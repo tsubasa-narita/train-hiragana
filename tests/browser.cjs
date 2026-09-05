@@ -7,6 +7,11 @@ const fs = require('node:fs');
   const browser = await chromium.launch({ headless: true, channel: process.env.BROWSER_CHANNEL || 'msedge' });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
   const errors = [];
+  const dismissReward = async () => {
+    assert.equal(await page.locator('.reward-dialog[open]').count(), 1);
+    await page.locator('[data-reward="continue"]').click();
+    assert.equal(await page.locator('.reward-dialog').count(), 0);
+  };
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
   await page.evaluate(() => document.fonts.ready);
@@ -22,6 +27,20 @@ const fs = require('node:fs');
   for (let i = 0; i < 5; i++) {
     target = (await page.locator('.target-letter').textContent()).trim();
     await page.locator(`.choice[data-letter="${target}"]`).click();
+    if (i === 0) {
+      await page.locator('.reward-dialog.running').waitFor();
+      await page.locator('.reward-runner').evaluate(el => { const animation = el.getAnimations()[0]; animation.pause(); animation.currentTime = 2500; });
+      await page.screenshot({ path: 'test-results/reward-desktop.png', fullPage: true });
+      await page.setViewportSize({ width: 375, height: 850 });
+      await page.screenshot({ path: 'test-results/reward-mobile.png', fullPage: true });
+      await page.setViewportSize({ width: 1440, height: 1100 });
+      const name = await page.locator('#reward-title').textContent();
+      await page.locator('[data-reward="replay"]:enabled').waitFor({ timeout: 10000 });
+      await page.locator('[data-reward="replay"]').click();
+      assert.equal(await page.locator('#reward-title').textContent(), name);
+      assert.equal(await page.locator('.reward-dialog.running').count(), 1);
+    }
+    await dismissReward();
     assert.equal(await page.locator('.choice:disabled').count(), 2);
     await page.locator('[data-action="next"]').click();
   }
@@ -35,6 +54,7 @@ const fs = require('node:fs');
     while (await page.locator('.carriage.waiting').count()) {
       const c = (await page.locator('.carriage.waiting').textContent()).trim();
       await page.locator(`.choice[data-letter="${c}"]`).click();
+      await dismissReward();
     }
     await page.locator('[data-action="next"]').click();
   }
@@ -78,6 +98,26 @@ const fs = require('node:fs');
   await unavailable.locator('[data-action="start-find"]').click();
   assert.equal(await unavailable.locator('.choice').count(), 2);
   assert.deepEqual(errors, []);
+  const reduced = await browser.newPage({ reducedMotion: 'reduce' });
+  await reduced.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
+  await reduced.locator('[data-action="start-find"]').click();
+  const c = await reduced.locator('.target-letter').textContent();
+  await reduced.locator(`.choice[data-letter="${c}"]`).click();
+  await reduced.locator('[data-reward="replay"]:enabled').waitFor();
+  assert.equal(await reduced.locator('.reward-runner').evaluate(el => getComputedStyle(el).animationName), 'none');
+  await reduced.keyboard.press('Escape');
+  assert.equal(await reduced.locator('.reward-dialog').count(), 0);
+  await reduced.setViewportSize({ width: 667, height: 375 });
+  await reduced.locator('[data-action="replay-reward"]').click();
+  await reduced.locator('[data-reward="continue"]').click();
+  assert.equal(await reduced.locator('.reward-dialog').count(), 0);
+  await reduced.route('**/assets/rewards/**', route => route.abort());
+  await reduced.locator('[data-action="next"]').click();
+  const nextChar = await reduced.locator('.target-letter').textContent();
+  await reduced.locator(`.choice[data-letter="${nextChar}"]`).click();
+  await reduced.locator('.reward-fallback:not([hidden])').waitFor();
+  await reduced.locator('[data-reward="continue"]').click();
+  assert.equal(await reduced.locator('.reward-dialog').count(), 0);
   await browser.close();
-  console.log('Browser checks passed: both 5-station modes, retry, stamps, reload, train selection, listen level, alphabet, mobile/tablet overflow, unavailable storage.');
+  console.log('Browser checks passed: both 5-station modes, reward animation/replay/skip, reduced motion/Escape, retry, stamps, reload, train selection, listen level, alphabet, mobile/tablet overflow, unavailable storage.');
 })().catch(e => { console.error(e); process.exit(1); });

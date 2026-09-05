@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { TRAINS, BASIC_KANA, KANA_ROWS, makeChoices, makeJourney, readProgress } from '../src/data.js';
+import { REWARD_TRAINS, chooseReward } from '../src/reward.js';
+test('reward images exist and random rewards never immediately repeat', () => {
+  for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/rewards/${t.image}`), t.image);
+  let previous;
+  for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
+});
 test('all train images exist and names use kana available in the alphabet', () => {
   assert.equal(new Set(TRAINS.map(t => t.id)).size, TRAINS.length);
   for (const t of TRAINS) {
