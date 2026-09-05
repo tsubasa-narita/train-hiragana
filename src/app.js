@@ -1,5 +1,7 @@
 import { TRAINS, KANA_ROWS, shuffle, makeChoices, makeJourney, readProgress } from './data.js';
 import { showTrainReward, stopTrainReward } from './reward.js';
+import { playVoice, stopVoice } from './voice.js';
+import { questionText, hintText, praiseText, VOICE_SAMPLE } from './voice-lines.js';
 
 const root = document.querySelector('#app');
 let storage;
@@ -16,13 +18,7 @@ function save() {
   catch { savingFailed = true; }
 }
 function speak(text) {
-  if (!progress.sound || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'ja-JP'; utterance.rate = .78; utterance.pitch = 1.12;
-  const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith('ja'));
-  if (voice) utterance.voice = voice;
-  speechSynthesis.speak(utterance);
+  if (progress.sound) playVoice(text);
 }
 function chime() {
   if (!progress.sound) return;
@@ -68,7 +64,7 @@ function reward(replay = false) {
 }
 function prompt() {
   const train = journey[station], letter = train.name[mode === 'find' ? 0 : letterIndex];
-  speak(`${train.name}。${mode === 'find' ? 'はじめの もじ' : 'つぎの もじ'}、${letter}。${letter} は どれかな？`);
+  speak(questionText(train, letter));
 }
 function game() {
   const train = journey[station], target = train.name[mode === 'find' ? 0 : letterIndex];
@@ -79,7 +75,7 @@ function answer(letter) {
   if (screen !== 'game' || answered) return;
   const train = journey[station], target = train.name[mode === 'find' ? 0 : letterIndex];
   if (letter !== target) {
-    wrong = letter; hint = `「${target}」を さがしてみよう。`; speak(hint); render(); return;
+    wrong = letter; hint = hintText(target); speak(hint); render(); return;
   }
   wrong = ''; hint = ''; chime();
   if (mode === 'connect' && letterIndex < train.name.length - 1) {
@@ -90,7 +86,7 @@ function answer(letter) {
   if (station === 4) {
     progress.trips++; save(); navigate('finish'); reward(); return;
   }
-  save(); render(); speak(`できたね！ ${train.name}！`);
+  save(); render(); speak(praiseText(train));
 }
 function finish() {
   return `<main class="finish"><div class="finish-seal">★</div><div class="eyebrow">5えきの たび、とうちゃく！</div><h1>やったね、<br>すてきな うんてんしゅ！</h1><p>きょうは こんな でんしゃと あそんだよ。</p><div class="earned-trains">${journey.map(t => `<div><img src="${imagePath(t)}" alt=""/><b>${t.name}</b><span>✓</span></div>`).join('')}</div><div class="finish-actions"><button class="primary" data-action="home">えきに もどる ⌂</button><button class="secondary" data-action="collection">ずかんを みる →</button></div><button class="replay-reward" data-action="replay-reward">↻ ごほうびを もういっかい</button><p class="gentle-note">つづきは また こんどでも。おつかれさま！</p></main>`;
@@ -106,7 +102,7 @@ function alphabet() {
   return `<main class="alphabet"><div class="page-heading"><div class="eyebrow">もじの きっぷうりば</div><h1>あいうえおで あそぼう</h1><p>もじを タッチすると、こえが きこえるよ。</p></div><div class="kana-layout"><div class="kana-board">${KANA_ROWS.map((row, i) => `${i === 10 ? '<h2>てんてん・まるの もじ</h2>' : i === 15 ? '<h2>ちいさい もじ・のばす おと</h2>' : ''}<div class="kana-row">${[...row].map(c => c === ' ' ? '<span></span>' : `<button data-action="kana" data-letter="${c}">${c}</button>`).join('')}</div>`).join('')}</div><aside class="kana-preview"><div class="preview-character" id="preview-character">あ</div><p id="preview-caption" role="status">すきな もじを おしてね</p>${trainSvg()}</aside></div></main>`;
 }
 function settings() {
-  return `<main class="settings"><button class="quiet" data-action="home">← ホームへ</button><h1>おうちのかたへ</h1><p>「好きな電車の名前」を入り口に、文字の形と音に親しむアプリです。最初は一緒に「はやぶさの、は！」と声をかけてみてください。</p><fieldset><legend>あそびの むずかしさ</legend><label><input type="radio" name="level" value="match" ${progress.level === 'match' ? 'checked' : ''}/> <span><b>おなじ文字をみつける（はじめはこちら）</b><small>見本の文字を見ながら、2つの選択肢から選びます。</small></span></label><label><input type="radio" name="level" value="listen" ${progress.level === 'listen' ? 'checked' : ''}/> <span><b>音を聞いてみつける</b><small>大きな文字の見本を隠して3択に。電車名は手がかりとして残ります。ヒントはいつでも表示できます。</small></span></label></fieldset><h2>短い旅を、好きなペースで</h2><p>1回5駅。5問すべて正解すると、ごほうびの電車が走ります。名前の連結では5つの名前を完成させると登場します。制限時間も、減点もありません。1駅ごとに図鑑に記録するので、途中で終わっても大丈夫です。図鑑の電車は最初からすべて見ることができます。</p><h2>音声について</h2><p>端末の日本語読み上げ機能を使います。音が出ない場合は「おと あり」と端末の音量、日本語音声の設定を確認してください。小さい文字や「を」「ぢ」などの読み方は、端末によって異なることがあります。音なしでも文字合わせで遊べます。</p><h2>保存とプライバシー</h2><p>図鑑・設定はこのブラウザ内に保存します。アカウント登録や広告、アクセス解析はありません。履歴を削除すると記録も消えます。${savingFailed ? '<strong>現在、このブラウザでは記録を保存できません。</strong>' : ''}</p><p>完走した旅：${progress.trips}回 ／ あそんだ電車：${progress.stamps.length}種類</p><details><summary>記録をリセットする</summary><p>図鑑の「あそんだよ」と完走回数を消します。設定は残ります。</p><button class="reset-button" data-action="reset">記録を消す</button></details></main>`;
+  return `<main class="settings"><button class="quiet" data-action="home">← ホームへ</button><h1>おうちのかたへ</h1><p>「好きな電車の名前」を入り口に、文字の形と音に親しむアプリです。最初は一緒に「はやぶさの、は！」と声をかけてみてください。</p><fieldset><legend>あそびの むずかしさ</legend><label><input type="radio" name="level" value="match" ${progress.level === 'match' ? 'checked' : ''}/> <span><b>おなじ文字をみつける（はじめはこちら）</b><small>見本の文字を見ながら、2つの選択肢から選びます。</small></span></label><label><input type="radio" name="level" value="listen" ${progress.level === 'listen' ? 'checked' : ''}/> <span><b>音を聞いてみつける</b><small>大きな文字の見本を隠して3択に。電車名は手がかりとして残ります。ヒントはいつでも表示できます。</small></span></label></fieldset><h2>短い旅を、好きなペースで</h2><p>1回5駅。5問すべて正解すると、ごほうびの電車が走ります。名前の連結では5つの名前を完成させると登場します。制限時間も、減点もありません。1駅ごとに図鑑に記録するので、途中で終わっても大丈夫です。図鑑の電車は最初からすべて見ることができます。</p><h2>やさしい案内の声</h2><p>少しゆっくりした、日本語のAI合成音声を用意しました。電車の名前・問題・ほめ言葉を、同じ声で読み上げます。</p><button class="secondary" data-action="voice-sample">♪ こえを きいてみる</button><p>音が出ない場合は「おと あり」と端末の音量を確認してください。音声ファイルを読み込めない場合は端末の読み上げに切り替わります。小さい文字は「ちいさい、つ」のように案内します。</p><h2>保存とプライバシー</h2><p>図鑑・設定はこのブラウザ内に保存します。アカウント登録や広告、アクセス解析はありません。履歴を削除すると記録も消えます。${savingFailed ? '<strong>現在、このブラウザでは記録を保存できません。</strong>' : ''}</p><p>完走した旅：${progress.trips}回 ／ あそんだ電車：${progress.stamps.length}種類</p><details><summary>記録をリセットする</summary><p>図鑑の「あそんだよ」と完走回数を消します。設定は残ります。</p><button class="reset-button" data-action="reset">記録を消す</button></details></main>`;
 }
 function render() {
   const views = { home, game, finish, collection, train: trainDetail, alphabet, settings };
@@ -114,14 +110,15 @@ function render() {
 }
 function navigate(next) {
   stopTrainReward();
-  window.speechSynthesis?.cancel(); screen = next; render(); window.scrollTo(0, 0);
+  stopVoice(); screen = next; render(); window.scrollTo(0, 0);
 }
 root.addEventListener('click', e => {
   const button = e.target.closest('button[data-action]');
   if (!button) return;
   const action = button.dataset.action;
   if (['home', 'collection', 'alphabet', 'settings'].includes(action)) return navigate(action);
-  if (action === 'sound') { progress.sound = !progress.sound; save(); if (!progress.sound) window.speechSynthesis?.cancel(); render(); if (progress.sound) speak('おとが でるよ'); }
+  if (action === 'sound') { progress.sound = !progress.sound; save(); if (!progress.sound) stopVoice(); render(); if (progress.sound) speak('おとが でるよ'); }
+  if (action === 'voice-sample') { progress.sound = true; save(); render(); speak(VOICE_SAMPLE); }
   if (action === 'start-find') start('find');
   if (action === 'start-connect') start('connect');
   if (action === 'listen') { if (!progress.sound) { progress.sound = true; save(); render(); } prompt(); }

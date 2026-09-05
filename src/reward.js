@@ -1,3 +1,5 @@
+import { stopVoice } from './voice.js';
+import { rewardText } from './voice-lines.js';
 export const REWARD_TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'reward_train_hayabusa.png' },
   { id: 'komachi', name: 'こまち', image: 'reward_train_komachi.png' },
@@ -67,7 +69,7 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   const close = (continueGame = true) => {
     if (closed) return;
     closed = true; runId++; clearTimeout(timer); clearTimeout(loadTimer); stopSound();
-    window.speechSynthesis?.cancel(); dialog.close(); dialog.remove(); activeClose = null;
+    stopVoice(); dialog.close(); dialog.remove(); activeClose = null;
     if (continueGame) onDone?.();
   };
   activeClose = close;
@@ -80,7 +82,7 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
     dialog.classList.add('running');
     status.textContent = 'がたん ごとん、しゅっぱつ！';
     replay.disabled = true;
-    speak?.(`${train.name} が やってきた！`);
+    speak?.(rewardText(train));
     stopSound = playPassSound(sound);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     timer = setTimeout(() => {
