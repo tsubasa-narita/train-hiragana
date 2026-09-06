@@ -1,20 +1,21 @@
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { TRAINS, KANA_ROWS } from '../src/data.js';
+import { QUIZ_CARDS, KANA_ROWS } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
 import { questionText, hintText, praiseText, rewardText, VOICE_SAMPLE } from '../src/voice-lines.js';
 const lines = new Map();
-const names = { yamanote: '山手線', enoden: '江ノ電', 'doctor-yellow': 'ドクターイエロー' };
+const names = { yamanote: '山手線', enoden: '江ノ電', 'doctor-yellow': 'ドクターイエロー', 'narita-express': '成田エクスプレス', marunouchi: '丸ノ内線', rapit: 'ラピート', keikyu: '京急線', sonic: 'ソニック', nemuro: '根室本線', hitachi: 'ひたち', 'heisei-chikuho': '平成筑豊鉄道', yufuin: 'ゆふいんの森', yokosuka: '横須賀線' };
 const kana = c => c.replace(/[ぁ-ゖ]/g, x => String.fromCharCode(x.charCodeAt(0) + 0x60));
 const add = (text, spoken = text) => lines.set(text, { text, spoken, file: createHash('sha256').update(text).digest('hex').slice(0, 16) + '.mp3' });
 add(VOICE_SAMPLE);
 add('おとが でるよ', '音が出るよ！');
-for (const train of TRAINS) {
-  const name = names[train.id] || train.name;
+add('できたね！');
+for (const train of QUIZ_CARDS) {
+  const name = train.kind ? train.name : names[train.id] || train.name;
   add(train.name, name + '。');
   add(praiseText(train), `できたね！ ${name}！`);
   for (const letter of train.name) {
-    add(questionText(train, letter), `${name}の、${kana(letter)}。同じ文字は、どれかな？`);
+    add(questionText(train, letter), `${name}の、${letter === 'ー' ? 'のばす音' : kana(letter)}。同じ文字は、どれかな？`);
     add(hintText(letter), `${kana(letter)}を、探してみよう。`);
   }
 }

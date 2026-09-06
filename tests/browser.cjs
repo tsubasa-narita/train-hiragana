@@ -49,23 +49,21 @@ const fs = require('node:fs');
   await dismissReward();
   assert.equal(await page.locator('.earned-trains>div').count(), 5);
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')));
-  assert.equal(saved.stamps.length, 5); assert.equal(saved.trips, 1);
+  assert.ok(saved.stamps.length > 0 && saved.stamps.length <= 5); assert.equal(saved.trips, 1);
   await page.reload();
-  assert.equal((await page.locator('.ticket-count b').textContent()).trim(), '5');
+  assert.equal((await page.locator('.ticket-count b').textContent()).trim(), String(saved.stamps.length));
   await page.locator('[data-action="start-connect"]').click();
-  for (let i = 0; i < 5; i++) {
-    while (await page.locator('.carriage.waiting').count()) {
-      const c = (await page.locator('.carriage.waiting').textContent()).trim();
-      await page.locator(`.choice[data-letter="${c}"]`).click();
-      if (await page.locator('.game').count()) assert.equal(await page.locator('.reward-dialog').count(), 0);
-    }
-    if (i < 4) await page.locator('[data-action="next"]').click();
+  while (await page.locator('.game').count()) {
+    const c = (await page.locator('.carriage.waiting').textContent()).trim();
+    await page.locator(`.choice[data-letter="${c}"]`).click();
+    assert.equal(await page.locator('.reward-dialog').count(), 0);
+    await page.locator('[data-action="next"]').click();
   }
   await dismissReward();
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')));
   assert.equal(saved.trips, 2);
   await page.locator('[data-action="collection"]').first().click();
-  assert.equal(await page.locator('.train-card').count(), 8);
+  assert.equal(await page.locator('.train-card').count(), 21);
   await page.locator('[data-action="train"][data-id="hayabusa"]').click();
   assert.equal(await page.locator('.name-letters button').count(), 4);
   await page.locator('[data-action="train-play"]').click();

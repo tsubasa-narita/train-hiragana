@@ -1,0 +1,52 @@
+# 清音46文字の出題対応
+
+その文字から始まる名前を優先した、出題候補の一例です。実際の出題は候補からランダムに選びます。
+
+| 文字 | 名前・ことば | 文字の位置 | 画像 |
+| --- | --- | --- | --- |
+| あ | あずさ | 1 | azusa.png |
+| い | けいきゅうせん | 2 | keikyu.png |
+| う | まるのうちせん | 4 | marunouchi.png |
+| え | えのでん | 1 | enoden.png |
+| お | わかしお | 4 | wakashio.png |
+| か | かがやき | 1 | kagayaki.jpg |
+| き | かがやき | 4 | kagayaki.jpg |
+| く | さくら | 2 | sakura.png |
+| け | けいきゅうせん | 1 | keikyu.png |
+| こ | こまち | 1 | komachi.jpg |
+| さ | さくら | 1 | sakura.png |
+| し | わかしお | 3 | wakashio.png |
+| す | なりたえくすぷれす | 6 | narita-express.png |
+| せ | やまのてせん | 5 | yamanote.jpg |
+| そ | そにっく | 1 | sonic.png |
+| た | なりたえくすぷれす | 3 | narita-express.png |
+| ち | こまち | 3 | komachi.jpg |
+| つ | つばさ | 1 | e8_tsubasa.png |
+| て | やまのてせん | 4 | yamanote.jpg |
+| と | らぴーと | 4 | rapit.png |
+| な | なりたえくすぷれす | 1 | narita-express.png |
+| に | そにっく | 2 | sonic.png |
+| ぬ | いぬ | 2 | dog-train.png |
+| ね | ねむろほんせん | 1 | nemuro.png |
+| の | のぞみ | 1 | n700s_nozomi.png |
+| は | はやぶさ | 1 | hayabusa.jpg |
+| ひ | ひたち | 1 | hitachi.png |
+| ふ | ゆふいんのもり | 2 | yufuin.png |
+| へ | へいせいちくほうてつどう | 1 | heisei-chikuho.png |
+| ほ | ねむろほんせん | 4 | nemuro.png |
+| ま | まるのうちせん | 1 | marunouchi.png |
+| み | のぞみ | 3 | n700s_nozomi.png |
+| む | ねむろほんせん | 2 | nemuro.png |
+| め | つばめ | 3 | kyushu_800_tsubame.png |
+| も | ゆふいんのもり | 6 | yufuin.png |
+| や | やまのてせん | 1 | yamanote.jpg |
+| ゆ | ゆふいんのもり | 1 | yufuin.png |
+| よ | よこすかせん | 1 | yokosuka.png |
+| ら | らぴーと | 1 | rapit.png |
+| り | なりたえくすぷれす | 2 | narita-express.png |
+| る | まるのうちせん | 2 | marunouchi.png |
+| れ | なりたえくすぷれす | 8 | narita-express.png |
+| ろ | ねむろほんせん | 3 | nemuro.png |
+| わ | わかしお | 1 | wakashio.png |
+| を | でんしゃをみる | 5 | dog-train.png |
+| ん | やまのてせん | 6 | yamanote.jpg |

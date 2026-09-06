@@ -7,6 +7,11 @@ export const REWARD_TRAINS = [
   { id: 'kagayaki', name: 'かがやき', image: 'reward_train_kagayaki.png' },
   { id: 'yamanote', name: 'やまのてせん', image: 'reward_train_yamanote.png' },
   { id: 'doctor-yellow', name: 'どくたーいえろー', image: 'reward_train_doctor_yellow.png' },
+  { id: 'azusa', name: 'あずさ', image: 'reward_azusa.webp' },
+  { id: 'sakura', name: 'さくら', image: 'reward_sakura.webp' },
+  { id: 'narita-express', name: 'なりたえくすぷれす', image: 'reward_narita-express.webp' },
+  { id: 'marunouchi', name: 'まるのうちせん', image: 'reward_marunouchi.webp' },
+  { id: 'rapit', name: 'らぴーと', image: 'reward_rapit.webp' },
 ];
 let previousId, activeClose, context;
 export function chooseReward() {
@@ -16,6 +21,13 @@ export function chooseReward() {
   return train;
 }
 export function stopTrainReward() { activeClose?.(false); }
+export function unlockRewardAudio(enabled) {
+  if (!enabled) return;
+  try {
+    context ??= new (window.AudioContext || window.webkitAudioContext)();
+    context.resume().catch(() => {});
+  } catch {}
+}
 
 // Quiet rail rumble, rhythmic wheel clicks, and an air rush moving left to right.
 function playPassSound(enabled) {
@@ -50,13 +62,8 @@ function playPassSound(enabled) {
 
 export function showTrainReward({ train = chooseReward(), sound = true, speak, onDone } = {}) {
   stopTrainReward();
-  // Unlock audio during the answer tap, before awaiting the image on iOS.
-  if (sound) {
-    try {
-      context ??= new (window.AudioContext || window.webkitAudioContext)();
-      context.resume().catch(() => {});
-    } catch {}
-  }
+  // Also unlocked on the start tap, since automatic progression has no user activation.
+  unlockRewardAudio(sound);
   const dialog = document.createElement('dialog');
   dialog.className = 'reward-dialog';
   dialog.setAttribute('aria-labelledby', 'reward-title');

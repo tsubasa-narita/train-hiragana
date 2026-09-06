@@ -39,7 +39,7 @@ const assert = require('node:assert/strict');
       await context.close();
       return count;
     });
-    assert.equal(decoded, 156);
+    assert.equal(decoded, await page.evaluate(async () => Object.keys((await import('./src/voice-manifest.js')).VOICE_FILES).length));
     await page.route('**/assets/voice/*.mp3', route => route.abort());
     await page.locator('[data-action="settings"]').click();
     await page.locator('[data-action="voice-sample"]').click();
