@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJourneyOffset, kanaRow, targetIndices, makeChoices, makeJourney, readProgress } from '../src/data.js';
 import { REWARD_TRAINS, chooseReward } from '../src/reward.js';
 test('reward images exist and random rewards never immediately repeat', () => {
@@ -14,6 +15,9 @@ test('all train images exist and names use kana available in the alphabet', () =
     assert.ok(existsSync(`assets/trains/${t.image}`), t.image);
     for (const letter of t.name) assert.ok(KANA_ROWS.join('').includes(letter), letter);
   }
+  assert.equal(new Set(TRAINS.map(t => t.image)).size, TRAINS.length, 'every named train has its own illustration');
+  const imageHashes = TRAINS.map(t => createHash('sha256').update(readFileSync(`assets/trains/${t.image}`)).digest('hex'));
+  assert.equal(new Set(imageHashes).size, TRAINS.length, 'train illustrations must not be duplicate files');
   assert.equal(BASIC_KANA.length, 46);
 });
 test('every kana including voiced letters has exactly one correct choice', () => {

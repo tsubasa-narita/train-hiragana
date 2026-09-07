@@ -9,19 +9,19 @@
 - 沼尻軽便鉄道・留萌本線・レッドアロー：[担当記録と公式出典](prefix-trains-c.md)
 - 上野東京ライン・りんかい線：[担当記録と公式出典](prefix-trains-d.md)
 
-## 同形式のイラストを共用する列車・路線
+## 同形式でも専用イラストを用意する列車・路線
 
 | 名前 | 車両 | 確認した公式資料 |
 | --- | --- | --- |
-| たにがわ・とき | E7系（かがやきと共用） | [JR東日本 E7系](https://www.jreast.co.jp/ko/train/shinkan/e7.html) |
-| 富士回遊 | E353系（あずさと共用） | [JR東日本 あずさ・かいじ・富士回遊](https://www.jreast.co.jp/multi/traininformation/azusa_kaiji/) |
-| しおさい | E257系（わかしおと共用） | [JR東日本 さざなみ・わかしお・しおさい](https://www.jreast.co.jp/multi/traininformation/sazanami_wakashio/) |
-| みずほ | N700系（さくらと共用） | [JR九州 N700系](https://www.jrkyushu.co.jp/english/train/700series.html) |
-| 室蘭本線 | H100形（根室本線と共用） | [JR北海道 H100形室蘭線ラッピング車の運行区間](https://www.jrhokkaido.co.jp/CM/Info/press/pdf/20240117_KO_H100.pdf) |
+| たにがわ・とき | E7系（専用画像） | [JR東日本 E7系](https://www.jreast.co.jp/ko/train/shinkan/e7.html) |
+| 富士回遊 | E353系（専用画像） | [JR東日本 あずさ・かいじ・富士回遊](https://www.jreast.co.jp/multi/traininformation/azusa_kaiji/) |
+| しおさい | E257系（専用画像） | [JR東日本 さざなみ・わかしお・しおさい](https://www.jreast.co.jp/multi/traininformation/sazanami_wakashio/) |
+| みずほ | N700系（専用画像） | [JR九州 N700系](https://www.jrkyushu.co.jp/english/train/700series.html) |
+| 室蘭本線 | H100形（専用画像） | [JR北海道 H100形室蘭線ラッピング車の運行区間](https://www.jrhokkaido.co.jp/CM/Info/press/pdf/20240117_KO_H100.pdf) |
 
 ## 既存プロジェクトのイラストを再利用した車両
 
-出所は `C:\develop\go-home-puzzle\public\images`。配信用のWebPを `assets/trains/` に保存しています。
+出所は `C:\develop\go-home-puzzle\public\images`。以下は初回取り込みの記録です。名鉄は実車レビュー後に `meitetsu-v2.webp` に差し替えました。最新の採用画像は [レビュー結果](design-review.md) と `src/data.js` を参照してください。
 
 | 名前 | 元ファイル → 配信用ファイル | 確認した公式資料 |
 | --- | --- | --- |

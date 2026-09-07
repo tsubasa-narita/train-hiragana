@@ -51,6 +51,8 @@ const fs = require('node:fs');
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')));
   assert.ok(saved.stamps.length > 0 && saved.stamps.length <= 5); assert.equal(saved.trips, 1);
   await page.reload();
+  await page.locator('.finish').waitFor();
+  await page.locator('[data-action="home"]').first().click();
   assert.equal((await page.locator('.ticket-count b').textContent()).trim(), String(saved.stamps.length));
   await page.locator('[data-action="start-connect"]').click();
   while (await page.locator('.game').count()) {
@@ -100,7 +102,7 @@ const fs = require('node:fs');
   await unavailable.locator('[data-action="start-find"]').click();
   assert.equal(await unavailable.locator('.choice').count(), 2);
   assert.deepEqual(errors, []);
-  const reduced = await browser.newPage({ reducedMotion: 'reduce' });
+  const reduced = await browser.newPage({ reducedMotion: 'reduce', serviceWorkers: 'block' });
   await reduced.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
   await reduced.locator('[data-action="start-find"]').click();
   for (let i = 0; i < 5; i++) {

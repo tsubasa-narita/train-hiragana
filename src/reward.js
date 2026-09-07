@@ -1,7 +1,7 @@
 import { stopVoice } from './voice.js';
 import { rewardText } from './voice-lines.js';
 export const REWARD_TRAINS = [
-  { id: 'hayabusa', name: 'はやぶさ', image: 'reward_train_hayabusa.png' },
+  { id: 'hayabusa', name: 'はやぶさ', image: 'reward-hayabusa-v2.webp' },
   { id: 'komachi', name: 'こまち', image: 'reward_train_komachi.png' },
   { id: 'nozomi', name: 'のぞみ', image: 'reward_train_nozomi.png' },
   { id: 'kagayaki', name: 'かがやき', image: 'reward_train_kagayaki.png' },
@@ -11,7 +11,7 @@ export const REWARD_TRAINS = [
   { id: 'sakura', name: 'さくら', image: 'reward_sakura.webp' },
   { id: 'narita-express', name: 'なりたえくすぷれす', image: 'reward_narita-express.webp' },
   { id: 'marunouchi', name: 'まるのうちせん', image: 'reward_marunouchi.webp' },
-  { id: 'rapit', name: 'らぴーと', image: 'reward_rapit.webp' },
+  { id: 'rapit', name: 'らぴーと', image: 'reward-rapit-v2.webp' },
 ];
 let previousId, activeClose, context;
 export function chooseReward() {

@@ -55,3 +55,11 @@
 - [上野東京ライン・りんかい線](prefix-trains-d.md)
 
 そのほか、既存 `go-home-puzzle/public/images/` の踊り子・パンダくろしお・スカイライナー・西武40000系・中央線・名鉄ミュースカイ・桃太郎・ロマンスカーの8枚をWebPとして再利用しました。
+
+## 実車レビュー後の修正・専用画像化
+
+2026-09-07、Luna / effort超高の3エージェントが画像レビューと組み込みImageGenによる生成を分担しました。親エージェントも公式写真で指摘を裏取りしました。詳細は [レビュー結果](design-review.md) を参照してください。
+
+- 共有していた6列車の専用画像：[たにがわ・とき](unique-trains-a.md)、[しおさい・室蘭本線](unique-trains-b.md)、[富士回遊・みずほ](unique-trains-c.md)。
+- 実車に合わせた6枚の修正：[わかしお](design-fix-wakashio.md)、[ごほうびはやぶさ](design-fix-hayabusa.md)、[ごほうびラピート](design-fix-rapit.md)、[平成筑豊鉄道](design-fix-b.md)、[名鉄ミュースカイ・レッドアロー](design-fix-c.md)。
+- 各記録に最終プロンプト・公式資料・PNG原本と配信用WebPのパスを保存。旧ファイルも比較用に保持しています。
