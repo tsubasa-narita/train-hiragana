@@ -16,7 +16,7 @@ const assert = require('node:assert/strict');
       }
       return paths.length;
     });
-    assert.equal(count, 33);
-    console.log('All 22 quiz illustrations and 11 reward images loaded and decoded.');
+    assert.equal(count, 51);
+    console.log('All 40 quiz illustrations and 11 reward images loaded and decoded.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

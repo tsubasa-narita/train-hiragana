@@ -33,7 +33,7 @@
 | heisei-chikuho.png | 平成筑豊鉄道 |
 | yufuin.png | ゆふいんの森 |
 | yokosuka.png | 横須賀線 |
-| dog-train.png | 犬が京急線を見る場面。「ぬ」「を」を学ぶ言葉に使用 |
+| dog-train.png | 犬が京急線を見る場面。「を」を学ぶ言葉に使用 |
 
 ## ごほうび用の保存先（5枚）
 
@@ -44,3 +44,14 @@
 - reward_narita-express.png
 - reward_marunouchi.png
 - reward_rapit.png
+
+## 先頭一致のための追加10枚
+
+組み込みImageGenで生成し、PNG原本とWebP配信用画像を `assets/trains/` に保存しました。Luna・超高の3エージェントが8枚を分担し、親エージェントが2枚を生成しました。各記録には最終プロンプトと実在確認の出典を記載しています。
+
+- [いなほ・きぬがわ・にちりん](prefix-trains-a.md)
+- [天竜浜名湖鉄道・北斗](prefix-trains-b.md)
+- [沼尻軽便鉄道・留萌本線・レッドアロー](prefix-trains-c.md)
+- [上野東京ライン・りんかい線](prefix-trains-d.md)
+
+そのほか、既存 `go-home-puzzle/public/images/` の踊り子・パンダくろしお・スカイライナー・西武40000系・中央線・名鉄ミュースカイ・桃太郎・ロマンスカーの8枚をWebPとして再利用しました。

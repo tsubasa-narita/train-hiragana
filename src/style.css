@@ -45,3 +45,5 @@
 @media(prefers-reduced-motion:reduce){.running .reward-runner,.running .reward-fallback:not([hidden]),.arrived .reward-runner{animation:none;visibility:visible}}
 @media(max-width:580px){.sound span{display:none}.sound{width:42px;height:42px;padding:0}.brand{font-size:15px}.header-actions{gap:4px}}
 @media(prefers-reduced-motion:no-preference){.hero .train-body{animation:sway 4s ease-in-out infinite}.choice.correct{animation:pop .35s ease-out}.finish-seal{animation:pop .5s ease-out}.try-again{animation:nudge .25s ease-in-out}@keyframes sway{50%{transform:translateY(-2px)}}@keyframes pop{50%{transform:scale(1.08)}}@keyframes nudge{33%{transform:translateX(-3px)}66%{transform:translateX(3px)}}}
+
+.history-tag { position: absolute; top: 12px; left: 12px; padding: 6px 10px; border-radius: 12px; background: #fff8e8; color: #78562f; font-size: .8rem; font-weight: 700; }

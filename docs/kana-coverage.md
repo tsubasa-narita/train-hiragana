@@ -1,52 +1,67 @@
 # 清音46文字の出題対応
 
-その文字から始まる名前を優先した、出題候補の一例です。実際の出題は候補からランダムに選びます。
+出題する文字は五十音順。44文字は実在する列車・路線・鉄道会社の名前や愛称の先頭を使用します。候補が複数ある文字は、その中の電車だけをランダムに選びます。
 
-| 文字 | 名前・ことば | 文字の位置 | 画像 |
+| 文字 | 名前・ことばの例 | 位置 | 画像 |
 | --- | --- | --- | --- |
-| あ | あずさ | 1 | azusa.png |
-| い | けいきゅうせん | 2 | keikyu.png |
-| う | まるのうちせん | 4 | marunouchi.png |
+| あ | あずさ | 1 | azusa.webp |
+| い | いなほ | 1 | inaho.webp |
+| う | うえのとうきょうらいん | 1 | ueno-tokyo-story.webp |
 | え | えのでん | 1 | enoden.png |
-| お | わかしお | 4 | wakashio.png |
+| お | おどりこ | 1 | odoriko.webp |
 | か | かがやき | 1 | kagayaki.jpg |
-| き | かがやき | 4 | kagayaki.jpg |
-| く | さくら | 2 | sakura.png |
-| け | けいきゅうせん | 1 | keikyu.png |
+| き | きぬがわ | 1 | kinugawa.webp |
+| く | くろしお | 1 | kuroshio.webp |
+| け | けいきゅうせん | 1 | keikyu.webp |
 | こ | こまち | 1 | komachi.jpg |
-| さ | さくら | 1 | sakura.png |
-| し | わかしお | 3 | wakashio.png |
-| す | なりたえくすぷれす | 6 | narita-express.png |
-| せ | やまのてせん | 5 | yamanote.jpg |
-| そ | そにっく | 1 | sonic.png |
-| た | なりたえくすぷれす | 3 | narita-express.png |
-| ち | こまち | 3 | komachi.jpg |
+| さ | さくら | 1 | sakura.webp |
+| し | しおさい | 1 | wakashio.webp |
+| す | すかいらいなー | 1 | skyliner.webp |
+| せ | せいぶせん | 1 | seibu.webp |
+| そ | そにっく | 1 | sonic.webp |
+| た | たにがわ | 1 | kagayaki.jpg |
+| ち | ちゅうおうせん | 1 | chuo.webp |
 | つ | つばさ | 1 | e8_tsubasa.png |
-| て | やまのてせん | 4 | yamanote.jpg |
-| と | らぴーと | 4 | rapit.png |
-| な | なりたえくすぷれす | 1 | narita-express.png |
-| に | そにっく | 2 | sonic.png |
-| ぬ | いぬ | 2 | dog-train.png |
-| ね | ねむろほんせん | 1 | nemuro.png |
+| て | てんりゅうはまなこてつどう | 1 | tenhama.webp |
+| と | とき | 1 | kagayaki.jpg |
+| な | なりたえくすぷれす | 1 | narita-express.webp |
+| に | にちりん | 1 | nichirin.webp |
+| ぬ | ぬまじりけいべんてつどう（昔の鉄道） | 1 | numajiri.webp |
+| ね | ねむろほんせん | 1 | nemuro.webp |
 | の | のぞみ | 1 | n700s_nozomi.png |
 | は | はやぶさ | 1 | hayabusa.jpg |
-| ひ | ひたち | 1 | hitachi.png |
-| ふ | ゆふいんのもり | 2 | yufuin.png |
-| へ | へいせいちくほうてつどう | 1 | heisei-chikuho.png |
-| ほ | ねむろほんせん | 4 | nemuro.png |
-| ま | まるのうちせん | 1 | marunouchi.png |
-| み | のぞみ | 3 | n700s_nozomi.png |
-| む | ねむろほんせん | 2 | nemuro.png |
-| め | つばめ | 3 | kyushu_800_tsubame.png |
-| も | ゆふいんのもり | 6 | yufuin.png |
+| ひ | ひたち | 1 | hitachi.webp |
+| ふ | ふじかいゆう | 1 | azusa.webp |
+| へ | へいせいちくほうてつどう | 1 | heisei-chikuho.webp |
+| ほ | ほくと | 1 | hokuto.webp |
+| ま | まるのうちせん | 1 | marunouchi.webp |
+| み | みずほ | 1 | sakura.webp |
+| む | むろらんほんせん | 1 | nemuro.webp |
+| め | めいてつ | 1 | meitetsu.webp |
+| も | ももたろう | 1 | momotaro.webp |
 | や | やまのてせん | 1 | yamanote.jpg |
-| ゆ | ゆふいんのもり | 1 | yufuin.png |
-| よ | よこすかせん | 1 | yokosuka.png |
-| ら | らぴーと | 1 | rapit.png |
-| り | なりたえくすぷれす | 2 | narita-express.png |
-| る | まるのうちせん | 2 | marunouchi.png |
-| れ | なりたえくすぷれす | 8 | narita-express.png |
-| ろ | ねむろほんせん | 3 | nemuro.png |
-| わ | わかしお | 1 | wakashio.png |
-| を | でんしゃをみる | 5 | dog-train.png |
+| ゆ | ゆふいんのもり | 1 | yufuin.webp |
+| よ | よこすかせん | 1 | yokosuka.webp |
+| ら | らぴーと | 1 | rapit.webp |
+| り | りんかいせん | 1 | rinkai-story.webp |
+| る | るもいほんせん（昔の鉄道） | 1 | rumoi.webp |
+| れ | れっどあろー | 1 | red-arrow.webp |
+| ろ | ろまんすかー | 1 | romancecar.webp |
+| わ | わかしお | 1 | wakashio.webp |
+| を | でんしゃをみる | 5 | dog-train.webp |
 | ん | やまのてせん | 6 | yamanote.jpg |
+
+「を」「ん」は先頭が一致する実在名を確認できなかったため例外です。「を」は犬が電車を見る場面の「でんしゃをみる」、「ん」は電車名の途中から出題します。
+
+「ぬ」は1969年廃止の沼尻軽便鉄道、「る」は昔の留萌本線。ゲームの画像に「むかしの てつどう」を表示し、図鑑の説明にも明記します。
+
+同じ形式の車両が複数の列車名で走る場合は、その車両の絵を共用します（E7系：かがやき・たにがわ・とき、E353系：あずさ・富士回遊、E257系：わかしお・しおさい、N700系：さくら・みずほ、H100形：根室本線・室蘭本線）。運行や外観を確認した出典は [追加車両の出典](prefix-train-sources.md)、新規画像のプロンプトは [画像生成記録](image-generation.md) に記録しています。
+
+## 出題順
+
+- あ行のみ：あ→い→う→え→お。次の旅も「あ」から。
+- や行のみ：や→ゆ→よ→や→ゆ。わ行のみ：わ→を→ん→わ→を。
+- 複数行・ぜんぶ：選んだ文字を五十音順に並べ、5文字ずつ。完走後の位置を保存し、次回は続きから。最後まで行くと最初に戻ります。
+- 途中でホームへ戻ると、その旅は最初からやり直し。行の選択変更で出題位置も最初に戻ります。
+- 図鑑からは、その電車名の先頭が属する行の最初から開始。該当文字の番に選んだ電車を出題します。
+- 名前の連結は、電車を上記の順で出し、1つの名前の中では文字を左からつなぎます。

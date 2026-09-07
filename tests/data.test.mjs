@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, kanaRow, targetIndices, makeChoices, makeJourney, readProgress } from '../src/data.js';
+import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJourneyOffset, kanaRow, targetIndices, makeChoices, makeJourney, readProgress } from '../src/data.js';
 import { REWARD_TRAINS, chooseReward } from '../src/reward.js';
 test('reward images exist and random rewards never immediately repeat', () => {
   for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/rewards/${t.image}`), t.image);
@@ -24,11 +24,11 @@ test('every kana including voiced letters has exactly one correct choice', () =>
     assert.equal(choices.filter(x => x === c).length, 1);
   }
 });
-test('journeys have five questions and honor the chosen starting train', () => {
+test('journeys keep kana order and use the preferred train at its matching letter', () => {
   for (const t of TRAINS) {
-    const journey = makeJourney(t.id);
+    const journey = makeJourney(t.id, [kanaRow(t.name[0])]);
     assert.equal(journey.length, 5);
-    assert.equal(journey[0].id, t.id);
+    assert.ok(journey.some(card => card.id === t.id && card.targets[0] === 0), t.name);
     assert.ok(journey.every(t => t.targets.length));
   }
   assert.equal(makeJourney('unknown').length, 5);
@@ -78,4 +78,39 @@ test('each row has a train starting in that row and filtered quizzes never leave
 test('all 46 basic hiragana have illustrated quiz cards', () => {
   for (const c of BASIC_KANA) assert.ok(QUIZ_CARDS.some(t => targetIndices(t).some(i => t.name[i] === c)), c);
   for (const card of QUIZ_CARDS) assert.ok(existsSync(`assets/trains/${card.image}`), card.image);
+});
+
+test('all rows use fixed kana order; only wo and n may use a later character', () => {
+  for (let repeat = 0; repeat < 10; repeat++) for (const row of ROWS) {
+    const expected = Array.from({length: 5}, (_, i) => row.letters[i % row.letters.length]);
+    for (const mode of ['find', 'connect']) {
+      const journey = makeJourney(undefined, [row.id], mode, 19);
+      assert.deepEqual(journey.map(t => t.name[t.targets[0]]), expected);
+      for (const t of journey) {
+        const c = t.name[t.targets[0]];
+        if (!'をん'.includes(c)) assert.equal(t.targets[0], 0, c + ':' + t.name);
+      }
+    }
+  }
+  assert.equal(new Set(TRAINS.map(t => t.name[0])).size, 44);
+});
+
+test('multiple rows continue in canonical order, wrap, and never skip later rows', () => {
+  for (const rows of [[], ['か','あ'], ['や','わ'], ['わ','ら','な']]) {
+    const letters = orderedLetters(rows);
+    let offset = 0;
+    const seen = [];
+    for (let trip = 0; trip < letters.length; trip++) {
+      const journey = makeJourney(undefined, rows, 'find', offset);
+      const expected = Array.from({length:5}, (_, i) => letters[(offset + i) % letters.length]);
+      assert.deepEqual(journey.map(t => t.name[t.targets[0]]), expected);
+      seen.push(...expected);
+      offset = nextJourneyOffset(rows, offset);
+    }
+    assert.equal(new Set(seen).size, letters.length);
+  }
+  for (const row of ROWS) assert.equal(nextJourneyOffset([row.id], 0), 0);
+  for (const value of [-1, Infinity, 'bad', null]) {
+    assert.equal(readProgress({getItem: () => JSON.stringify({journeyOffset:value})}).journeyOffset, 0);
+  }
 });
