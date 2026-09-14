@@ -65,7 +65,7 @@ const fs = require('node:fs');
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')));
   assert.equal(saved.trips, 2);
   await page.locator('[data-action="collection"]').first().click();
-  assert.equal(await page.locator('.train-card').count(), 45);
+  assert.equal(await page.locator('.train-card').count(), 61);
   await page.locator('[data-action="train"][data-id="hayabusa"]').click();
   assert.equal(await page.locator('.name-letters button').count(), 4);
   await page.locator('[data-action="train-play"]').click();

@@ -70,11 +70,16 @@ const assert = require('node:assert/strict');
     assert.equal(await page.evaluate(()=>window.installCalls),1);
     assert.equal(await page.locator('[data-action="install"]').isVisible(),false);
     await page.locator('[data-action="home"]').first().click(); await page.locator('.home').waitFor();
-    await context.setOffline(true);
-    await page.reload(); await page.locator('.home').waitFor();
     await page.locator('[data-action="start-find"]').click();
     await page.locator('.train-picture img').evaluate(img=>img.decode());
+    const seenImage = await page.locator('.train-picture img').getAttribute('src');
+    await context.setOffline(true);
+    await page.reload(); await page.locator('.game').waitFor();
+    await page.locator('.train-picture img').evaluate(img=>img.decode());
+    assert.equal(await page.locator('.train-picture img').getAttribute('src'), seenImage);
     assert.equal(await page.locator('.target-letter').textContent(),'あ');
+    await page.locator('[data-action="home"]').first().click(); await page.locator('.home').waitFor();
+    await page.reload(); await page.locator('.home').waitFor();
     console.log('Android browser checks passed: PWA manifest/icons/service worker, isolated cache, offline shell and seen images, back/forward, reload/resume, timer cancellation, reward dismissal, no duplicate completion, install prompt.');
     await context.close();
   } finally { await browser.close(); }

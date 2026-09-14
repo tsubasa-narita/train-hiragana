@@ -1,3 +1,4 @@
+import { EXTRA_TRAINS, IMAGE_VARIANTS } from './train-expansion.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -44,12 +45,18 @@ export const TRAINS = [
   { id: 'rumoi', name: 'るもいほんせん', image: 'rumoi.webp', color: '#bf6459', historical: true, detail: 'むかし ほっかいどうを はしったよ' },
   { id: 'red-arrow', name: 'れっどあろー', image: 'red-arrow-v2.webp', color: '#be665c', detail: 'せいぶの とっきゅう' },
   { id: 'romancecar', name: 'ろまんすかー', image: 'romancecar.webp', color: '#c9664f', detail: 'おだきゅうの とっきゅう。この えは むかしの しゃりょう' },
+  ...EXTRA_TRAINS,
 ];
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
-export const QUIZ_CARDS = [...TRAINS, {
+export const QUIZ_CARDS = [...TRAINS, ...IMAGE_VARIANTS.map(variant => ({
+  ...TRAINS.find(t => t.id === variant.id), image: variant.image, quizId: `${variant.id}-variant`,
+})), {
   ...TRAINS.find(t => t.id === 'keikyu'), name: 'でんしゃをみる', image: 'dog-train.webp',
   quizId: 'keikyu-scene-1', kind: 'scene', focusLetter: 'を',
+}, {
+  ...TRAINS.find(t => t.id === 'keikyu'), name: 'でんしゃをみる',
+  quizId: 'keikyu-scene-2', kind: 'scene', focusLetter: 'を',
 }];
 export const KANA_ROWS = ['あいうえお','かきくけこ','さしすせそ','たちつてと','なにぬねの','はひふへほ','まみむめも','や ゆ よ','らりるれろ','わ を ん','がぎぐげご','ざじずぜぞ','だぢづでど','ばびぶべぼ','ぱぴぷぺぽ','ぁぃぅぇぉ','ゃゅょっー'];
 export const BASIC_KANA = [...KANA_ROWS.slice(0,10).join('').replaceAll(' ', '')];
@@ -86,11 +93,11 @@ export function orderedLetters(rows = []) {
 export function nextJourneyOffset(rows, offset = 0) {
   return normalizeRows(rows).length === 1 ? 0 : (offset + 5) % orderedLetters(rows).length;
 }
-export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0) {
+export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, recentImages = {}) {
   const selected = normalizeRows(rows);
   const eligible = QUIZ_CARDS.filter(t => targetIndices(t, rows).length);
   if (!eligible.length) return [];
-  const journey = [], used = new Set();
+  const journey = [], used = new Set(), recent = { ...recentImages };
   const letters = orderedLetters(selected);
   const start = selected.length === 1 ? 0 : (Number.isSafeInteger(offset) && offset >= 0 ? offset % letters.length : 0);
   const add = (train, index) => {
@@ -102,9 +109,14 @@ export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0) {
     const matches = eligible.filter(t => targetIndices(t, rows).some(i => t.name[i] === letter));
     const starting = matches.filter(t => t.name.startsWith(letter));
     const candidates = starting.length ? starting : matches;
-    const fresh = candidates.filter(t => !used.has(t.quizId || t.id));
-    const train = candidates.find(t => t.id === preferredId && !t.kind) || shuffle(fresh.length ? fresh : candidates)[0];
+    const preferred = candidates.filter(t => t.id === preferredId && !t.kind);
+    const pool = preferred.length ? preferred : candidates;
+    const different = pool.filter(t => t.image !== recent[letter]);
+    const varied = different.length ? different : pool;
+    const fresh = varied.filter(t => !used.has(t.quizId || t.id));
+    const train = shuffle(fresh.length ? fresh : varied)[0];
     add(train, train.name.indexOf(letter));
+    recent[letter] = train.image;
   }
   return journey;
 }
@@ -113,11 +125,12 @@ export function readProgress(storage) {
     const value = JSON.parse(storage.getItem('train-hiragana-v1')) || {};
     return {
       stamps: [...new Set(Array.isArray(value.stamps) ? value.stamps.filter(id => TRAINS.some(t => t.id === id)) : [])],
+      recentImages: Object.fromEntries(Object.entries(value.recentImages && typeof value.recentImages === 'object' ? value.recentImages : {}).filter(([letter, image]) => BASIC_KANA.includes(letter) && QUIZ_CARDS.some(t => t.image === image))),
       trips: Number.isSafeInteger(value.trips) && value.trips >= 0 ? value.trips : 0,
       sound: value.sound !== false,
       level: ['match', 'listen'].includes(value.level) ? value.level : 'match',
       rows: normalizeRows(value.rows),
       journeyOffset: Number.isSafeInteger(value.journeyOffset) && value.journeyOffset >= 0 ? value.journeyOffset % orderedLetters(value.rows).length : 0,
     };
-  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', rows: [], journeyOffset: 0 }; }
+  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', rows: [], journeyOffset: 0, recentImages: {} }; }
 }

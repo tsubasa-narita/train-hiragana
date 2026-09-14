@@ -3,11 +3,45 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJourneyOffset, kanaRow, targetIndices, makeChoices, makeJourney, readProgress } from '../src/data.js';
-import { REWARD_TRAINS, chooseReward } from '../src/reward.js';
+import { REWARD_TRAINS, chooseReward, REWARD_ROUTES, chooseRewardRoute } from '../src/reward.js';
 test('reward images exist and random rewards never immediately repeat', () => {
+  assert.equal(REWARD_TRAINS.length, 16);
   for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/rewards/${t.image}`), t.image);
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
+});
+test('reward routes offer three distinct journeys without immediate repeats', () => {
+  assert.equal(REWARD_ROUTES.length, 3);
+  let previous;
+  const seen = new Set();
+  for (let i = 0; i < 100; i++) {
+    const route = chooseRewardRoute();
+    assert.notEqual(route.id, previous); seen.add(route.id); previous = route.id;
+  }
+  assert.equal(seen.size, 3);
+});
+test('every basic kana has at least two images and avoids the last shown image', () => {
+  const recent = {};
+  for (const letter of BASIC_KANA) {
+    const matches = QUIZ_CARDS.filter(t => targetIndices(t).some(i => t.name[i] === letter));
+    const starting = matches.filter(t => t.name.startsWith(letter));
+    const pool = starting.length ? starting : matches;
+    assert.ok(new Set(pool.map(t => t.image)).size >= 2, letter);
+    for (const card of pool) {
+      recent[letter] = card.image;
+      const trip = makeJourney(undefined, [], 'find', BASIC_KANA.indexOf(letter), recent);
+      assert.notEqual(trip[0].image, card.image, letter);
+    }
+  }
+  for (let repeat = 0; repeat < 5; repeat++) {
+    const journey = makeJourney(undefined, ['や'], 'find', 0, recent);
+    for (const train of journey) {
+      const letter = train.name[train.targets[0]];
+      assert.notEqual(train.image, recent[letter]); recent[letter] = train.image;
+    }
+  }
+  assert.deepEqual(readProgress({getItem: () => JSON.stringify({recentImages:recent})}).recentImages, recent);
+  assert.deepEqual(readProgress({getItem: () => JSON.stringify({recentImages:{bad:'missing',あ:'missing'}})}).recentImages, {});
 });
 test('all train images exist and names use kana available in the alphabet', () => {
   assert.equal(new Set(TRAINS.map(t => t.id)).size, TRAINS.length);
@@ -82,6 +116,11 @@ test('each row has a train starting in that row and filtered quizzes never leave
 test('all 46 basic hiragana have illustrated quiz cards', () => {
   for (const c of BASIC_KANA) assert.ok(QUIZ_CARDS.some(t => targetIndices(t).some(i => t.name[i] === c)), c);
   for (const card of QUIZ_CARDS) assert.ok(existsSync(`assets/trains/${card.image}`), card.image);
+  const paths = [...new Set(QUIZ_CARDS.map(t => t.image))];
+  const hashes = paths.map(path => createHash('sha256').update(readFileSync(`assets/trains/${path}`)).digest('hex'));
+  assert.equal(new Set(hashes).size, paths.length, 'alternate scenes must be different image files');
+  assert.equal(paths.length, 89);
+  assert.equal(QUIZ_CARDS.length, 90);
 });
 
 test('all rows use fixed kana order; only wo and n may use a later character', () => {

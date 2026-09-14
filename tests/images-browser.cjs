@@ -13,10 +13,23 @@ const assert = require('node:assert/strict');
         const image = new Image(); image.src = path;
         await image.decode();
         if (!image.naturalWidth || !image.naturalHeight) throw new Error(path);
+        if (path.includes('/reward-extra-')) {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+          const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0);
+          const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          let clear = 0, solid = 0;
+          for (let i = 3; i < pixels.length; i += 4) {
+            if (pixels[i] === 0) clear++;
+            if (pixels[i] >= 240) solid++;
+          }
+          const area = canvas.width * canvas.height;
+          if (clear / area < .15 || solid / area < .1) throw new Error(`Missing transparent cutout: ${path}`);
+        }
       }
       return paths.length;
     });
-    assert.equal(count, 57);
-    console.log('All 46 quiz illustrations and 11 reward images loaded and decoded.');
+    assert.equal(count, 105);
+    console.log('All 89 quiz illustrations and 16 reward images loaded and decoded.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

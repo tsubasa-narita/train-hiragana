@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: process.env.BROWSER_CHANNEL || 'msedge' });
   try {
-    const page = await browser.newPage();
+    // Exercise the audio network fallback without the PWA cache serving the file.
+    const page = await browser.newPage({ serviceWorkers: 'block' });
     await page.addInitScript(() => {
       const NativeAudio = window.Audio;
       window.Audio = class extends NativeAudio { constructor(...args) { super(...args); window.testAudio = this; } };

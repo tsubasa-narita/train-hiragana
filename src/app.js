@@ -63,6 +63,8 @@ function prepare() {
   answered = false; wrong = ''; hint = '';
   const letter = journey[station].name[letterIndex];
   choices = makeChoices(letter, progress.level === 'match' ? 2 : 3, gameRows);
+  progress.recentImages[letter] = journey[station].image;
+  save();
 }
 function start(type, preferredId) {
   cancelAdvance(); stopTrainReward(); lastReward = null;
@@ -72,7 +74,7 @@ function start(type, preferredId) {
     progress.journeyOffset = 0; save();
   }
   gameRows = [...progress.rows]; gameOffset = progress.journeyOffset;
-  mode = type; journey = makeJourney(preferredId, gameRows, mode, gameOffset);
+  mode = type; journey = makeJourney(preferredId, gameRows, mode, gameOffset, progress.recentImages);
   station = 0; letterIndex = journey[0].targets[0]; prepare(); navigate('game'); prompt();
 }
 function reward(replay = false, restoring = false) {
@@ -155,7 +157,7 @@ function alphabet() {
   return `<main class="alphabet"><div class="page-heading"><div class="eyebrow">もじの きっぷうりば</div><h1>あいうえおで あそぼう</h1><p>もじを タッチすると、こえが きこえるよ。</p></div><div class="kana-layout"><div class="kana-board">${KANA_ROWS.map((row, i) => `${i === 10 ? '<h2>てんてん・まるの もじ</h2>' : i === 15 ? '<h2>ちいさい もじ・のばす おと</h2>' : ''}<div class="kana-row">${[...row].map(c => c === ' ' ? '<span></span>' : `<button data-action="kana" data-letter="${c}">${c}</button>`).join('')}</div>`).join('')}</div><aside class="kana-preview"><div class="preview-character" id="preview-character">あ</div><p id="preview-caption" role="status">すきな もじを おしてね</p>${trainSvg()}</aside></div></main>`;
 }
 function settings() {
-  return `<main class="settings"><button class="quiet" data-action="home">← ホームへ</button><h1>おうちのかたへ</h1><p>「好きな電車の名前」を入り口に、文字の形と音に親しむアプリです。最初は一緒に「はやぶさの、は！」と声をかけてみてください。</p><fieldset><legend>あそびの むずかしさ</legend><label><input type="radio" name="level" value="match" ${progress.level === 'match' ? 'checked' : ''}/> <span><b>おなじ文字をみつける（はじめはこちら）</b><small>見本の文字を見ながら、2つの選択肢から選びます。</small></span></label><label><input type="radio" name="level" value="listen" ${progress.level === 'listen' ? 'checked' : ''}/> <span><b>音を聞いてみつける</b><small>大きな文字の見本を隠して3択に。電車名は手がかりとして残ります。ヒントはいつでも表示できます。</small></span></label></fieldset><h2>出題する行について</h2><p>ホームで「あ・か・さ・た・な・は・ま・や・ら・わ」の行を複数選べます。「あ→い→う→え→お」のように五十音順で出題します。1行だけなら毎回その行の最初から、複数の行や「ぜんぶ」なら完走するたびに続きの5文字へ進みます。や行・わ行だけのときは3文字を順に繰り返して5問にします。44文字は実在する列車・路線・鉄道会社の名前や愛称の先頭と一致します。「ぬ」は昔の沼尻軽便鉄道、「る」は昔の留萌本線です。先頭に使う名前を確認できない「を」「ん」だけ、言葉や名前の途中から出題します。図鑑から遊ぶと、その電車の先頭文字が属する行に切り替わり、行の最初から始まります。濁点・半濁点と小さい文字も元の行に含みます。名前の連結では、選んでいない行の文字をあらかじめ入れておきます。長音符は「ぜんぶ」のときだけ出題します。</p><h2>短い旅を、好きなペースで</h2><p>1回5駅。正解から約1秒で自動的に次へ進みます。5問すべて正解すると、ごほうびの電車が走ります。名前の連結では5つの名前を完成させると登場します。制限時間も、減点もありません。1駅ごとに図鑑に記録するので、途中で終わっても大丈夫です。図鑑の電車は最初からすべて見ることができます。</p><h2>やさしい案内の声</h2><p>少しゆっくりした、日本語のAI合成音声を用意しました。電車の名前・問題・ほめ言葉を、同じ声で読み上げます。</p><button class="secondary" data-action="voice-sample">♪ こえを きいてみる</button><p>音が出ない場合は「おと あり」と端末の音量を確認してください。音声ファイルを読み込めない場合は端末の読み上げに切り替わります。小さい文字は「ちいさい、つ」のように案内します。</p>${installMarkup()}<h2>戻る操作について</h2><p>Androidの戻る操作やブラウザの戻るボタンで、ひとつ前の画面に戻れます。クイズから設定を開いて戻ると、同じ問題の続きから遊べます。ごほうび表示中は、ごほうびを閉じます。</p><h2>保存とプライバシー</h2><p>図鑑・設定はこのブラウザ内に保存します。アカウント登録や広告、アクセス解析はありません。履歴を削除すると記録も消えます。${savingFailed ? '<strong>現在、このブラウザでは記録を保存できません。</strong>' : ''}</p><p>完走した旅：${progress.trips}回 ／ あそんだ電車：${progress.stamps.length}種類</p><details><summary>記録をリセットする</summary><p>図鑑の「あそんだよ」と完走回数を消します。設定は残ります。</p><button class="reset-button" data-action="reset">記録を消す</button></details></main>`;
+  return `<main class="settings"><button class="quiet" data-action="home">← ホームへ</button><h1>おうちのかたへ</h1><p>「好きな電車の名前」を入り口に、文字の形と音に親しむアプリです。最初は一緒に「はやぶさの、は！」と声をかけてみてください。</p><fieldset><legend>あそびの むずかしさ</legend><label><input type="radio" name="level" value="match" ${progress.level === 'match' ? 'checked' : ''}/> <span><b>おなじ文字をみつける（はじめはこちら）</b><small>見本の文字を見ながら、2つの選択肢から選びます。</small></span></label><label><input type="radio" name="level" value="listen" ${progress.level === 'listen' ? 'checked' : ''}/> <span><b>音を聞いてみつける</b><small>大きな文字の見本を隠して3択に。電車名は手がかりとして残ります。ヒントはいつでも表示できます。</small></span></label></fieldset><h2>出題する行について</h2><p>ホームで「あ・か・さ・た・な・は・ま・や・ら・わ」の行を複数選べます。「あ→い→う→え→お」のように五十音順で出題します。1行だけなら毎回その行の最初から、複数の行や「ぜんぶ」なら完走するたびに続きの5文字へ進みます。や行・わ行だけのときは3文字を順に繰り返して5問にします。44文字は実在する列車・路線・鉄道会社の名前や愛称の先頭と一致します。「ぬ」は昔の沼尻軽便鉄道、「る」は昔の留萌本線です。先頭に使う名前を確認できない「を」「ん」だけ、言葉や名前の途中から出題します。図鑑から遊ぶと、その電車の先頭文字が属する行に切り替わり、行の最初から始まります。濁点・半濁点と小さい文字も元の行に含みます。名前の連結では、選んでいない行の文字をあらかじめ入れておきます。長音符は「ぜんぶ」のときだけ出題します。</p><h2>いろいろな電車と景色</h2><p>清音46文字すべてに2枚以上のクイズ画像があります。同じ文字でも、前回とは違う電車や景色が出てきます。図鑑は61種類。別の景色の絵でも、同じ電車のスタンプが付きます。</p><h2>短い旅を、好きなペースで</h2><p>1回5駅。正解から約1秒で自動的に次へ進みます。5問すべて正解すると、16種類からごほうびの電車が走ります。虹の橋・駅でひとやすみ・星空急行の3つの演出があり、もう一度走らせると演出が変わります。名前の連結では5つの名前を完成させると登場します。制限時間も、減点もありません。1駅ごとに図鑑に記録するので、途中で終わっても大丈夫です。図鑑の電車は最初からすべて見ることができます。</p><h2>やさしい案内の声</h2><p>少しゆっくりした、日本語のAI合成音声を用意しました。電車の名前・問題・ほめ言葉を、同じ声で読み上げます。</p><button class="secondary" data-action="voice-sample">♪ こえを きいてみる</button><p>音が出ない場合は「おと あり」と端末の音量を確認してください。音声ファイルを読み込めない場合は端末の読み上げに切り替わります。小さい文字は「ちいさい、つ」のように案内します。</p>${installMarkup()}<h2>戻る操作について</h2><p>Androidの戻る操作やブラウザの戻るボタンで、ひとつ前の画面に戻れます。クイズから設定を開いて戻ると、同じ問題の続きから遊べます。ごほうび表示中は、ごほうびを閉じます。</p><h2>保存とプライバシー</h2><p>図鑑・設定はこのブラウザ内に保存します。アカウント登録や広告、アクセス解析はありません。履歴を削除すると記録も消えます。${savingFailed ? '<strong>現在、このブラウザでは記録を保存できません。</strong>' : ''}</p><p>完走した旅：${progress.trips}回 ／ あそんだ電車：${progress.stamps.length}種類</p><details><summary>記録をリセットする</summary><p>図鑑の「あそんだよ」と完走回数を消します。設定は残ります。</p><button class="reset-button" data-action="reset">記録を消す</button></details></main>`;
 }
 function render() {
   recordHistory();
@@ -238,7 +240,7 @@ root.addEventListener('click', e => {
       document.querySelector('#preview-caption').textContent = train ? `${train.name} の「${c}」だね！` : `「${c}」だね！`;
     }
   }
-  if (action === 'reset' && window.confirm('図鑑の記録と完走回数を消しますか？')) { progress.stamps = []; progress.trips = 0; progress.journeyOffset = 0; save(); render(); }
+  if (action === 'reset' && window.confirm('図鑑の記録と完走回数を消しますか？')) { progress.stamps = []; progress.trips = 0; progress.journeyOffset = 0; progress.recentImages = {}; save(); render(); }
 });
 root.addEventListener('change', e => {
   if (e.target.name === 'level') { progress.level = e.target.value; save(); }

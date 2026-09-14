@@ -47,3 +47,37 @@
 @media(prefers-reduced-motion:no-preference){.hero .train-body{animation:sway 4s ease-in-out infinite}.choice.correct{animation:pop .35s ease-out}.finish-seal{animation:pop .5s ease-out}.try-again{animation:nudge .25s ease-in-out}@keyframes sway{50%{transform:translateY(-2px)}}@keyframes pop{50%{transform:scale(1.08)}}@keyframes nudge{33%{transform:translateX(-3px)}66%{transform:translateX(3px)}}}
 
 .history-tag { position: absolute; top: 12px; left: 12px; padding: 6px 10px; border-radius: 12px; background: #fff8e8; color: #78562f; font-size: .8rem; font-weight: 700; }
+
+/* Three journeys, all sharing the same short celebration and close controls. */
+.reward-route{display:inline-block;margin:0 16px 2px;padding:5px 18px;border-radius:99px;background:#ffffffa8;font-size:13px;color:#385b48;font-weight:700}
+.reward-scenery{position:absolute;inset:0;pointer-events:none;z-index:0}
+.reward-rainbow{position:absolute;width:330px;height:165px;border-radius:330px 330px 0 0;border:14px solid #e5a3a2;border-bottom:0;left:9%;top:4px;box-shadow:inset 0 13px #ecd68f,inset 0 26px #a8cba3,inset 0 39px #a3c9d9;opacity:.8}
+.reward-stars,.reward-stop{display:none}
+.reward-sparkles{position:absolute;left:12%;top:30%;font-size:25px;color:#f1bf54;letter-spacing:70px;opacity:0}
+.reward-sparkles i{font-style:normal;color:#df98a5}
+.running .reward-sparkles{animation:reward-twinkle 2.6s ease-in-out 2}
+[data-route="rainbow"] .reward-track{background-color:#e0bc91;border-color:#977c61;box-shadow:0 16px #a98e72,0 25px #d5b696}
+[data-route="rainbow"].running .reward-runner,[data-route="rainbow"].running .reward-fallback:not([hidden]){animation-name:reward-bridge}
+[data-route="station"] .reward-sky{background:#f6edda}
+[data-route="station"] .reward-rainbow{display:none}
+[data-route="station"] .reward-stop{display:flex;position:absolute;left:24%;bottom:73px;width:200px;height:140px;border:5px solid #b79474;background:#fff9df;align-items:center;flex-direction:column;justify-content:space-evenly;border-radius:5px}
+.station-roof{position:absolute;left:-18px;right:-18px;top:-24px;height:24px;background:#85a992;border-radius:12px 12px 0 0}
+.reward-stop b{font-size:13px;color:#5e755f;background:#fff;padding:5px;border:2px solid #adbc99}
+.station-friends{position:absolute;right:-100px;top:-10px;font-size:32px;letter-spacing:12px}
+[data-route="station"].running .reward-runner,[data-route="station"].running .reward-fallback:not([hidden]){animation-name:reward-station}
+[data-route="night"] .reward-sky{background:linear-gradient(#243956,#426683);color:#fff9da}
+[data-route="night"] .reward-status,[data-route="night"] .reward-eyebrow{color:#eff0cf}
+[data-route="night"] .reward-rainbow{display:none}
+[data-route="night"] .reward-sun{background:#fff3bc;box-shadow:0 0 35px #fff1b344}
+[data-route="night"] .reward-mountains{background:#294650;box-shadow:500px 30px 0 40px #325666}
+[data-route="night"] .reward-stars{display:block;position:absolute;left:10%;top:2%;width:65%;font-size:27px;color:#ffedaf;word-spacing:35px}
+.reward-stars i{font-style:normal;font-size:15px;vertical-align:35px}
+[data-route="night"].running .reward-stars{animation:reward-stars 5.2s linear both}
+[data-route="night"].running .reward-runner,[data-route="night"].running .reward-fallback:not([hidden]){animation-name:reward-express}
+@keyframes reward-bridge{0%{transform:translateX(-120%) translateY(0)}30%{transform:translateX(-30%) translateY(-10px)}58%{transform:translateX(4%) translateY(-10px)}100%{transform:translateX(125%) translateY(0)}}
+@keyframes reward-station{0%{transform:translateX(-120%)}35%{transform:translateX(-8%)}60%{transform:translateX(-8%)}75%{transform:translateX(15%)}100%{transform:translateX(125%)}}
+@keyframes reward-express{0%{transform:translateX(-120%) scale(.85)}30%{transform:translateX(-35%) scale(.92)}60%{transform:translateX(2%) scale(1)}100%{transform:translateX(130%) scale(1)}}
+@keyframes reward-stars{from{transform:translateX(15px)}to{transform:translateX(-50px)}}
+@keyframes reward-twinkle{0%,100%{opacity:0;transform:translateY(8px)}40%,65%{opacity:.9;transform:translateY(-10px)}}
+@media(max-width:580px){.reward-route{font-size:11px}.reward-rainbow{width:210px;height:105px;top:5px;border-width:10px}.reward-stars{font-size:20px!important;word-spacing:12px!important}.reward-stop{width:130px!important;height:100px!important;bottom:67px!important;left:19%!important}.station-friends{right:-72px;top:-5px;font-size:27px;letter-spacing:2px}.reward-sparkles{letter-spacing:35px;font-size:18px}}
+@media(prefers-reduced-motion:reduce){.reward-dialog.running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.running .reward-sparkles,.reward-dialog.running .reward-stars{animation:none}.running .reward-sparkles{opacity:.65}}

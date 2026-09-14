@@ -12,7 +12,24 @@ export const REWARD_TRAINS = [
   { id: 'narita-express', name: 'なりたえくすぷれす', image: 'reward_narita-express.webp' },
   { id: 'marunouchi', name: 'まるのうちせん', image: 'reward_marunouchi.webp' },
   { id: 'rapit', name: 'らぴーと', image: 'reward-rapit-v2.webp' },
+  { id: 'tsubasa', name: 'つばさ', image: 'reward-extra-tsubasa.webp' },
+  { id: 'enoden', name: 'えのでん', image: 'reward-extra-enoden.webp' },
+  { id: 'sonic', name: 'そにっく', image: 'reward-extra-sonic.webp' },
+  { id: 'yufuin', name: 'ゆふいんのもり', image: 'reward-extra-yufuin.webp' },
+  { id: 'momotaro', name: 'ももたろう', image: 'reward-extra-momotaro.webp' },
 ];
+export const REWARD_ROUTES = [
+  { id: 'rainbow', name: 'にじの はしを わたろう', start: 'にじに むかって、しゅっぱつ！', middle: 'にじの はしを、すいすい！' },
+  { id: 'station', name: 'えきで ひとやすみ', start: 'がたん ごとん、えきへ いこう！', middle: 'とうちゃく！ どうぶつさんに ごあいさつ' },
+  { id: 'night', name: 'ほしぞら きゅうこう', start: 'きらきら おほしさまへ、しゅっぱつ！', middle: 'おほしさまが いっぱい！' },
+];
+let previousRoute;
+export function chooseRewardRoute() {
+  const candidates = REWARD_ROUTES.filter(route => route.id !== previousRoute);
+  const route = candidates[Math.floor(Math.random() * candidates.length)];
+  previousRoute = route.id;
+  return route;
+}
 let previousId, activeClose, context;
 export function chooseReward() {
   const candidates = REWARD_TRAINS.filter(t => t.id !== previousId);
@@ -69,34 +86,43 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   dialog.setAttribute('aria-labelledby', 'reward-title');
   dialog.innerHTML = `<div class="reward-sky"><span class="reward-eyebrow">✦ せいかい！ ごほうび でんしゃ ✦</span><h2 id="reward-title">${train.name} が やってきた！</h2><p class="reward-status" role="status">でんしゃを よんでいるよ…</p><div class="reward-scene"><div class="reward-sun"></div><div class="reward-mountains"></div><div class="reward-track"></div><img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/><div class="reward-fallback" hidden>🚄</div><span class="reward-platform">ひらがなえき</span></div></div><div class="reward-controls"><button class="secondary" data-reward="replay" disabled>↻ もういっかい はしる</button><button class="primary" data-reward="continue" autofocus>つづける →</button></div>`;
   document.body.append(dialog);
+  const scenery = document.createElement('div');
+  scenery.className = 'reward-scenery'; scenery.setAttribute('aria-hidden', 'true');
+  scenery.innerHTML = `<div class="reward-rainbow"></div><div class="reward-stars">✦ <i>✧</i> ✦ <i>✧</i> ✦</div><div class="reward-stop"><span class="station-roof"></span><b>ひらがなえき</b><span class="station-friends">🐰 🐻</span></div><div class="reward-sparkles">✧ <i>✦</i> ✧</div>`;
+  dialog.querySelector('.reward-scene').append(scenery);
+  const routeLabel = document.createElement('p'); routeLabel.className = 'reward-route';
+  dialog.querySelector('.reward-status').before(routeLabel);
   const runner = dialog.querySelector('.reward-runner');
   const status = dialog.querySelector('.reward-status');
   const replay = dialog.querySelector('[data-reward="replay"]');
-  let timer, loadTimer, stopSound = () => {}, closed = false, runId = 0;
+  let timer, phaseTimer, loadTimer, stopSound = () => {}, closed = false, runId = 0;
   const close = (continueGame = true) => {
     if (closed) return;
-    closed = true; runId++; clearTimeout(timer); clearTimeout(loadTimer); stopSound();
+    closed = true; runId++; clearTimeout(timer); clearTimeout(phaseTimer); clearTimeout(loadTimer); stopSound();
     stopVoice(); dialog.close(); dialog.remove(); activeClose = null;
     if (continueGame) onDone?.();
   };
   activeClose = close;
   const run = () => {
     if (closed) return;
-    clearTimeout(timer); stopSound();
+    clearTimeout(timer); clearTimeout(phaseTimer); stopSound();
     dialog.classList.remove('running', 'arrived');
+    const route = chooseRewardRoute();
+    dialog.dataset.route = route.id; routeLabel.textContent = route.name;
     // Restart the same train when the child chooses to see it again.
     void runner.offsetWidth;
     dialog.classList.add('running');
-    status.textContent = 'がたん ごとん、しゅっぱつ！';
+    status.textContent = route.start;
     replay.disabled = true;
     speak?.(rewardText(train));
     stopSound = playPassSound(sound);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) phaseTimer = setTimeout(() => { if (!closed) status.textContent = route.middle; }, 2100);
     timer = setTimeout(() => {
       if (closed) return;
       dialog.classList.remove('running'); dialog.classList.add('arrived');
       status.textContent = 'かっこいいね！ もういっかい みる？';
-      replay.disabled = false; stopSound();
+      replay.disabled = false; clearTimeout(phaseTimer); stopSound();
     }, reduced ? 1200 : 5400);
   };
   const loadId = ++runId;
