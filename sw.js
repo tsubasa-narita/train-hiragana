@@ -1,8 +1,9 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v2';
+const CACHE = PREFIX + 'v3';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
+  'src/trace.js', 'src/trace-engine.js', 'src/kana-strokes.js', 'src/trace.css',
   'src/reward.js', 'src/voice.js', 'src/voice-lines.js', 'src/voice-manifest.js', 'src/pwa.js',
   'assets/icon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png'];
 self.addEventListener('install', event => {

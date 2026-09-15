@@ -1,0 +1,67 @@
+.trace-card { background:#f6eddb; }
+.trace-card .mode-visual { color:#99753e; font-size:30px; letter-spacing:12px; }
+.trace-page { max-width:1050px; }
+.trace-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+.trace-heading h1 { margin:8px 0 0; font-size:clamp(24px,4vw,34px); }
+.trace-heading-clue { margin:7px 0 0; color:#63816e; font-size:14px; }
+.trace-heading .quiet { white-space:nowrap; }
+.trace-picker { padding:12px 16px; display:flex; gap:18px; align-items:center; border:1px solid #dde4d8; border-radius:18px; background:#fffdf7; margin-bottom:22px; min-width:0; }
+.trace-picker label { display:flex; gap:8px; align-items:center; flex-shrink:0; font-size:13px; font-weight:700; }
+.trace-picker select { font:inherit; color:inherit; border:1px solid #bccfc2; background:white; border-radius:10px; padding:10px 6px; min-height:44px; max-width:185px; }
+.trace-letters { display:flex; gap:7px; overflow-x:auto; padding:4px 2px 9px; scrollbar-width:thin; scroll-padding:10px; }
+.trace-letters button { flex:0 0 46px; height:46px; border:1px solid #d9e2d6; border-radius:13px; background:#fff; color:var(--ink); font-family:inherit; font-size:24px; font-weight:700; }
+.trace-letters button[aria-pressed="true"] { color:white; background:var(--green); border-color:var(--green); box-shadow:0 3px 0 #105e4c; }
+.trace-layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:28px; align-items:start; }
+.trace-workbench { padding:18px; border-radius:25px; background:#fffef9; border:1px solid #dce4d5; box-shadow:0 9px 26px #325b4210; min-width:0; }
+.trace-instruction { display:flex; gap:9px; align-items:center; min-height:40px; margin-bottom:12px; }
+.trace-instruction p { margin:0; font-size:15px; font-weight:700; flex:1; }
+.trace-count { font-size:12px; color:#60796a; white-space:nowrap; }
+.trace-signal { width:10px; height:10px; background:#e6ac4a; border-radius:50%; flex-shrink:0; }
+.is-complete .trace-signal { background:#238675; }
+.trace-board { display:block; width:100%; max-height:490px; aspect-ratio:1; border:1px solid #dbe5da; border-radius:20px; background:#fffdf3; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; cursor:crosshair; }
+.trace-guide,.trace-ink { fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-width:4.6; }
+.trace-guide { stroke:#e1e7de; }
+.trace-guide.current { stroke:#e8c17b; }
+.trace-ink { stroke:#268c7b; pointer-events:none; }
+.trace-start,.trace-engine,.trace-direction { pointer-events:none; }
+.trace-engine { filter:drop-shadow(0 1px 1px #244c4135); }
+.trace-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:15px; }
+.trace-tools button { min-height:48px; font-size:14px; padding:10px 15px; }
+.trace-tip { color:#678071; text-align:center; font-size:12px; line-height:1.8; margin:14px 0 0; }
+.trace-destination { overflow:hidden; background:#edf2e6; border:1px solid #dce3d4; border-radius:23px; text-align:center; padding:0 22px 26px; }
+.trace-ticket-top { display:flex; justify-content:space-between; margin:0 -22px 18px; padding:14px 22px; border-bottom:2px dashed #cedbc7; font-size:12px; font-weight:700; letter-spacing:2px; }
+.trace-clue { font-size:16px; line-height:1.8; }
+.trace-clue b { display:block; font-size:21px; }
+.trace-clue strong { font-size:32px; color:#187861; }
+.trace-secret { width:130px; height:130px; display:grid; place-items:center; font-size:64px; color:#719d7c; border-radius:38px; border:2px dashed #adc3a7; background:#f6f8ed; margin:26px auto; position:relative; transform:rotate(-5deg); }
+.trace-secret span { position:absolute; right:-8px; top:-8px; font-size:30px; color:#daa650; }
+.trace-mystery h2 { font-size:19px; }
+.trace-mystery p,.trace-arrival p { font-size:14px; line-height:1.9; color:#5e7b66; }
+.trace-stops { display:flex; justify-content:center; gap:14px; margin-top:23px; }
+.trace-stops span { border:2px solid #c5d4bc; border-radius:50%; width:31px; height:31px; display:grid; place-items:center; font-size:13px; color:#788e6e; background:#f7f9f0; }
+.trace-stops .done { background:#248572; border-color:#248572; color:white; }
+.trace-arrival[hidden],.trace-mystery[hidden] { display:none; }
+.trace-arrival { animation:trace-arrive .65s ease-out both; }
+.trace-celebration { display:block; margin:15px 0; font-size:14px; font-weight:700; color:#967329; }
+.trace-arrival img { width:100%; aspect-ratio:3/2; object-fit:cover; border-radius:16px; box-shadow:0 5px 15px #224e3c16; }
+.trace-arrival h2 { font-size:24px; margin:16px 0 0; }
+.trace-arrival p { margin:4px 0 16px; }
+.trace-arrival button { display:block; width:100%; margin-top:12px; min-height:48px; }
+.trace-parents { font-size:13px; line-height:1.9; color:#6a7f70; margin-top:25px; }
+.trace-parents summary { cursor:pointer; min-height:44px; padding:10px 0; }
+.trace-parents a { color:#276b59; }
+@keyframes trace-arrive { from { opacity:0; transform:translateY(15px) scale(.97); } to { opacity:1; transform:none; } }
+@media(min-width:850px) { .mode-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .mode-card { min-width:0; } .mode-card .mode-visual { gap:8px; } }
+@media(max-width:650px) {
+  .trace-heading { margin-bottom:14px; }.trace-heading .eyebrow { font-size:10px; letter-spacing:1px; }
+  .trace-heading h1 { font-size:25px; }.trace-heading .quiet { font-size:12px; padding:8px; }
+  .trace-picker { flex-direction:column; align-items:stretch; gap:5px; padding:8px 10px; margin-bottom:14px; }.trace-picker label { font-size:12px; }.trace-picker select { flex:1; max-width:none; padding:5px 8px; min-height:40px; }
+  .trace-letters { padding-bottom:6px; }.trace-letters button { height:44px; flex-basis:44px; }
+  .trace-layout { grid-template-columns:1fr; gap:16px; }.trace-workbench { padding:12px; border-radius:20px; }
+  .trace-instruction { margin-bottom:8px; min-height:32px; }.trace-instruction p { font-size:13px; }
+  .trace-tools { margin-top:10px; }.trace-tip { font-size:11px; margin-top:8px; }
+  .trace-destination { padding:0 18px 20px; }.trace-ticket-top { margin:0 -18px 10px; padding:10px 18px; }
+  .trace-mystery { padding-top:8px; }.trace-secret { width:70px; height:70px; font-size:36px; border-radius:20px; margin:12px auto; }.trace-secret span { font-size:20px; }
+  .trace-mystery h2 { margin:10px 0; font-size:16px; }.trace-mystery p { margin:6px 0; }.trace-stops { margin-top:14px; }
+}
+@media(prefers-reduced-motion:reduce) { .trace-arrival { animation:none; } }
