@@ -63,6 +63,10 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4180/';
     const letters = await page.locator('[data-trace-letter]').evaluateAll(buttons=>buttons.map(b=>b.dataset.traceLetter));
     assert.equal(letters.length,46);
     for (const letter of letters) {
+      await page.locator('[data-action="home"]').first().click();
+      await page.locator('.home').waitFor();
+      await page.click('[data-action="start-trace"]');
+      await page.selectOption('#trace-row','');
       await page.locator(`[data-trace-letter="${letter}"]`).click();
       const count = await page.locator('.trace-guide').count();
       for (let i=0;i<count;i++) {

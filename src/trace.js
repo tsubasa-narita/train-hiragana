@@ -1,3 +1,4 @@
+import { tracePromptText } from './voice-lines.js';
 import { QUIZ_CARDS, ROWS, orderedLetters } from './data.js';
 import { KANA_STROKES } from './kana-strokes.js';
 import { sampleStroke, createTracker } from './trace-engine.js';
@@ -10,7 +11,7 @@ export function newTrace(rows = [], letter, recent = {}) {
   const varied = pool.filter(t => t.image !== recent[letter]);
   const cards = varied.length ? varied : pool;
   const card = cards[Math.floor(Math.random() * cards.length)];
-  return { rows: [...rows], letters, letter, card, stroke: 0, index: 0, complete: false };
+  return { rows: [...rows], letters, letter, card, stroke: 0, index: 0, complete: false, completedCards: [], credited: false, rewardPending: false };
 }
 
 // The nose points along +x; rotation follows the tangent, even on loops.
@@ -19,6 +20,7 @@ const locomotive = `<g class="trace-locomotive"><ellipse cx="0" cy="4.6" rx="7" 
 export function traceMarkup(state) {
   const paths = KANA_STROKES[state.letter];
   return `<main class="trace-page"><div class="trace-heading"><div><div class="eyebrow">ゆびで はしる、もじの せんろ</div><h1>なぞって はしろう</h1><p class="trace-heading-clue">${state.card.name} の「${state.letter}」</p></div><button class="quiet" data-action="home">← ホーム</button></div>
+    <div class="trace-journey" aria-label="5文字の旅"><b>${(state.completedCards || []).length} / 5 もじ かけたよ</b><span>5もじで ごほうび！</span><button class="quiet" data-trace="prompt">♪ もういちど きく</button></div>
     <section class="trace-picker" aria-label="なぞる文字を選ぶ"><label>ぎょう <select id="trace-row"><option value="" ${!state.rows.length ? 'selected' : ''}>ぜんぶ</option>${state.rows.length > 1 ? '<option value="selected" selected>ホームで えらんだ ぎょう</option>' : ''}${ROWS.map(r => `<option value="${r.id}" ${state.rows.length === 1 && state.rows[0] === r.id ? 'selected' : ''}>${r.letters.join ? r.letters.join('・') : [...r.letters].join('・')}</option>`).join('')}</select></label><div class="trace-letters">${state.letters.map(c => `<button data-trace-letter="${c}" aria-label="${c}をなぞる" aria-pressed="${c === state.letter}">${c}</button>`).join('')}</div></section>
     <div class="trace-layout"><section class="trace-workbench" aria-label="指でなぞる練習"><div class="trace-instruction"><span class="trace-signal"></span><p id="trace-status" role="status" aria-live="polite"></p><span class="trace-count"></span></div>
     <svg class="trace-board" viewBox="0 0 109 109" aria-label="${state.letter}。${paths.length}画。番号の電車から、線に沿って指を動かしてね。" role="img"><defs><pattern id="trace-paper" width="10.9" height="10.9" patternUnits="userSpaceOnUse"><circle cx="5.45" cy="5.45" r=".25" fill="#bdcec8"/></pattern></defs><rect width="109" height="109" rx="7" fill="url(#trace-paper)"/><path d="M54.5 4V105M4 54.5H105" stroke="#dce5dc" stroke-width=".4" stroke-dasharray="1.5 2"/>
@@ -26,7 +28,7 @@ export function traceMarkup(state) {
       <g class="trace-direction"><path fill="none" stroke="#b66b22" stroke-width="1"/><path class="trace-arrow" d="M-2-2L0 0-2 2" fill="none" stroke="#b66b22" stroke-width="1"/></g><g class="trace-start"><circle r="4.4" fill="#fff4d1" stroke="#cc923f" stroke-width=".6"/><text text-anchor="middle" dy="1.5" font-size="4.2" font-weight="700" fill="#81571d"></text></g><g class="trace-engine">${locomotive}</g>
     </svg><div class="trace-tools"><button class="secondary" data-trace="demo">▷ おてほん</button><button class="quiet" data-trace="reset">↺ はじめから</button></div><p class="trace-tip">でんしゃから、せんに そって ゆびを すべらせよう。<br>ゆびを はなしても、つづきから できるよ。</p></section>
     <aside class="trace-destination"><div class="trace-ticket-top"><span>もじの とうちゃくえき</span><span>🎫</span></div><div class="trace-clue"><b>${state.card.name}</b> の <strong>「${state.letter}」</strong></div><div class="trace-mystery" ${state.complete ? 'hidden' : ''}><div class="trace-secret">？<span>★</span></div><h2>どんな でんしゃかな？</h2><p>じゅんばんに なぞると<br>でんしゃが あらわれるよ。</p><div class="trace-stops" aria-label="書き終えた画数">${paths.map((_, i) => `<span data-stop="${i}">${i + 1}</span>`).join('')}</div></div>
-    <div class="trace-arrival" ${state.complete ? '' : 'hidden'}><span class="trace-celebration">★ じょうずに かけたね！ ★</span><img src="./assets/trains/${state.card.image}" alt="${state.card.name}のイラスト"/><h2>${state.card.name}</h2><p>「${state.letter}」えきに とうちゃく！</p><button class="secondary" data-trace="voice">♪ なまえを きく</button><button class="primary" data-trace="next">つぎの もじへ →</button></div></aside></div>
+    <div class="trace-arrival" ${state.complete ? '' : 'hidden'}><span class="trace-celebration">★ じょうずに かけたね！ ★</span><img src="./assets/trains/${state.card.image}" alt="${state.card.name}のイラスト"/><h2>${state.card.name}</h2><p>「${state.letter}」えきに とうちゃく！</p><button class="secondary" data-trace="voice">♪ なまえを きく</button><button class="primary" data-trace="next" ${state.rewardPending ? 'disabled' : ''}>${state.rewardPending ? 'ごほうびが くるよ…' : 'つぎの もじへ →'}</button></div></aside></div>
     <details class="trace-parents"><summary>おうちのかたへ・書き順データ</summary><p>清音46文字を、書き順と線の進む方向に沿って練習します。番号の位置から始め、次の線に移るときは指を離してください。少しのはみ出しは大丈夫。急いだり、指を押し付けたりする必要はありません。「おてほん」を一緒に見てから試せます。絵は書き終えるまで表示せず、完成後は自分のペースで次へ進めます。</p><p>書き順・字形：<a href="https://kanjivg.tagaini.net/" target="_blank" rel="noopener">KanjiVG</a> © Ulrich Apel・貢献者（<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>）。SVGの筆画を抽出し、色・電車・案内を加えて表示しています。</p></details></main>`;
 }
 
@@ -116,6 +118,7 @@ export function mountTrace(root, state, { change, complete, speak, choose, reset
     const action = e.target.closest('[data-trace]')?.dataset.trace;
     if (action === 'reset') reset();
     if (action === 'voice') speak(state.card.name);
+    if (action === 'prompt') speak(tracePromptText(state.card, state.letter));
     if (action === 'next') choose(state.rows, state.letters[(state.letters.indexOf(state.letter) + 1) % state.letters.length]);
     if (action !== 'demo' || state.complete) return;
     release();

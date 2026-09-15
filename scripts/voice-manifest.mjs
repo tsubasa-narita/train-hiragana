@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { QUIZ_CARDS, KANA_ROWS } from '../src/data.js';
+import { QUIZ_CARDS, KANA_ROWS, BASIC_KANA } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
-import { questionText, hintText, praiseText, rewardText, VOICE_SAMPLE } from '../src/voice-lines.js';
+import { questionText, hintText, praiseText, rewardText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
 const lines = new Map();
 const names = { yamanote: '山手線', enoden: '江ノ電', 'doctor-yellow': 'ドクターイエロー', 'narita-express': '成田エクスプレス', marunouchi: '丸ノ内線', rapit: 'ラピート', keikyu: '京急線', sonic: 'ソニック', nemuro: '根室本線', hitachi: 'ひたち', 'heisei-chikuho': '平成筑豊鉄道', yufuin: 'ゆふいんの森', yokosuka: '横須賀線' };
 Object.assign(names, { inaho: 'いなほ', 'ueno-tokyo': '上野東京ライン', odoriko: '踊り子', kinugawa: 'きぬがわ', kuroshio: 'くろしお', shiosai: 'しおさい', skyliner: 'スカイライナー', seibu: '西武線', tanigawa: 'たにがわ', chuo: '中央線', tenhama: '天竜浜名湖鉄道', toki: 'とき', nichirin: 'にちりん', numajiri: '沼尻軽便鉄道', fuji: '富士回遊', hokuto: '北斗', mizuho: 'みずほ', muroran: '室蘭本線', meitetsu: '名鉄', momotaro: '桃太郎', rinkai: 'りんかい線', rumoi: '留萌本線', 'red-arrow': 'レッドアロー', romancecar: 'ロマンスカー' });
@@ -14,6 +14,10 @@ add('おとが でるよ', '音が出るよ！');
 add('できたね！');
 for (const train of QUIZ_CARDS) {
   const name = train.kind ? train.name : names[train.id] || train.name;
+  for (const letter of BASIC_KANA) {
+    if (train.name.startsWith(letter) || (['を', 'ん'].includes(letter) && train.name.includes(letter)))
+      add(tracePromptText(train, letter), `${name}の、${kana(letter)}。電車と一緒に、なぞってみよう。`);
+  }
   add(train.name, name + '。');
   add(praiseText(train), `できたね！ ${name}！`);
   for (const letter of train.name) {

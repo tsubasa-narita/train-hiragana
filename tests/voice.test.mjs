@@ -1,16 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { statSync, readFileSync } from 'node:fs';
-import { QUIZ_CARDS, KANA_ROWS } from '../src/data.js';
+import { QUIZ_CARDS, KANA_ROWS, BASIC_KANA } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
 import { VOICE_FILES } from '../src/voice-manifest.js';
-import { questionText, hintText, praiseText, rewardText, VOICE_SAMPLE } from '../src/voice-lines.js';
+import { questionText, hintText, praiseText, rewardText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
 import { playVoice, stopVoice } from '../src/voice.js';
 
 test('all reachable narration has a generated audio file', () => {
   const expected = [VOICE_SAMPLE, 'おとが でるよ', 'のばす おと', 'できたね！'];
   for (const train of QUIZ_CARDS) {
     expected.push(train.name, praiseText(train));
+    for (const c of BASIC_KANA) if (train.name.startsWith(c) || ('をん'.includes(c) && train.name.includes(c))) expected.push(tracePromptText(train, c));
     for (const c of train.name) expected.push(questionText(train, c), hintText(c));
   }
   for (const train of REWARD_TRAINS) expected.push(rewardText(train));
