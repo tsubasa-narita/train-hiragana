@@ -1,5 +1,6 @@
 // Geometry is in KanjiVG's 109 × 109 coordinate system, independent of screen size.
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const TOUCH_TOLERANCE = 10;
 
 export function sampleStroke(path) {
   const length = path.getTotalLength();
@@ -19,7 +20,7 @@ export function createTracker(points, initial = 0) {
     get point() { return current(); },
     get done() { return index === points.length - 1; },
     begin(p) {
-      previous = distance(p, current()) <= 8 ? p : null;
+      previous = distance(p, current()) <= TOUCH_TOLERANCE ? p : null;
       return !!previous;
     },
     end() { previous = null; },
@@ -36,10 +37,17 @@ export function createTracker(points, initial = 0) {
           const d = distance(q, points[j]);
           if (d < gap - .001) { gap = d; best = j; }
         }
-        if (gap > 7) { previous = null; return false; }
+        if (gap > TOUCH_TOLERANCE) { previous = null; return false; }
         index = best;
       }
       previous = p;
+      // Small fingers need not land precisely on the end. Require the last section
+      // of this stroke to have been reached in order, including on closed loops.
+      const last = points.at(-1);
+      const finishMargin = Math.min(4, last.s * .15);
+      if (last.s - current().s <= finishMargin && distance(p, last) <= TOUCH_TOLERANCE) {
+        index = points.length - 1;
+      }
       return true;
     },
   };

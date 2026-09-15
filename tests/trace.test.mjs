@@ -32,6 +32,22 @@ test('tracing uses matching initials, varied cards, and canonical selected rows'
 });
 
 const line = Array.from({ length:101 }, (_, i) => ({ x:i, y:0, s:i }));
+test('small fingers can start off-center, wobble beside the line and stop just short', () => {
+  const t = createTracker(line);
+  assert.ok(t.begin({ x:0, y:9 }));
+  for (let x=1;x<=97;x++) assert.ok(t.move({x,y:8+Math.sin(x/8)}));
+  assert.ok(t.done, 'the last few pixels do not require precise placement');
+});
+
+test('end assistance cannot turn a tap or a partial short stroke into completion', () => {
+  const short = line.slice(0,21);
+  const t = createTracker(short);
+  t.begin(short[0]);
+  t.move(short[0]); assert.ok(!t.done);
+  t.move(short[15]); assert.ok(!t.done);
+  t.move(short[18]); assert.ok(t.done);
+});
+
 test('only the current start accepts input; forward drawing advances, reversal does not', () => {
   const t = createTracker(line);
   assert.equal(t.begin({ x:100, y:0 }), false);
