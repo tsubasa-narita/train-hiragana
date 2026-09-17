@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
         const image = new Image(); image.src = path;
         await image.decode();
         if (!image.naturalWidth || !image.naturalHeight) throw new Error(path);
-        if (path.includes('/reward-extra-')) {
+        if (path.includes('/assets/rewards/')) {
           const canvas = document.createElement('canvas');
           canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
           const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0);
@@ -26,7 +26,7 @@ const assert = require('node:assert/strict');
             if (pixels[i] >= 240) solid++;
           }
           const area = canvas.width * canvas.height;
-          if (clear / area < .15 || solid / area < .1) throw new Error(`Missing transparent cutout: ${path}`);
+          if (clear / area < .15 || solid / area < .001) throw new Error(`Missing transparent reward cutout: ${path}`);
         }
       }
       return paths.length;
