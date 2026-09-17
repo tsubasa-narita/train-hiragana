@@ -1,16 +1,14 @@
 import { tracePromptText } from './voice-lines.js';
-import { QUIZ_CARDS, ROWS, orderedLetters } from './data.js';
+import { QUIZ_CARDS, ROWS, orderedLetters, pickQuizCard } from './data.js';
 import { KANA_STROKES } from './kana-strokes.js';
 import { sampleStroke, createTracker } from './trace-engine.js';
 
-export function newTrace(rows = [], letter, recent = {}) {
+export function newTrace(rows = [], letter, recent = {}, imageDecks = {}) {
   const letters = orderedLetters(rows);
   letter = letters.includes(letter) ? letter : letters[0];
   const matching = QUIZ_CARDS.filter(t => t.name.startsWith(letter));
   const pool = matching.length ? matching : QUIZ_CARDS.filter(t => t.focusLetter === letter || (!t.focusLetter && t.name.includes(letter)));
-  const varied = pool.filter(t => t.image !== recent[letter]);
-  const cards = varied.length ? varied : pool;
-  const card = cards[Math.floor(Math.random() * cards.length)];
+  const card = pickQuizCard(pool, letter, recent, imageDecks);
   return { rows: [...rows], letters, letter, card, stroke: 0, index: 0, complete: false, completedCards: [], credited: false, rewardPending: false };
 }
 

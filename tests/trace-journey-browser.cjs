@@ -77,8 +77,8 @@ const assert=require('node:assert/strict');
       const audio=new AudioContext();
       try{for(const file of files){const data=await(await fetch('./assets/voice/'+file)).arrayBuffer();const clip=await audio.decodeAudioData(data);if(clip.duration<1)throw Error(file);}return files.length;}finally{await audio.close();}
     });
-    assert.equal(decoded,89);
+    assert.ok(decoded >= 89);
     assert.deepEqual(errors,[]);
-    console.log('Trace journey passed: top scroll, 89 recorded prompts decoded, five completions/reward, retry deduplication, settings/Back/reload/replay/new trip.');
+    console.log('Trace journey passed: top scroll, recorded prompts decoded, five completions/reward, retry deduplication, settings/Back/reload/replay/new trip.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,6 +1,6 @@
 import { newTrace, traceMarkup, mountTrace } from './trace.js';
 import { installMarkup, installApp } from './pwa.js';
-import { TRAINS, KANA_ROWS, ROWS, kanaRow, normalizeRows, orderedLetters, nextJourneyOffset, makeChoices, makeJourney, readProgress } from './data.js';
+import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, kanaRow, normalizeRows, orderedLetters, nextJourneyOffset, targetIndices, makeChoices, makeJourney, readProgress } from './data.js';
 import { showTrainReward, stopTrainReward, unlockRewardAudio } from './reward.js';
 import { playVoice, stopVoice } from './voice.js';
 import { questionText, hintText, praiseText, tracePromptText, VOICE_SAMPLE } from './voice-lines.js';
@@ -17,15 +17,18 @@ let advanceTimer;
 let trail = [], rewardOpen = false, gameRows = [], gameOffset = 0;
 let historyMoving = false;
 let traceState = null, disposeTrace;
+let selectedGalleryKana = 'あ';
 function chooseTrace(rows, letter) {
   if (traceState?.rewardPending) return;
   const completedCards = traceState?.completedCards || [];
-  traceState = { ...newTrace(rows, letter, progress.recentImages), completedCards };
+  traceState = { ...newTrace(rows, letter, progress.recentImages, progress.imageDecks), completedCards };
+  save();
   render(); window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   speak(tracePromptText(traceState.card, traceState.letter));
 }
 function startTrace() {
-  traceState = newTrace(progress.rows, undefined, progress.recentImages);
+  traceState = newTrace(progress.rows, undefined, progress.recentImages, progress.imageDecks);
+  save();
   unlockRewardAudio(progress.sound); navigate('trace'); speak(tracePromptText(traceState.card, traceState.letter));
 }
 function traceCompleted() {
@@ -110,7 +113,7 @@ function start(type, preferredId) {
     progress.journeyOffset = 0; save();
   }
   gameRows = [...progress.rows]; gameOffset = progress.journeyOffset;
-  mode = type; journey = makeJourney(preferredId, gameRows, mode, gameOffset, progress.recentImages);
+  mode = type; journey = makeJourney(preferredId, gameRows, mode, gameOffset, progress.recentImages, progress.imageDecks);
   station = 0; letterIndex = journey[0].targets[0]; prepare(); navigate('game'); prompt();
 }
 function reward(replay = false, restoring = false) {
@@ -183,7 +186,12 @@ function finish() {
   return `<main class="finish"><div class="finish-seal">★</div><div class="eyebrow">5えきの たび、とうちゃく！</div><h1>やったね、<br>すてきな うんてんしゅ！</h1><p>きょうは こんな でんしゃと あそんだよ。</p><div class="earned-trains">${journey.map(t => `<div><img src="${imagePath(t)}" alt=""/><b>${t.name}</b><span>✓</span></div>`).join('')}</div><div class="finish-actions"><button class="primary" data-action="home">えきに もどる ⌂</button><button class="secondary" data-action="collection">ずかんを みる →</button></div><button class="replay-reward" data-action="replay-reward">↻ ごほうびを もういっかい</button><p class="gentle-note">つづきは また こんどでも。おつかれさま！</p></main>`;
 }
 function collection() {
-  return `<main class="library"><div class="page-heading"><div class="eyebrow">きみだけの でんしゃずかん</div><h1>すきな でんしゃ、みつけた？</h1><p>でんしゃを タッチして、なまえを きいてみよう。</p><span class="collection-total">あそんだ でんしゃ <b>${progress.stamps.length} / ${TRAINS.length}</b></span></div><div class="train-grid">${TRAINS.map(t => `<button class="train-card" data-action="train" data-id="${t.id}"><div class="train-thumbnail"><img src="${imagePath(t)}" alt="" loading="lazy"/>${progress.stamps.includes(t.id) ? '<span class="stamp">✓ あそんだよ</span>' : ''}</div><div class="train-card-caption"><b>${t.name}</b><span>♪</span></div><p>${t.detail}</p></button>`).join('')}</div></main>`;
+  return `<main class="library"><div class="page-heading"><div class="eyebrow">きみだけの でんしゃずかん</div><h1>すきな でんしゃ、みつけた？</h1><p>でんしゃを タッチして、なまえを きいてみよう。</p><span class="collection-total">あそんだ でんしゃ <b>${progress.stamps.length} / ${TRAINS.length}</b></span><button class="kana-library-link" data-action="kana-library">あいうえお から<br/>でんしゃの えを みる →</button></div><div class="train-grid">${TRAINS.map(t => `<button class="train-card" data-action="train" data-id="${t.id}"><div class="train-thumbnail"><img src="${imagePath(t)}" alt="" loading="lazy"/>${progress.stamps.includes(t.id) ? '<span class="stamp">✓ あそんだよ</span>' : ''}</div><div class="train-card-caption"><b>${t.name}</b><span>♪</span></div><p>${t.detail}</p></button>`).join('')}</div></main>`;
+}
+function baseKana(character) { return character.normalize('NFD')[0]; }
+function kanaLibrary() {
+  const cards = QUIZ_CARDS.filter(card => targetIndices(card).some(index => baseKana(card.name[index]) === selectedGalleryKana));
+  return `<main class="kana-library"><button class="quiet" data-action="collection">← ずかんに もどる</button><div class="page-heading"><div class="eyebrow">もじと でんしゃの え ずかん</div><h1>「${selectedGalleryKana}」の でんしゃ</h1><p>この もじの クイズに でてくる えを、ぜんぶ みられるよ。</p></div><div class="kana-library-letters" aria-label="もじを えらぶ">${BASIC_KANA.map(letter => `<button data-action="gallery-kana" data-letter="${letter}" aria-pressed="${letter === selectedGalleryKana}">${letter}</button>`).join('')}</div><p class="kana-library-count">${cards.length}まい の え</p><div class="train-grid kana-image-grid">${cards.map(card => { const index = targetIndices(card).find(i => baseKana(card.name[i]) === selectedGalleryKana); return `<button class="train-card" data-action="train" data-id="${card.id}"><div class="train-thumbnail"><img src="${imagePath(card)}" alt="${card.name}の イラスト" loading="lazy"/></div><div class="train-card-caption"><b>${card.name}</b><span class="kana-tag">「${card.name[index]}」</span></div><p>この えで クイズに でるよ</p></button>`; }).join('')}</div></main>`;
 }
 function trainDetail() {
   const t = TRAINS.find(t => t.id === selectedTrain);
@@ -198,13 +206,13 @@ function settings() {
 function render() {
   disposeTrace?.(); disposeTrace = undefined;
   recordHistory();
-  const views = { home, game, finish, collection, train: trainDetail, alphabet, settings, trace: () => traceMarkup(traceState) };
+  const views = { home, game, finish, collection, 'kana-library': kanaLibrary, train: trainDetail, alphabet, settings, trace: () => traceMarkup(traceState) };
   root.innerHTML = header() + views[screen]() + (!['game', 'trace'].includes(screen) ? nav() : '') + `<footer>ひらがな でんしゃ <span>きょうも、すきから はじめよう。</span></footer>`;
   if (screen === 'trace') disposeTrace = mountTrace(root, traceState, { change: recordHistory, complete: traceCompleted, speak, choose: chooseTrace, reset: () => { if (traceState.rewardPending) return; traceState = { ...traceState, stroke: 0, index: 0, complete: false }; render(); } });
 }
 function snapshot() {
   return { app: HISTORY_APP, screen, trail, rewardOpen, mode, journey, gameRows, gameOffset, station, letterIndex,
-    answered, selectedTrain, choices, hint, wrong, lastReward, traceState };
+    answered, selectedTrain, selectedGalleryKana, choices, hint, wrong, lastReward, traceState };
 }
 function recordHistory() {
   history.replaceState(snapshot(), '', rewardOpen ? '#reward' : screen === 'home' ? location.pathname + location.search : '#' + screen);
@@ -232,7 +240,7 @@ function restoreHistory(state) {
   if (state?.app !== HISTORY_APP) return;
   historyMoving = false;
   ({ screen, trail, rewardOpen, mode, journey, gameRows, gameOffset, station, letterIndex, answered,
-    selectedTrain, choices, hint, wrong, lastReward } = state);
+    selectedTrain, selectedGalleryKana = 'あ', choices, hint, wrong, lastReward } = state);
   traceState = state.traceState || null;
   if (screen === 'trace' && !traceState) screen = 'home';
   if (screen === 'game') {
@@ -251,7 +259,8 @@ root.addEventListener('click', e => {
   if (!button) return;
   const action = button.dataset.action;
   if (action === 'install') return installApp();
-  if (['home', 'collection', 'alphabet', 'settings'].includes(action)) return navigate(action);
+  if (['home', 'collection', 'alphabet', 'settings', 'kana-library'].includes(action)) return navigate(action);
+  if (action === 'gallery-kana') { selectedGalleryKana = button.dataset.letter; render(); return; }
   if (action === 'sound') { progress.sound = !progress.sound; save(); if (!progress.sound) stopVoice(); render(); if (progress.sound) { unlockRewardAudio(true); speak('おとが でるよ'); } }
   if (action === 'voice-sample') { progress.sound = true; save(); render(); speak(VOICE_SAMPLE); }
   if (action === 'all-rows') { progress.rows = []; progress.journeyOffset = 0; save(); render(); }
@@ -282,7 +291,7 @@ root.addEventListener('click', e => {
       document.querySelector('#preview-caption').textContent = train ? `${train.name} の「${c}」だね！` : `「${c}」だね！`;
     }
   }
-  if (action === 'reset' && window.confirm('図鑑の記録と完走回数を消しますか？')) { progress.stamps = []; progress.trips = 0; progress.journeyOffset = 0; progress.recentImages = {}; save(); render(); }
+  if (action === 'reset' && window.confirm('図鑑の記録と完走回数を消しますか？')) { progress.stamps = []; progress.trips = 0; progress.journeyOffset = 0; progress.recentImages = {}; progress.imageDecks = {}; save(); render(); }
 });
 root.addEventListener('change', e => {
   if (e.target.name === 'level') { progress.level = e.target.value; save(); }

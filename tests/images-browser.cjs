@@ -1,6 +1,8 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 (async () => {
+  const [{ QUIZ_CARDS }, { REWARD_TRAINS }] = await Promise.all([import('../src/data.js'), import('../src/reward.js')]);
+  const expectedCount = new Set([...QUIZ_CARDS.map(t => t.image), ...REWARD_TRAINS.map(t => t.image)]).size;
   const browser = await chromium.launch({ headless: true, channel: process.env.BROWSER_CHANNEL || 'msedge' });
   try {
     const page = await browser.newPage();
@@ -29,7 +31,7 @@ const assert = require('node:assert/strict');
       }
       return paths.length;
     });
-    assert.equal(count, 105);
-    console.log('All 89 quiz illustrations and 16 reward images loaded and decoded.');
+    assert.equal(count, expectedCount);
+    console.log(`All ${QUIZ_CARDS.length} quiz cards and ${REWARD_TRAINS.length} reward images loaded and decoded.`);
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });
