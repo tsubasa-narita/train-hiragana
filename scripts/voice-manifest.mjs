@@ -12,6 +12,7 @@ Object.assign(names, { oimachi: '大井町線', kaiji: 'かいじ', sunrise: '�
 const add = (text, spoken = text) => lines.set(text, { text, spoken, file: createHash('sha256').update(text).digest('hex').slice(0, 16) + '.mp3' });
 Object.assign(names, { sunrise: '寝台特急サンライズ瀬戸・出雲', 'e4-max': 'E4系Max', haruka: '特急はるか', shiokaze: '特急しおかぜ', 'chuo-e233': '中央線' });
 Object.assign(names, { thunderbird: '特急サンダーバード', 'marine-liner': '快速マリンライナー', musashino: '武蔵野線', yokohama: '横浜線', ryomo: '特急りょうもう', minatomirai: 'みなとみらい線', 'kyoto-jr': 'JR京都線', sagano: '嵯峨野線' });
+Object.assign(names, { 'tokiwa-express': '特急ときわ', sazanami: '特急さざなみ', 'shonan-express': '特急湘南', 'kusatsu-shima': '特急草津・四万', akagi: '特急あかぎ', revaty: '東武リバティ', 'romancecar-gse': 'ロマンスカーGSE', 'fujisan-view': '富士山ビュー特急' });
 add(VOICE_SAMPLE);
 add('おとが でるよ', '音が出るよ！');
 add('できたね！');

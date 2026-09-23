@@ -77,6 +77,18 @@ export const REQUESTED_TRAINS = [
   { id: 'sagano', name: 'さがのせん', image: 'quiz-sagano.webp', color: '#a78964', detail: 'きょうとの みどりの なかを はしる でんしゃ' },
 ];
 
+// Current limited expresses in and around the Tokyo metropolitan area.
+export const METRO_EXPRESS_TRAINS = [
+  { id: 'tokiwa-express', name: 'ときわ', image: 'quiz-tokiwa.webp', color: '#a95a78', detail: 'いばらきへ むかう うめいろの とっきゅう' },
+  { id: 'sazanami', name: 'さざなみ', image: 'quiz-sazanami.webp', color: '#4d90bd', detail: 'ちばの うみへ むかう とっきゅう' },
+  { id: 'shonan-express', name: 'しょうなん', image: 'quiz-shonan.webp', color: '#3e93b0', detail: 'とうきょうと しょうなんを むすぶ とっきゅう' },
+  { id: 'kusatsu-shima', name: 'くさつしま', image: 'quiz-kusatsu-shima.webp', color: '#4d795e', detail: 'おんせんの まちへ むかう とっきゅう' },
+  { id: 'akagi', name: 'あかぎ', image: 'quiz-akagi.webp', color: '#5f8664', detail: 'ぐんまの やまへ むかう とっきゅう' },
+  { id: 'revaty', name: 'りばてぃ', image: 'quiz-revaty.webp', color: '#5287a5', detail: 'みっつの しゃりょうを つないで はしる とっきゅう' },
+  { id: 'romancecar-gse', name: 'ろまんすかーじーえすいー', image: 'quiz-romancecar-gse.webp', color: '#c95e4d', detail: 'おおきな まどで はこねへ むかう とっきゅう' },
+  { id: 'fujisan-view', name: 'ふじさんびゅーとっきゅう', image: 'quiz-fujisan-view.webp', color: '#b94c43', detail: 'あかい からだで ふじさんの ふもとを はしるよ' },
+];
+
 export const IMAGE_VARIANTS = [
   'azusa', 'kinugawa', 'keikyu', 'komachi', 'romancecar',
   'inaho', 'ueno-tokyo', 'enoden', 'kuroshio', 'tanigawa', 'tenhama', 'nichirin', 'numajiri', 'nemuro', 'nozomi',
