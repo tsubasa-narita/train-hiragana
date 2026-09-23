@@ -64,6 +64,19 @@ export const GO_HOME_TRAINS = [
   { id: 'keikyu-le-ciel', name: 'けいきゅうるしえる', image: 'go-home-keikyu-le-ciel.webp', color: '#689fc2', detail: 'みずいろの とびらが すてきな けいきゅう' },
 ];
 
+// New named trains chosen for their own quiz and collection illustrations.
+export const REQUESTED_TRAINS = [
+  { id: 'thunderbird', name: 'さんだーばーど', image: 'quiz-thunderbird.webp', color: '#55749a', detail: 'おおさかと つるがを むすぶ とっきゅう' },
+  { id: 'marine-liner', name: 'まりんらいなー', image: 'quiz-marine-liner.webp', color: '#4e8fb7', detail: 'にかいだての しゃりょうで せとおおはしを わたるよ' },
+  { id: 'musashino', name: 'むさしのせん', image: 'quiz-musashino.webp', color: '#d17844', detail: 'オレンジの おびの でんしゃ' },
+  { id: 'yokohama', name: 'よこはません', image: 'quiz-yokohama.webp', color: '#69a06b', detail: 'みどりの おびの でんしゃ' },
+  { id: 'ryomo', name: 'りょうもう', image: 'quiz-ryomo.webp', color: '#bb6a72', detail: 'あさくさと ぐんまを むすぶ とっきゅう' },
+  { id: 'haruka', name: 'はるか', image: 'quiz-haruka.webp', color: '#507ab2', detail: 'かんさいくうこうへ むかう とっきゅう' },
+  { id: 'minatomirai', name: 'みなとみらいせん', image: 'quiz-minatomirai.webp', color: '#3f71a7', detail: 'よこはまの まちを はしる あおい でんしゃ' },
+  { id: 'kyoto-jr', name: 'きょうとせん', image: 'quiz-kyoto-jr.webp', color: '#536fa5', detail: 'きょうとと おおさかを むすぶ しんかいそく' },
+  { id: 'sagano', name: 'さがのせん', image: 'quiz-sagano.webp', color: '#a78964', detail: 'きょうとの みどりの なかを はしる でんしゃ' },
+];
+
 export const IMAGE_VARIANTS = [
   'azusa', 'kinugawa', 'keikyu', 'komachi', 'romancecar',
   'inaho', 'ueno-tokyo', 'enoden', 'kuroshio', 'tanigawa', 'tenhama', 'nichirin', 'numajiri', 'nemuro', 'nozomi',

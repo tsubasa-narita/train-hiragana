@@ -1,4 +1,4 @@
-import { EXTRA_TRAINS, GO_HOME_TRAINS, IMAGE_VARIANTS } from './train-expansion.js';
+import { EXTRA_TRAINS, GO_HOME_TRAINS, REQUESTED_TRAINS, IMAGE_VARIANTS } from './train-expansion.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -47,6 +47,7 @@ export const TRAINS = [
   { id: 'romancecar', name: 'ろまんすかー', image: 'romancecar.webp', color: '#c9664f', detail: 'おだきゅうの とっきゅう。この えは むかしの しゃりょう' },
   ...EXTRA_TRAINS,
   ...GO_HOME_TRAINS,
+  ...REQUESTED_TRAINS,
 ];
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
