@@ -22,6 +22,11 @@ export const REWARD_TRAINS = [
   { id: 'hinotori', name: 'ひのとり', image: 'reward-hinotori.webp' },
   { id: 'saphir-odoriko', name: 'さふぃーるおどりこ', image: 'reward-saphir-odoriko.webp' },
   { id: 'cassiopeia', name: 'かしおぺあ', image: 'reward-cassiopeia.webp' },
+  { id: 'e4-max', name: 'まっくす', image: 'reward-e4-max.webp' },
+  { id: 'sunrise', name: 'さんらいず', image: 'reward-sunrise.webp' },
+  { id: 'haruka', name: 'はるか', image: 'reward-haruka.webp' },
+  { id: 'shiokaze', name: 'しおかぜ', image: 'reward-shiokaze.webp' },
+  { id: 'chuo-e233', name: 'ちゅうおうせん', image: 'reward-chuo-e233.webp' },
 ];
 export const REWARD_ROUTES = [
   { id: 'rainbow', name: 'にじの はしを わたろう', start: 'にじに むかって、しゅっぱつ！', middle: 'にじの はしを、すいすい！' },

@@ -6,7 +6,7 @@ import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJo
 import { REWARD_TRAINS, chooseReward, REWARD_ROUTES, chooseRewardRoute } from '../src/reward.js';
 const baseKana = character => character.normalize('NFD')[0];
 test('reward images exist and random rewards never immediately repeat', () => {
-  assert.equal(REWARD_TRAINS.length, 21);
+  assert.equal(REWARD_TRAINS.length, 26);
   for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/rewards/${t.image}`), t.image);
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
