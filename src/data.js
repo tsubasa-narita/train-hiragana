@@ -1,4 +1,5 @@
 import { EXTRA_TRAINS, GO_HOME_TRAINS, REQUESTED_TRAINS, METRO_EXPRESS_TRAINS, IMAGE_VARIANTS } from './train-expansion.js';
+import { BOOK_TRAINS } from './book-trains.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -49,6 +50,7 @@ export const TRAINS = [
   ...GO_HOME_TRAINS,
   ...REQUESTED_TRAINS,
   ...METRO_EXPRESS_TRAINS,
+  ...BOOK_TRAINS,
 ];
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
@@ -155,7 +157,7 @@ export function readProgress(storage) {
     return {
       stamps: [...new Set(Array.isArray(value.stamps) ? value.stamps.filter(id => TRAINS.some(t => t.id === id)) : [])],
       recentImages: Object.fromEntries(Object.entries(value.recentImages && typeof value.recentImages === 'object' ? value.recentImages : {}).filter(([letter, image]) => BASIC_KANA.includes(letter) && QUIZ_CARDS.some(t => t.image === image))),
-      imageDecks: Object.fromEntries(Object.entries(value.imageDecks && typeof value.imageDecks === 'object' ? value.imageDecks : {}).filter(([letter, deck]) => BASIC_KANA.includes(letter) && Array.isArray(deck)).map(([letter, deck]) => [letter, deck.filter(key => typeof key === 'string').slice(0, 30)])),
+      imageDecks: Object.fromEntries(Object.entries(value.imageDecks && typeof value.imageDecks === 'object' ? value.imageDecks : {}).filter(([letter, deck]) => BASIC_KANA.includes(letter) && Array.isArray(deck)).map(([letter, deck]) => [letter, deck.filter(key => typeof key === 'string').slice(0, QUIZ_CARDS.length)])),
       trips: Number.isSafeInteger(value.trips) && value.trips >= 0 ? value.trips : 0,
       sound: value.sound !== false,
       level: ['match', 'listen'].includes(value.level) ? value.level : 'match',

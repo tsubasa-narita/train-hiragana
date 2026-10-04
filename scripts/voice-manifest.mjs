@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { QUIZ_CARDS, KANA_ROWS, BASIC_KANA } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
+import { BOOK_TRAINS } from '../src/book-trains.js';
 import { questionText, hintText, praiseText, rewardText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
 const lines = new Map();
 const names = { yamanote: '山手線', enoden: '江ノ電', 'doctor-yellow': 'ドクターイエロー', 'narita-express': '成田エクスプレス', marunouchi: '丸ノ内線', rapit: 'ラピート', keikyu: '京急線', sonic: 'ソニック', nemuro: '根室本線', hitachi: 'ひたち', 'heisei-chikuho': '平成筑豊鉄道', yufuin: 'ゆふいんの森', yokosuka: '横須賀線' };
@@ -14,6 +15,7 @@ Object.assign(names, { sunrise: '寝台特急サンライズ瀬戸・出雲', 'e
 Object.assign(names, { thunderbird: '特急サンダーバード', 'marine-liner': '快速マリンライナー', musashino: '武蔵野線', yokohama: '横浜線', ryomo: '特急りょうもう', minatomirai: 'みなとみらい線', 'kyoto-jr': 'JR京都線', sagano: '嵯峨野線' });
 Object.assign(names, { 'tokiwa-express': '特急ときわ', sazanami: '特急さざなみ', 'shonan-express': '特急湘南', 'kusatsu-shima': '特急草津・四万', akagi: '特急あかぎ', revaty: '東武リバティ', 'romancecar-gse': 'ロマンスカーGSE', 'fujisan-view': '富士山ビュー特急' });
 add(VOICE_SAMPLE);
+Object.assign(names, Object.fromEntries(BOOK_TRAINS.map(train => [train.id, train.spokenName || train.bookName || train.name])));
 add('おとが でるよ', '音が出るよ！');
 add('できたね！');
 for (const train of QUIZ_CARDS) {
@@ -29,7 +31,7 @@ for (const train of QUIZ_CARDS) {
     add(hintText(letter), `${kana(letter)}を、探してみよう。`);
   }
 }
-for (const train of REWARD_TRAINS) add(rewardText(train), `${names[train.id] || train.name}が、やってきた！`);
+for (const train of REWARD_TRAINS) add(rewardText(train), `${train.spokenName || names[train.id] || train.name}が、やってきた！`);
 for (const c of KANA_ROWS.join('').replaceAll(' ', '')) {
   if (c === 'ー') add('のばす おと', 'のばす音。');
   else if ('ぁぃぅぇぉゃゅょっ'.includes(c)) add(c, `ちいさい、${kana(c.toUpperCase()).replace(/[ァィゥェォャュョッ]/g, x => ({ァ:'ア',ィ:'イ',ゥ:'ウ',ェ:'エ',ォ:'オ',ャ:'ヤ',ュ:'ユ',ョ:'ヨ',ッ:'ツ'})[x])}。`);

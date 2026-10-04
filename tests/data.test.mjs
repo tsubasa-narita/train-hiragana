@@ -6,7 +6,7 @@ import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJo
 import { REWARD_TRAINS, chooseReward, REWARD_ROUTES, chooseRewardRoute } from '../src/reward.js';
 const baseKana = character => character.normalize('NFD')[0];
 test('reward images exist and random rewards never immediately repeat', () => {
-  assert.equal(REWARD_TRAINS.length, 26);
+  assert.equal(REWARD_TRAINS.length, 36);
   for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/rewards/${t.image}`), t.image);
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
@@ -79,6 +79,23 @@ test('every kana including voiced letters has exactly one correct choice', () =>
     assert.equal(choices.filter(x => x === c).length, 1);
   }
 });
+test('large image bags survive reopening without repeating consumed cards', () => {
+  const pool = QUIZ_CARDS.filter(card => targetIndices(card).some(index => card.name[index] === 'ん'));
+  const decks = {};
+  const key = card => `${card.quizId || card.id}:${card.image}`;
+  const first = pickQuizCard(pool, 'ん', {}, decks);
+  assert.ok(decks['ん'].length > 30);
+  const restored = readProgress({getItem: () => JSON.stringify({imageDecks: decks})});
+  assert.equal(restored.imageDecks['ん'].length, decks['ん'].length);
+  const seen = new Set([key(first)]);
+  for (let i = 1; i < pool.length; i++) {
+    const card = pickQuizCard(pool, 'ん', {}, restored.imageDecks);
+    assert.ok(!seen.has(key(card)));
+    seen.add(key(card));
+  }
+  assert.equal(seen.size, pool.length);
+});
+
 test('journeys keep kana order and use the preferred train at its matching letter', () => {
   for (const t of TRAINS) {
     const journey = makeJourney(t.id, [kanaRow(t.name[0])]);

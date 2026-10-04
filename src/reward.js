@@ -1,5 +1,6 @@
 import { stopVoice } from './voice.js';
 import { rewardText } from './voice-lines.js';
+import { BOOK_REWARD_TRAINS } from './book-rewards.js';
 export const REWARD_TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'reward-hayabusa-v2.webp' },
   { id: 'komachi', name: 'こまち', image: 'reward_train_komachi.png' },
@@ -27,6 +28,7 @@ export const REWARD_TRAINS = [
   { id: 'haruka', name: 'はるか', image: 'reward-haruka.webp' },
   { id: 'shiokaze', name: 'しおかぜ', image: 'reward-shiokaze.webp' },
   { id: 'chuo-e233', name: 'ちゅうおうせん', image: 'reward-chuo-e233.webp' },
+  ...BOOK_REWARD_TRAINS,
 ];
 export const REWARD_ROUTES = [
   { id: 'rainbow', name: 'にじの はしを わたろう', start: 'にじに むかって、しゅっぱつ！', middle: 'にじの はしを、すいすい！' },

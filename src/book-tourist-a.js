@@ -1,0 +1,111 @@
+// Tourist trains from the book list. Each entry has its own verified train art.
+export const BOOK_TOURIST_A_TRAINS = [
+  {
+    id: 'book-36plus3', name: 'さんじゅうろくぷらすさん', image: 'book-36plus3.webp', color: '#17191c',
+    detail: 'くろと きんいろの からだで きゅうしゅうを めぐるよ',
+    bookName: '36ぷらす3', spokenName: 'さんじゅうろく ぷらす さん', model: '787系電車（6両）',
+    sources: ['https://www.jrkyushu-36plus3.jp/', 'https://www.kato-special.com/36plus3'],
+  },
+  {
+    id: 'book-52seki', name: 'ごじゅうにせきのしふく', image: 'book-52seki.webp', color: '#668c91',
+    detail: 'ちちぶの きせつを えがいた ごちそうでんしゃ',
+    bookName: '52席の至福', spokenName: 'ごじゅうにせきの しふく', model: '西武4000系 4009編成（4両）',
+    sources: ['https://www.seiburailway.jp/railways/seibu52-shifuku/overview/', 'https://kosodate.seiburailway.jp/kids/museum/zukan/design/'],
+  },
+  {
+    id: 'book-bbbase', name: 'びーびーべーす', image: 'book-bbbase.webp', color: '#686a6d',
+    detail: 'じてんしゃと いっしょに ぼうそうへ むかうよ',
+    bookName: 'B.B.BASE', spokenName: 'びーびーべーす', model: '209系2200番代 J1編成（6両）',
+    sources: ['https://www.jreast.co.jp/railway/joyful/bbbase.html', 'https://www.jreast.co.jp/press/2026/chiba/20260413_c01.pdf', 'https://www.jreast.co.jp/chiba/news/pdf/pre1712_bbbase.pdf'],
+  },
+  {
+    id: 'book-etsetora', name: 'えとせとら', image: 'book-etsetora.webp', color: '#215f88',
+    detail: 'あおと しろの せとうち かんこうれっしゃ',
+    bookName: 'etSETOra', spokenName: 'えとせとら', model: 'キハ47形改造車（2両）',
+    sources: ['https://www.jr-odekake.net/railroad/kankoutrain/etsetora/', 'https://www.westjr.co.jp/press/article/items/210728_02_etsetora_route.pdf'],
+  },
+  {
+    id: 'book-highrail1375', name: 'はいれーるいちさんななご', image: 'book-highrail1375.webp', color: '#234f84',
+    detail: 'やまの むこうの ほしぞらを みにいこう',
+    bookName: 'HIGH RAIL 1375', spokenName: 'はいれーる いちさんななご', model: 'キハ103形・キハ112形（2両）',
+    sources: ['https://www.jreast.co.jp/train/fun/highrail1375.html', 'https://recruit.jreast.co.jp/project/pj_highrail/'],
+  },
+  {
+    id: 'book-pokemon-with-you', name: 'ぽけもんうぃずゆーとれいん', image: 'book-pokemon-with-you.webp', color: '#e7c237',
+    detail: 'きいろい からだで とうほくを はしるよ',
+    bookName: 'POKÉMON with YOU トレイン', spokenName: 'ぽけもん うぃず ゆー とれいん', model: 'キハ100-1・キハ100-3（2両）',
+    sources: ['https://www.jreast.co.jp/railway/joyful/pokemon.html', 'https://www.j-trec.co.jp/company/070/02/jtr02_104-107.pdf'],
+  },
+  {
+    id: 'book-royal-express', name: 'ざろいやるえくすぷれす', image: 'book-royal-express.webp', color: '#174b84',
+    detail: 'ろいやるぶるーの うみべの かんこうれっしゃ',
+    bookName: 'THE ROYAL EXPRESS', spokenName: 'ざ ろいやる えくすぷれす', model: '伊豆急行2100系 リゾート21（8両）',
+    sources: ['https://www.the-royalexpress.jp/concept/design/', 'https://www.tokyu.co.jp/company/news/detail/2495.html'],
+  },
+  {
+    id: 'book-tohoku-emotion', name: 'とうほくえもーしょん', image: 'book-tohoku-emotion.webp', color: '#a35143',
+    detail: 'きたの うみを ながめる おしょくじれっしゃ',
+    bookName: 'TOHOKU EMOTION', spokenName: 'とうほく えもーしょん', model: 'キハ110系改造（3両）',
+    sources: ['https://www.jreast.co.jp/railway/joyful/tohoku.html', 'https://www.j-trec.co.jp/jr-east-tohoku-emotion/', 'https://www.j-trec.co.jp/company/070/02/jtr02_108-111.pdf'],
+  },
+  {
+    id: 'book-shikishima', name: 'とらんすいーとしきしま', image: 'book-shikishima.webp', color: '#b49a69',
+    detail: 'きんいろの くるーずとれいん',
+    bookName: 'TRAIN SUITE 四季島', spokenName: 'トランスイート四季島', model: 'E001形（10両）',
+    sources: ['https://www.jreast.co.jp/shiki-shima/index.html', 'https://www.jreast.co.jp/shiki-shima/pdf/colorpamphlet202008.pdf', 'https://www.katomodels.com/product/n/e001_shikishima'],
+  },
+  {
+    id: 'book-west-express-ginga', name: 'うえすとえくすぷれすぎんが', image: 'book-west-express-ginga.webp', color: '#273e69',
+    detail: 'あおい からだで にしの まちを むすぶよ',
+    bookName: 'WEST EXPRESS 銀河', spokenName: 'うぇすと えくすぷれす ぎんが', model: '117系改造車（6両）',
+    sources: ['https://www.jr-odekake.net/railroad/westexginga/train/', 'https://www.westjr.co.jp/press/article/2019/03/page_14028.html'],
+  },
+  {
+    id: 'book-aoniyoshi', name: 'あをによし', image: 'book-aoniyoshi.webp', color: '#704b82',
+    detail: 'むらさきと きんの ならを めぐる とっきゅう',
+    bookName: 'あをによし', spokenName: 'あをによし', model: '近鉄19200系（12200系改造・4両）',
+    sources: ['https://www.kintetsu.jp/kouhou/Train/aoniyoshi.html', 'https://www.kintetsu.co.jp/senden/aoniyoshi/index.html'],
+  },
+  {
+    id: 'book-isaburo-shinpei', name: 'いさぶろうしんぺい', image: 'book-isaburo-shinpei.webp', color: '#783c48', historical: true,
+    detail: 'むかし ひさつせんを はしったよ。いまは べつの なまえの れっしゃだよ',
+    bookName: 'いさぶろう・しんぺい', spokenName: 'いさぶろう・しんぺい', model: 'キハ47形（2両・旧観光列車）',
+    sources: ['https://www.jrkyushu.co.jp/news/__icsFiles/afieldfile/2023/08/31/230831_isaburoushinpei_920.pdf', 'https://www.jrkyushu.co.jp/news/__icsFiles/afieldfile/2023/10/26/20231026_d_s_kampachi_ichiroku.pdf'],
+  },
+  {
+    id: 'book-orange-restaurant', name: 'おれんじしょくどう', image: 'book-orange-restaurant.webp', color: '#263c56',
+    detail: 'あおと きんいろの うみべの ごちそうれっしゃ',
+    bookName: 'おれんじ食堂', spokenName: 'おれんじ しょくどう', model: '肥薩おれんじ鉄道 HSOR-100A形（2両）',
+    sources: ['https://www.hs-orange.com/kankou/', 'https://www.tomytec.co.jp/tomix/products/n/98128.html'],
+  },
+  {
+    id: 'book-ozatoro', name: 'おざとろてんぼうれっしゃ', image: 'book-ozatoro.webp', color: '#397caf',
+    detail: 'おざしき とろっこ てんぼうを たのしめるよ',
+    bookName: 'お座トロ展望列車', spokenName: 'おざとろ てんぼうれっしゃ', model: '会津鉄道 AT-400形＋AT-350形（2両）',
+    sources: ['https://aizutetsudo.jp/travel/ozatoroaki/', 'https://aizutetsudo.jp/wp-content/themes/aizutetsudo/assets/pdf/ozatoro_2026.pdf', 'https://railway-catalog.com/05/01212at400.html'],
+  },
+  {
+    id: 'book-kinme', name: 'きんめでんしゃ', image: 'book-kinme.webp', color: '#bb3638',
+    detail: 'きんめだいの あかを まとった でんしゃ',
+    bookName: 'キンメ電車', spokenName: 'きんめでんしゃ', model: '伊豆急行2100系 リゾート21',
+    sources: ['https://www.tokyu.co.jp/area/izukyu/article/arti-01JSAZEEGBK0YPERE9F5R9115X/', 'https://camel3.com/cms/files/izukyu/MASTER/0200/lNyQSxLR.pdf'],
+  },
+  {
+    id: 'book-kotatsu', name: 'こたつれっしゃ', image: 'book-kotatsu.webp', color: '#8d4644', representative: true,
+    detail: 'さんりくの こたつれっしゃ。だいひょうの えだよ',
+    bookName: 'こたつ列車', spokenName: 'こたつれっしゃ', model: '三陸鉄道36-Z形 お座敷車両（代表例）',
+    sources: ['https://www.sanrikutetsudou.com/%E4%B8%89%E9%99%B8%E9%89%84%E9%81%93%E3%81%AE%E8%BB%8A%E4%B8%A1%E3%81%AE%E3%81%94%E7%B4%B9%E4%BB%8B%E3%83%BB%E5%88%97%E8%BB%8A%E3%81%94%E5%88%A9%E7%94%A8%E3%81%AE%E3%81%94%E6%A1%88%E5%86%85/', 'https://www.sanrikutetsudou.com/xo_event/%E3%81%93%E3%81%9F%E3%81%A4%E5%88%97%E8%BB%8A-18/'],
+  },
+  {
+    id: 'book-kotokoto', name: 'ことことれっしゃ', image: 'book-kotokoto.webp', color: '#992f3b',
+    detail: 'つやつやの しんくの でんしゃで おしょくじ',
+    bookName: 'ことこと列車', spokenName: 'ことことれっしゃ', model: '平成筑豊鉄道400形 401・402号車（2両）',
+    sources: ['https://www.heichiku.net/tanoshimu/cars/401-402-cotocoto/'],
+  },
+  {
+    id: 'book-nanatsuboshi', name: 'ななつぼしいんきゅうしゅう', image: 'book-nanatsuboshi.webp', color: '#772d3a',
+    detail: 'ななつの ほしが きらめく きゅうしゅうの たび',
+    bookName: 'ななつ星 in 九州', spokenName: 'ななつぼし いん きゅうしゅう', model: 'DF200-7000＋77系客車（7両）',
+    sources: ['https://www.cruisetrain-sevenstars.jp/train/', 'https://www.jrkyushu.co.jp/news/__icsFiles/afieldfile/2021/09/28/210928_seven_stars_spring_course.pdf', 'https://www.katomodels.com/product/n/sevenstars_in_kyushu'],
+  },
+];
