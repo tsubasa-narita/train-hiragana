@@ -1,10 +1,12 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v10';
+const CACHE = PREFIX + 'v12';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
   'src/book-trains.js', 'src/book-express.js', 'src/book-tourist-a.js', 'src/book-tourist-b.js', 'src/book-local-work.js', 'src/book-rewards.js',
   'src/trace.js', 'src/trace-engine.js', 'src/kana-strokes.js', 'src/trace.css',
+  'src/connect.js', 'src/connect-engine.js', 'src/connect.css',
+  'assets/connect/komachi-carriages.png',
   'src/reward.js', 'src/voice.js', 'src/voice-lines.js', 'src/voice-manifest.js', 'src/pwa.js',
   'assets/icon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png'];
 self.addEventListener('install', event => {

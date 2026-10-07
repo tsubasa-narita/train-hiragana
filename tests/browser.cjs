@@ -55,17 +55,32 @@ const fs = require('node:fs');
   await page.locator('[data-action="home"]').first().click();
   assert.equal((await page.locator('.ticket-count b').textContent()).trim(), String(saved.stamps.length));
   await page.locator('[data-action="start-connect"]').click();
-  while (await page.locator('.game').count()) {
-    const c = (await page.locator('.carriage.waiting').textContent()).trim();
-    await page.locator(`.choice[data-letter="${c}"]`).click();
-    assert.equal(await page.locator('.reward-dialog').count(), 0);
-    await page.locator('[data-action="next"]').click();
+  await page.locator('[data-connect="choose"][data-id="komachi"]').click();
+  while (await page.locator('.connect-car.waiting').count()) {
+    await page.waitForFunction(() => Date.now() >= (history.state.connectState.lockedUntil || 0));
+    const letter = await page.locator('.connect-car.waiting .connect-ghost').textContent();
+    await page.locator(`[data-connect="letter"][data-letter="${letter}"]`).click();
   }
+  for (let completed = 1; completed < 3; completed++) {
+    assert.equal(await page.locator('.reward-dialog').count(), 0);
+    await page.locator('[data-connect="next"]').click();
+    while (await page.locator('.connect-car.waiting').count()) {
+      await page.waitForFunction(() => Date.now() >= (history.state.connectState.lockedUntil || 0));
+      const letter = await page.locator('.connect-car.waiting .connect-ghost').textContent();
+      await page.locator(`[data-connect="letter"][data-letter="${letter}"]`).click();
+    }
+  }
+  await page.locator('.reward-dialog[open]').waitFor();
   await dismissReward();
+  assert.equal(await page.locator('.earned-trains>div').count(), 3);
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')));
   assert.equal(saved.trips, 2);
+  await page.locator('[data-action="start-connect"]').click();
+  await page.locator('[data-connect="garage"]').first().click();
+  assert.equal(await page.locator('.connect-train').count(), 3);
+  await page.locator('[data-action="home"]').first().click();
   await page.locator('[data-action="collection"]').first().click();
-  assert.equal(await page.locator('.train-card').count(), 61);
+  assert.equal(await page.locator('.train-card').count(), (await import('../src/data.js')).TRAINS.length);
   await page.locator('[data-action="train"][data-id="hayabusa"]').click();
   assert.equal(await page.locator('.name-letters button').count(), 4);
   await page.locator('[data-action="train-play"]').click();
@@ -124,5 +139,5 @@ const fs = require('node:fs');
   await reduced.locator('[data-reward="continue"]').click();
   assert.equal(await reduced.locator('.reward-dialog').count(), 0);
   await browser.close();
-  console.log('Browser checks passed: rewards only after all five questions in both modes, animation/replay/skip, reduced motion/Escape, retry, stamps, reload, train selection, listen level, alphabet, mobile/tablet overflow, unavailable storage.');
+  console.log('Browser checks passed: five-station find reward, three-name connect reward/garage, animation/replay/skip, reduced motion/Escape, retry, stamps, reload, train selection, listen level, alphabet, mobile/tablet overflow, unavailable storage.');
 })().catch(e => { console.error(e); process.exit(1); });

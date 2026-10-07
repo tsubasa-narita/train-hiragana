@@ -1,4 +1,6 @@
 import { newTrace, traceMarkup, mountTrace } from './trace.js';
+import { connectMarkup, mountConnect } from './connect.js';
+import { newConnect, readGarage } from './connect-engine.js';
 import { installMarkup, installApp } from './pwa.js';
 import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, kanaRow, normalizeRows, orderedLetters, nextJourneyOffset, targetIndices, makeChoices, makeJourney, readProgress } from './data.js';
 import { REWARD_TRAINS, showTrainReward, stopTrainReward, unlockRewardAudio } from './reward.js';
@@ -9,6 +11,45 @@ const root = document.querySelector('#app');
 let storage;
 try { storage = window.localStorage; } catch { storage = null; }
 const progress = readProgress(storage);
+let connectState = null, disposeConnect;
+let connectGarage = readGarage(storage, TRAINS), connectSavingFailed = false;
+function chooseConnect(id) {
+  const train = TRAINS.find(t => t.id === id);
+  if (!train) return;
+  const completedCards = connectState?.completedCards || [];
+  stopVoice(); connectState = { ...newConnect(train, connectGarage.length === 0), completedCards };
+  render(); speak(train.name);
+}
+function saveConnectTrain(train, state) {
+  if (state.credited) return;
+  state.credited = true;
+  state.completedCards ||= [];
+  state.completedCards.push(train);
+  if (state.completedCards.length === 3) progress.trips++;
+  if (!connectGarage.includes(train.id)) connectGarage.push(train.id);
+  if (!progress.stamps.includes(train.id)) progress.stamps.push(train.id);
+  save();
+  try { storage.setItem('train-connect-garage-v1', JSON.stringify(connectGarage)); }
+  catch { connectSavingFailed = true; }
+}
+function nextConnect() {
+  if (connectState?.phase !== 'ready') return;
+  const completedCards = connectState.completedCards || [];
+  if (completedCards.length >= 3) {
+    connectState.finished = true;
+    mode = 'connect'; journey = [...completedCards];
+    navigate('finish', { replace: true }); reward();
+    return;
+  }
+  const candidates = TRAINS.filter(train => [...train.name].length >= 2 && [...train.name].length <= 5 && !completedCards.some(card => card.id === train.id));
+  chooseConnect((candidates[0] || TRAINS[0]).id);
+}
+function browseConnect(phase) {
+  stopVoice();
+  const resume = connectState?.trainId ? connectState : connectState?.resume;
+  connectState = { phase, completedCards: connectState?.completedCards || [], ...(resume ? { resume } : {}) };
+  render(); window.scrollTo(0, 0);
+}
 let screen = 'home', mode = 'find', journey = [], station = 0, letterIndex = 0, answered = false;
 let selectedTrain = 'hayabusa', choices = [], hint = '', wrong = '', savingFailed = false;
 let audioContext;
@@ -96,7 +137,7 @@ function nav() {
   return `<nav class="bottom-nav" aria-label="メニュー"><button data-action="home" class="${screen === 'home' ? 'active' : ''}"><span>⌂</span>ホーム</button><button data-action="collection" class="${screen === 'collection' ? 'active' : ''}"><span>▤</span>でんしゃ ずかん <small>${progress.stamps.length}/${TRAINS.length}</small></button><button data-action="alphabet" class="${screen === 'alphabet' ? 'active' : ''}"><span>あ</span>あいうえお</button></nav>`;
 }
 function home() {
-  return `<main class="home"><section class="hero"><div class="hero-copy"><div class="eyebrow"><span></span> きょうも、もじの たびへ。</div><h1>もじを のせて、<br><em>しゅっぱつ！</em></h1><p>だいすきな でんしゃと、<br>ひらがなに あいに いこう。</p><div class="journey-note"><span>🎫</span> ひとたび 5えき。じぶんの ペースで。</div></div><div class="landscape"><div class="sun"></div><div class="cloud cloud-one"></div><div class="cloud cloud-two"></div><span class="floating-kana kana-ha">は</span><span class="floating-kana kana-ko">こ</span><span class="floating-kana kana-a">あ</span><div class="hill hill-back"></div><div class="hill hill-front"></div><div class="station-sign">ひらがなえき <span>HIRAGANA STATION</span></div>${trainSvg()}<span class="flower flower-one">✳</span><span class="flower flower-two">✳</span></div></section>${rowSelection()}<section class="play-section"><div class="section-heading"><h2>どんな たびに する？</h2><span>すきな あそびを えらんでね</span></div><div class="mode-grid"><button class="mode-card find-card" data-action="start-find"><div class="mode-label">まずは ここから <span>01</span></div><div class="mode-visual"><span class="mini-letter">は</span><span class="dotted-arrow">··· →</span><span class="mini-letter selected">は</span><span class="mini-letter small">こ</span></div><h3>もじを みつけよう <span>↗</span></h3><p>「はやぶさ」の「は」は どれかな？</p><div class="card-footer"><span>おなじ もじを タッチ</span><b>あそぶ →</b></div></button><button class="mode-card connect-card" data-action="start-connect"><div class="mode-label">なれて きたら <span>02</span></div><div class="mode-visual linked"><span class="mini-letter">こ</span><i></i><span class="mini-letter">ま</span><i></i><span class="mini-letter empty">？</span></div><h3>なまえを つなごう <span>↗</span></h3><p>もじの しゃりょうを つなげてみよう。</p><div class="card-footer"><span>ひともじ ずつで だいじょうぶ</span><b>あそぶ →</b></div></button><button class="mode-card trace-card" data-action="start-trace"><div class="mode-label">ゆびで かいてみよう <span>03</span></div><div class="mode-visual"><span>よ</span><span>··· 🚃</span></div><h3>なぞって はしろう <span>↗</span></h3><p>ゆびに あわせて、でんしゃが はしるよ。</p><div class="card-footer"><span>かけたら でんしゃが とうちゃく</span><b>あそぶ →</b></div></button></div></section><section class="ticket" aria-label="旅の記録"><div class="ticket-icon">♧</div><div><h3>きみの でんしゃずかん</h3><p>あそんだ でんしゃが、ずかんに ふえるよ。</p></div><div class="ticket-count"><b>${progress.stamps.length}</b> / ${TRAINS.length}<span>でんしゃ</span></div><button data-action="collection" aria-label="でんしゃずかんを見る">みる <span>→</span></button></section></main>`;
+  return `<main class="home"><section class="hero"><div class="hero-copy"><div class="eyebrow"><span></span> きょうも、もじの たびへ。</div><h1>もじを のせて、<br><em>しゅっぱつ！</em></h1><p>だいすきな でんしゃと、<br>ひらがなに あいに いこう。</p><div class="journey-note"><span>🎫</span> ひとたび 5えき。じぶんの ペースで。</div></div><div class="landscape"><div class="sun"></div><div class="cloud cloud-one"></div><div class="cloud cloud-two"></div><span class="floating-kana kana-ha">は</span><span class="floating-kana kana-ko">こ</span><span class="floating-kana kana-a">あ</span><div class="hill hill-back"></div><div class="hill hill-front"></div><div class="station-sign">ひらがなえき <span>HIRAGANA STATION</span></div>${trainSvg()}<span class="flower flower-one">✳</span><span class="flower flower-two">✳</span></div></section>${rowSelection()}<section class="play-section"><div class="section-heading"><h2>どんな たびに する？</h2><span>すきな あそびを えらんでね</span></div><div class="mode-grid"><button class="mode-card find-card" data-action="start-find"><div class="mode-label">まずは ここから <span>01</span></div><div class="mode-visual"><span class="mini-letter">は</span><span class="dotted-arrow">··· →</span><span class="mini-letter selected">は</span><span class="mini-letter small">こ</span></div><h3>もじを みつけよう <span>↗</span></h3><p>「はやぶさ」の「は」は どれかな？</p><div class="card-footer"><span>おなじ もじを タッチ</span><b>あそぶ →</b></div></button><button class="mode-card connect-card" data-action="start-connect"><div class="mode-label">ひともじから <span>02</span></div><div class="mode-visual linked"><span class="mini-letter">こ</span><i></i><span class="mini-letter">ま</span><i></i><span class="mini-letter empty">？</span></div><h3>なまえを つなごう <span>↗</span></h3><p>もじの しゃりょうを つなげてみよう。</p><div class="card-footer"><span>ひともじ ずつで だいじょうぶ</span><b>あそぶ →</b></div></button><button class="mode-card trace-card" data-action="start-trace"><div class="mode-label">ゆびで かいてみよう <span>03</span></div><div class="mode-visual"><span>よ</span><span>··· 🚃</span></div><h3>なぞって はしろう <span>↗</span></h3><p>ゆびに あわせて、でんしゃが はしるよ。</p><div class="card-footer"><span>かけたら でんしゃが とうちゃく</span><b>あそぶ →</b></div></button></div></section><section class="ticket" aria-label="旅の記録"><div class="ticket-icon">♧</div><div><h3>きみの でんしゃずかん</h3><p>あそんだ でんしゃが、ずかんに ふえるよ。</p></div><div class="ticket-count"><b>${progress.stamps.length}</b> / ${TRAINS.length}<span>でんしゃ</span></div><button data-action="collection" aria-label="でんしゃずかんを見る">みる <span>→</span></button></section></main>`;
 }
 function prepare() {
   answered = false; wrong = ''; hint = '';
@@ -183,7 +224,7 @@ function answer(letter) {
   cancelAdvance(); advanceTimer = setTimeout(advance, 1000);
 }
 function finish() {
-  return `<main class="finish"><div class="finish-seal">★</div><div class="eyebrow">5えきの たび、とうちゃく！</div><h1>やったね、<br>すてきな うんてんしゅ！</h1><p>きょうは こんな でんしゃと あそんだよ。</p><div class="earned-trains">${journey.map(t => `<div><img src="${imagePath(t)}" alt=""/><b>${t.name}</b><span>✓</span></div>`).join('')}</div><div class="finish-actions"><button class="primary" data-action="home">えきに もどる ⌂</button><button class="secondary" data-action="collection">ずかんを みる →</button></div><button class="replay-reward" data-action="replay-reward">↻ ごほうびを もういっかい</button><p class="gentle-note">つづきは また こんどでも。おつかれさま！</p></main>`;
+  return `<main class="finish"><div class="finish-seal">★</div><div class="eyebrow">${mode === 'connect' ? '3つの なまえ、つながったね！' : '5えきの たび、とうちゃく！'}</div><h1>やったね、<br>すてきな うんてんしゅ！</h1><p>きょうは こんな でんしゃと あそんだよ。</p><div class="earned-trains">${journey.map(t => `<div><img src="${imagePath(t)}" alt=""/><b>${t.name}</b><span>✓</span></div>`).join('')}</div><div class="finish-actions">${mode === 'connect' ? '<button class="primary" data-action="start-connect">もういっかい つなごう →</button>' : ''}<button class="primary" data-action="home">えきに もどる ⌂</button><button class="secondary" data-action="collection">ずかんを みる →</button></div><button class="replay-reward" data-action="replay-reward">↻ ごほうびを もういっかい</button><p class="gentle-note">つづきは また こんどでも。おつかれさま！</p></main>`;
 }
 function collection() {
   return `<main class="library"><div class="page-heading"><div class="eyebrow">きみだけの でんしゃずかん</div><h1>すきな でんしゃ、みつけた？</h1><p>でんしゃを タッチして、なまえを きいてみよう。</p><span class="collection-total">あそんだ でんしゃ <b>${progress.stamps.length} / ${TRAINS.length}</b></span><button class="kana-library-link" data-action="kana-library">あいうえお から<br/>でんしゃの えを みる →</button></div><div class="train-grid">${TRAINS.map(t => `<button class="train-card" data-action="train" data-id="${t.id}"><div class="train-thumbnail"><img src="${imagePath(t)}" alt="" loading="lazy"/>${progress.stamps.includes(t.id) ? '<span class="stamp">✓ あそんだよ</span>' : ''}</div><div class="train-card-caption"><b>${t.name}</b><span>♪</span></div><p>${t.detail}</p></button>`).join('')}</div></main>`;
@@ -195,24 +236,33 @@ function kanaLibrary() {
 }
 function trainDetail() {
   const t = TRAINS.find(t => t.id === selectedTrain);
-  return `<main class="train-detail"><button class="quiet" data-action="collection">← ずかんに もどる</button><img class="detail-image" src="${imagePath(t)}" alt="${t.name}のイラスト"/><h1>${t.name}</h1><p>${t.detail}</p><div class="name-letters">${[...t.name].map(c => `<button data-action="kana" data-letter="${c}">${c}</button>`).join('')}</div><div class="finish-actions"><button class="secondary" data-action="train-sound">♪ なまえを きく</button><button class="primary" data-action="train-play" >この でんしゃの ぎょうで あそぶ →</button></div></main>`;
+  return `<main class="train-detail"><button class="quiet" data-action="collection">← ずかんに もどる</button><img class="detail-image" src="${imagePath(t)}" alt="${t.name}のイラスト"/><h1>${t.name}</h1><p>${t.detail}</p><div class="name-letters">${[...t.name].map(c => `<button data-action="kana" data-letter="${c}">${c}</button>`).join('')}</div><div class="finish-actions">${mode === 'connect' ? '<button class="primary" data-action="start-connect">もういっかい つなごう →</button>' : ''}<button class="secondary" data-action="train-sound">♪ なまえを きく</button><button class="primary" data-action="train-play" >この でんしゃの ぎょうで あそぶ →</button></div></main>`;
 }
 function alphabet() {
   return `<main class="alphabet"><div class="page-heading"><div class="eyebrow">もじの きっぷうりば</div><h1>あいうえおで あそぼう</h1><p>もじを タッチすると、こえが きこえるよ。</p></div><div class="kana-layout"><div class="kana-board">${KANA_ROWS.map((row, i) => `${i === 10 ? '<h2>てんてん・まるの もじ</h2>' : i === 15 ? '<h2>ちいさい もじ・のばす おと</h2>' : ''}<div class="kana-row">${[...row].map(c => c === ' ' ? '<span></span>' : `<button data-action="kana" data-letter="${c}">${c}</button>`).join('')}</div>`).join('')}</div><aside class="kana-preview"><div class="preview-character" id="preview-character">あ</div><p id="preview-caption" role="status">すきな もじを おしてね</p>${trainSvg()}</aside></div></main>`;
 }
 function settings() {
-  return `<main class="settings"><button class="quiet" data-action="home">← ホームへ</button><h1>おうちのかたへ</h1><p>「好きな電車の名前」を入り口に、文字の形と音に親しむアプリです。最初は一緒に「はやぶさの、は！」と声をかけてみてください。</p><fieldset><legend>あそびの むずかしさ</legend><label><input type="radio" name="level" value="match" ${progress.level === 'match' ? 'checked' : ''}/> <span><b>おなじ文字をみつける（はじめはこちら）</b><small>見本の文字を見ながら、2つの選択肢から選びます。</small></span></label><label><input type="radio" name="level" value="listen" ${progress.level === 'listen' ? 'checked' : ''}/> <span><b>音を聞いてみつける</b><small>大きな文字の見本を隠して3択に。電車名は手がかりとして残ります。ヒントはいつでも表示できます。</small></span></label></fieldset><h2>出題する行について</h2><p>ホームで「あ・か・さ・た・な・は・ま・や・ら・わ」の行を複数選べます。「あ→い→う→え→お」のように五十音順で出題します。1行だけなら毎回その行の最初から、複数の行や「ぜんぶ」なら完走するたびに続きの5文字へ進みます。や行・わ行だけのときは3文字を順に繰り返して5問にします。44文字は実在する列車・路線・鉄道会社の名前や愛称の先頭と一致します。「ぬ」は昔の沼尻軽便鉄道、「る」は昔の留萌本線です。先頭に使う名前を確認できない「を」「ん」だけ、言葉や名前の途中から出題します。図鑑から遊ぶと、その電車の先頭文字が属する行に切り替わり、行の最初から始まります。濁点・半濁点と小さい文字も元の行に含みます。名前の連結では、選んでいない行の文字をあらかじめ入れておきます。長音符は「ぜんぶ」のときだけ出題します。</p><h2>いろいろな電車と景色</h2><p>清音46文字すべてに2枚以上のクイズ画像があります。同じ文字でも、前回とは違う電車や景色が出てきます。図鑑は${TRAINS.length}種類。別の景色の絵でも、同じ電車のスタンプが付きます。</p><h2>指でなぞる練習</h2><p>「なぞって はしろう」では清音46文字に対応しています。番号の電車から書き順どおりに指を動かすと、電車が線の上を走ります。指を離しても続きから遊べます。1文字書き終えると、その文字の電車の絵が登場し、図鑑にも記録します。「おてほん」で今の線の進み方を確認できます。文字の開始時に電車名と文字を読み上げます。5文字書けたらごほうび電車が走ります。途中は自分のペースで次の文字へ進めます。</p><h2>短い旅を、好きなペースで</h2><p>1回5駅。正解から約1秒で自動的に次へ進みます。5問すべて正解すると、${REWARD_TRAINS.length}種類からごほうびの電車が走ります。虹の橋・駅でひとやすみ・星空急行の3つの演出があり、もう一度走らせると演出が変わります。名前の連結では5つの名前を完成させると登場します。制限時間も、減点もありません。1駅ごとに図鑑に記録するので、途中で終わっても大丈夫です。図鑑の電車は最初からすべて見ることができます。</p><h2>やさしい案内の声</h2><p>少しゆっくりした、日本語のAI合成音声を用意しました。電車の名前・問題・ほめ言葉を、同じ声で読み上げます。</p><button class="secondary" data-action="voice-sample">♪ こえを きいてみる</button><p>音が出ない場合は「おと あり」と端末の音量を確認してください。音声ファイルを読み込めない場合は端末の読み上げに切り替わります。小さい文字は「ちいさい、つ」のように案内します。</p>${installMarkup()}<h2>戻る操作について</h2><p>Androidの戻る操作やブラウザの戻るボタンで、ひとつ前の画面に戻れます。クイズから設定を開いて戻ると、同じ問題の続きから遊べます。ごほうび表示中は、ごほうびを閉じます。</p><h2>保存とプライバシー</h2><p>図鑑・設定はこのブラウザ内に保存します。アカウント登録や広告、アクセス解析はありません。履歴を削除すると記録も消えます。${savingFailed ? '<strong>現在、このブラウザでは記録を保存できません。</strong>' : ''}</p><p>完走した旅：${progress.trips}回 ／ あそんだ電車：${progress.stamps.length}種類</p><details><summary>記録をリセットする</summary><p>図鑑の「あそんだよ」と完走回数を消します。設定は残ります。</p><button class="reset-button" data-action="reset">記録を消す</button></details></main>`;
+  return `<main class="settings"><button class="quiet" data-action="home">← ホームへ</button><h1>おうちのかたへ</h1><p>「好きな電車の名前」を入り口に、文字の形と音に親しむアプリです。最初は一緒に「はやぶさの、は！」と声をかけてみてください。</p><fieldset><legend>あそびの むずかしさ</legend><label><input type="radio" name="level" value="match" ${progress.level === 'match' ? 'checked' : ''}/> <span><b>おなじ文字をみつける（はじめはこちら）</b><small>見本の文字を見ながら、2つの選択肢から選びます。</small></span></label><label><input type="radio" name="level" value="listen" ${progress.level === 'listen' ? 'checked' : ''}/> <span><b>音を聞いてみつける</b><small>大きな文字の見本を隠して3択に。電車名は手がかりとして残ります。ヒントはいつでも表示できます。</small></span></label></fieldset><h2>出題する行について</h2><p>ホームで「あ・か・さ・た・な・は・ま・や・ら・わ」の行を複数選べます。「あ→い→う→え→お」のように五十音順で出題します。1行だけなら毎回その行の最初から、複数の行や「ぜんぶ」なら完走するたびに続きの5文字へ進みます。や行・わ行だけのときは3文字を順に繰り返して5問にします。44文字は実在する列車・路線・鉄道会社の名前や愛称の先頭と一致します。「ぬ」は昔の沼尻軽便鉄道、「る」は昔の留萌本線です。先頭に使う名前を確認できない「を」「ん」だけ、言葉や名前の途中から出題します。図鑑から遊ぶと、その電車の先頭文字が属する行に切り替わり、行の最初から始まります。濁点・半濁点と小さい文字も元の行に含みます。「なまえをつなごう」では行の選択に関係なく、好きな電車から遊べます。初回のこまちは正しい文字を一つずつ表示し、3車両を連結します。他の電車は最後の一文字から始め、次から名前全体を音声とお手本でつなぎます。</p><h2>いろいろな電車と景色</h2><p>清音46文字すべてに2枚以上のクイズ画像があります。同じ文字でも、前回とは違う電車や景色が出てきます。図鑑は${TRAINS.length}種類。別の景色の絵でも、同じ電車のスタンプが付きます。</p><h2>指でなぞる練習</h2><p>「なぞって はしろう」では清音46文字に対応しています。番号の電車から書き順どおりに指を動かすと、電車が線の上を走ります。指を離しても続きから遊べます。1文字書き終えると、その文字の電車の絵が登場し、図鑑にも記録します。「おてほん」で今の線の進み方を確認できます。文字の開始時に電車名と文字を読み上げます。5文字書けたらごほうび電車が走ります。途中は自分のペースで次の文字へ進めます。</p><h2>短い旅を、好きなペースで</h2><p>1回5駅。正解から約1秒で自動的に次へ進みます。5問すべて正解すると、${REWARD_TRAINS.length}種類からごほうびの電車が走ります。虹の橋・駅でひとやすみ・星空急行の3つの演出があり、もう一度走らせると演出が変わります。「なまえをつなごう」では3つの名前を完成させると、ごほうび電車が走ります。二問目からは短い名前を出題します。電車選びや車庫を開いても「つづきから」で戻れます。制限時間も、減点もありません。1駅ごとに図鑑に記録するので、途中で終わっても大丈夫です。図鑑の電車は最初からすべて見ることができます。</p><h2>やさしい案内の声</h2><p>少しゆっくりした、日本語のAI合成音声を用意しました。電車の名前・問題・ほめ言葉を、同じ声で読み上げます。</p><button class="secondary" data-action="voice-sample">♪ こえを きいてみる</button><p>音が出ない場合は「おと あり」と端末の音量を確認してください。音声ファイルを読み込めない場合は端末の読み上げに切り替わります。小さい文字は「ちいさい、つ」のように案内します。</p>${installMarkup()}<h2>戻る操作について</h2><p>Androidの戻る操作やブラウザの戻るボタンで、ひとつ前の画面に戻れます。クイズから設定を開いて戻ると、同じ問題の続きから遊べます。ごほうび表示中は、ごほうびを閉じます。</p><h2>保存とプライバシー</h2><p>図鑑・設定はこのブラウザ内に保存します。アカウント登録や広告、アクセス解析はありません。履歴を削除すると記録も消えます。${savingFailed ? '<strong>現在、このブラウザでは記録を保存できません。</strong>' : ''}</p><p>完走した旅：${progress.trips}回 ／ あそんだ電車：${progress.stamps.length}種類</p><details><summary>記録をリセットする</summary><p>図鑑の「あそんだよ」と完走回数を消します。設定は残ります。</p><button class="reset-button" data-action="reset">記録を消す</button></details></main>`;
 }
 function render() {
   disposeTrace?.(); disposeTrace = undefined;
+  disposeConnect?.(); disposeConnect = undefined;
   recordHistory();
-  const views = { home, game, finish, collection, 'kana-library': kanaLibrary, train: trainDetail, alphabet, settings, trace: () => traceMarkup(traceState) };
-  root.innerHTML = header() + views[screen]() + (!['game', 'trace'].includes(screen) ? nav() : '') + `<footer>ひらがな でんしゃ <span>きょうも、すきから はじめよう。</span></footer>`;
+  const views = { home, game, finish, collection, 'kana-library': kanaLibrary, train: trainDetail, alphabet, settings, trace: () => traceMarkup(traceState), connect: () => connectMarkup(connectState, connectGarage, connectSavingFailed) };
+  root.innerHTML = header() + views[screen]() + (!['game', 'trace', 'connect'].includes(screen) ? nav() : '') + `<footer>ひらがな でんしゃ <span>きょうも、すきから はじめよう。</span></footer>`;
   if (screen === 'trace') disposeTrace = mountTrace(root, traceState, { change: recordHistory, complete: traceCompleted, speak, choose: chooseTrace, reset: () => { if (traceState.rewardPending) return; traceState = { ...traceState, stroke: 0, index: 0, complete: false }; render(); } });
+  if (screen === 'connect') disposeConnect = mountConnect(root, connectState, {
+    change: render, record: recordHistory, speak, sound: progress.sound, choose: chooseConnect,
+    credit: saveConnectTrain,
+    next: nextConnect,
+    pick: () => browseConnect('pick'),
+    garage: () => browseConnect('garage'),
+    resume: () => { if (!connectState?.resume) return; stopVoice(); connectState = connectState.resume; render(); },
+  });
 }
 function snapshot() {
   return { app: HISTORY_APP, screen, trail, rewardOpen, mode, journey, gameRows, gameOffset, station, letterIndex,
-    answered, selectedTrain, selectedGalleryKana, choices, hint, wrong, lastReward, traceState };
+    answered, selectedTrain, selectedGalleryKana, choices, hint, wrong, lastReward, traceState, connectState };
 }
 function recordHistory() {
   history.replaceState(snapshot(), '', rewardOpen ? '#reward' : screen === 'home' ? location.pathname + location.search : '#' + screen);
@@ -242,6 +292,8 @@ function restoreHistory(state) {
   ({ screen, trail, rewardOpen, mode, journey, gameRows, gameOffset, station, letterIndex, answered,
     selectedTrain, selectedGalleryKana = 'あ', choices, hint, wrong, lastReward } = state);
   traceState = state.traceState || null;
+  // The current connection journey survives visiting home or other modes.
+  connectState = screen === 'connect' ? (state.connectState || connectState) : (connectState || state.connectState || null);
   if (screen === 'trace' && !traceState) screen = 'home';
   if (screen === 'game') {
     const count = progress.level === 'match' ? 2 : 3;
@@ -272,7 +324,11 @@ root.addEventListener('click', e => {
   }
   if (action === 'start-trace') startTrace();
   if (action === 'start-find') start('find');
-  if (action === 'start-connect') start('connect');
+  if (action === 'start-connect') {
+    if (connectState?.finished) connectState = null;
+    else if (connectState?.resume) connectState = connectState.resume;
+    navigate('connect');
+  }
   if (action === 'listen') { if (!progress.sound) { progress.sound = true; save(); render(); } prompt(); }
   if (action === 'answer') answer(button.dataset.letter);
   if (action === 'replay-reward' && screen === 'finish' && lastReward) reward(true);
@@ -291,7 +347,12 @@ root.addEventListener('click', e => {
       document.querySelector('#preview-caption').textContent = train ? `${train.name} の「${c}」だね！` : `「${c}」だね！`;
     }
   }
-  if (action === 'reset' && window.confirm('図鑑の記録と完走回数を消しますか？')) { progress.stamps = []; progress.trips = 0; progress.journeyOffset = 0; progress.recentImages = {}; progress.imageDecks = {}; save(); render(); }
+  if (action === 'reset' && window.confirm('図鑑・車庫の記録と完走回数を消しますか？')) {
+    progress.stamps = []; progress.trips = 0; progress.journeyOffset = 0; progress.recentImages = {}; progress.imageDecks = {};
+    connectGarage = []; connectState = null;
+    try { storage.removeItem('train-connect-garage-v1'); } catch { connectSavingFailed = true; }
+    save(); render();
+  }
 });
 root.addEventListener('change', e => {
   if (e.target.name === 'level') { progress.level = e.target.value; save(); }

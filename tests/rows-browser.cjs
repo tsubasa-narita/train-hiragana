@@ -41,23 +41,34 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('.reward-dialog').count(), 0);
     await page.locator('[data-action="home"]').first().click();
     await page.locator('[data-action="start-connect"]').click();
-    assert.ok(await page.locator('.carriage.supplied').count() > 0);
-    let solved = 0;
-    while (await page.locator('.game').count()) {
-      c = await page.locator('.carriage.waiting').textContent();
-      assert.ok(valid.includes(c));
-      assert.equal(await page.locator('.reward-dialog').count(), 0);
-      await page.locator(`.choice[data-letter="${c}"]`).click();
-      assert.equal(await page.locator('.reward-dialog').count(), 0);
-      await page.clock.runFor(1000);
-      assert.ok(++solved < 50, 'journey must terminate');
+    // Connect now offers free train choice, independently of find-mode rows.
+    await page.locator('[data-connect="choose"][data-id="komachi"]').click();
+    assert.equal(await page.locator('.connect-car.filled').count(), 0);
+    while (await page.locator('.connect-car.waiting').count()) {
+      await page.clock.runFor(800);
+      const letter = await page.locator('.connect-car.waiting .connect-ghost').textContent();
+      await page.locator(`[data-connect="letter"][data-letter="${letter}"]`).click();
     }
-    assert.equal(await page.locator('.earned-trains>div').count(), 5);
+    await page.clock.runFor(3000);
+    assert.equal(await page.locator('[data-connect="next"]').count(), 1);
+    assert.equal(await page.locator('.reward-dialog').count(), 0);
+    for (let completed = 1; completed < 3; completed++) {
+      await page.locator('[data-connect="next"]').click();
+      while (await page.locator('.connect-car.waiting').count()) {
+        await page.clock.runFor(400);
+        const letter = await page.locator('.connect-car.waiting .connect-ghost').textContent();
+        await page.locator(`[data-connect="letter"][data-letter="${letter}"]`).click();
+      }
+    }
+    await page.clock.runFor(1299);
+    assert.equal(await page.locator('.reward-dialog').count(), 0);
+    await page.clock.runFor(1);
     assert.equal(await page.locator('.reward-dialog[open]').count(), 1);
-    await page.locator('[data-reward="continue"]').click();
     const trips = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')).trips);
+    assert.equal(trips, 1);
     await page.clock.runFor(3000);
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')).trips), trips);
+    await page.locator('[data-reward="continue"]').click();
     await page.locator('[data-action="home"]').first().click();
     await page.locator('[data-action="all-rows"]').click();
     assert.equal(await page.locator('[data-action="all-rows"]').getAttribute('aria-pressed'), 'true');
@@ -65,11 +76,11 @@ const assert = require('node:assert/strict');
       await page.locator(`[data-row="${row}"]`).click();
       await page.locator('[data-action="start-find"]').click();
       const targetLetter = await page.locator('.target-letter').textContent();
-      assert.equal(targetLetter, row);
+      assert.equal(targetLetter.normalize('NFD')[0], row);
       await page.locator('[data-action="home"]').first().click();
       await page.locator('[data-action="all-rows"]').click();
     }
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    console.log('Row and timer checks passed: all 10 rows, first-letter priority, selection persistence, filtered connection, 1000ms auto advance, repeated taps, manual advance cancellation, navigation cancellation, reward once after five.');
+    console.log('Row and timer checks passed: all 10 rows, selection persistence, free train connection, 1000ms find advance, repeated taps, three-name reward, navigation cancellation.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1,0 +1,76 @@
+
+.connect-play{padding:0 24px 36px;max-width:1080px}
+.connect-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;font-size:13px;font-weight:700}
+.connect-picker,.connect-workshop{background:#fffdf5;border:1px solid #dce5d4;border-radius:28px;padding:26px}
+.connect-play h1{font-size:clamp(22px,3vw,32px);line-height:1.4;overflow-wrap:anywhere}
+.connect-picker>p{margin:12px 0 24px;color:#647764}
+.connect-trains{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0}
+.connect-train{min-width:0;border:2px solid #e2e9da;border-radius:20px;background:#fff;padding:10px;text-align:left}
+.connect-train:hover,.connect-train:focus-visible{border-color:#369c80;box-shadow:0 5px 0 #e0ecdc}
+.connect-train img{width:100%;height:125px;object-fit:contain;border-radius:12px}
+.connect-train b{display:block;overflow-wrap:anywhere;font-size:17px;margin-top:8px}
+.connect-train>span{display:block;color:#66816b;font-size:12px;margin:6px 0}
+.connect-more summary{padding:18px;background:#edf3e6;border-radius:16px;cursor:pointer;font-weight:700;min-height:54px}
+.connect-empty{padding:30px;text-align:center;font-size:60px}.connect-empty p{font-size:16px}
+.connect-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0}
+.connect-heading h1{min-width:0}.connect-heading .listen-button{flex-shrink:0;min-height:44px}
+.connect-progress{display:flex;align-items:center;gap:9px;font-size:12px;color:#627761;font-weight:700}
+.connect-ticket{border:2px solid #d6dfcb;background:#f4f5eb;border-radius:9px;width:34px;height:30px;display:grid;place-items:center;color:#8b987f}
+.connect-ticket.done{background:#278165;border-color:#278165;color:white}
+.connect-progress>span:last-child{margin-left:5px}
+.connect-showcase{height:210px;border-radius:20px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 80%,#dde6df,#f1f5ec 65%);border-bottom:3px solid #b6c8b6}
+.connect-showcase img{width:85%;height:100%;object-fit:contain}
+.connect-showcase.photo img{width:100%;border-radius:14px;object-fit:contain}
+.connect-assembly{height:240px;position:relative;border-radius:20px;overflow:hidden;isolation:isolate;background:linear-gradient(180deg,#142c39,#2e4553 58%,#293c47 59%,#102934);border:1px solid #354d58}
+.assembly-lights{position:absolute;inset:0;background:radial-gradient(ellipse at 55% 45%,#9fc8d922,transparent 70%),repeating-linear-gradient(90deg,transparent 0 155px,#86a3b212 155px 158px)}
+.assembly-sign{position:absolute;left:18px;top:14px;color:#f5f6ee;font-size:18px;font-weight:700;letter-spacing:.1em}
+.assembly-sign small{color:#98b2bf;font-size:11px;margin-left:8px}
+.assembly-belt{position:absolute;top:75px;left:0;display:flex;width:840px;transform-origin:left bottom}
+.assembly-car{position:relative;flex:0 0 280px;width:280px;height:100px}
+.komachi-sprite{width:100%;height:84px;background-image:url('../assets/connect/komachi-carriages.png');background-size:100% 300%;background-repeat:no-repeat;filter:drop-shadow(0 5px 3px #06131d99)}
+.sprite-0{background-position:0 0}.sprite-1{background-position:0 50%}.sprite-2{background-position:0 100%}
+.assembly-car.missing{opacity:.12;filter:grayscale(1)}
+.assembly-letter{position:absolute;bottom:-12px;left:45%;font-size:18px;color:#fff;background:#315267;border:1px solid #87b6c4;border-radius:8px;min-width:32px;text-align:center;font-weight:700}
+.assembly-car.coupled .assembly-letter{background:#bf3f54;border-color:#ed93a1}
+.assembly-car.incoming{animation:assembly-couple .72s cubic-bezier(.2,.7,.3,1) both}
+.assembly-coupler{position:absolute;left:-4px;top:59px;width:8px;height:4px;background:#d5dfe3}
+.assembly-car.incoming .assembly-coupler{animation:coupler-glint .85s ease-out both}
+.assembly-rail{position:absolute;left:0;right:0;top:var(--rail-top,162px);height:7px;border-top:2px solid #a7bdc9;border-bottom:2px solid #4d6878;background:repeating-linear-gradient(90deg,#152d3d 0 24px,#688394 24px 28px);z-index:-1}
+.assembled .assembly-belt{animation:assembly-tour 8s ease-in-out infinite alternate}
+.assembly-caption{position:absolute;bottom:14px;left:12px;right:12px;text-align:center;color:#c1d6dd;font-size:12px}
+.assembled .assembly-caption{color:#f6d783}.assembled .assembly-sign:after{content:' ✓';color:#f6d783}
+.connect-track{position:relative;display:flex;gap:13px;overflow-x:auto;padding:19px 6px 19px;scroll-padding:20px;min-height:116px;align-items:center}
+.connect-car{flex:0 0 72px;height:68px;border:3px solid #e0e5d5;border-radius:14px 14px 8px 8px;background:#f0f2e8;position:relative;font-size:42px;font-weight:700;line-height:1;box-shadow:0 5px 0 #c9d3bf}
+.connect-car:before,.connect-car:after{content:'';position:absolute;width:15px;height:15px;background:#506457;border:3px solid #dce3d3;border-radius:50%;bottom:-13px;left:9px}
+.connect-car:after{left:auto;right:9px}.connect-car i{position:absolute;right:-16px;top:44px;width:14px;height:6px;background:#9ba68e}.connect-car:last-child i{display:none}
+.connect-car.filled{background:#e0f0e1;border-color:var(--connect-color,#238d79);color:#204d40}
+.connect-car.waiting{border:3px dashed #388b70;background:#fff8dc}.connect-ghost{color:#738975;opacity:.7}
+.connect-car.just-joined{animation:connect-click .35s ease-out}
+.connect-instruction{text-align:center;font-size:21px;font-weight:700;margin:0 0 14px}
+.connect-tray{display:flex;justify-content:center;gap:20px;min-height:90px}
+.connect-letter{touch-action:none;position:relative;z-index:5;border:2px solid #b8d5bc;background:#fff;border-radius:20px;min-width:82px;height:82px;font-size:48px;font-weight:700;box-shadow:0 6px 0 #cbdcc4;user-select:none}
+.connect-letter.suggested{background:#fff2bd;border-color:#bc913a}
+.connect-letter.dragging{z-index:20;box-shadow:0 12px 20px #294c4033}
+.connect-tools{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:16px}
+.connect-tools span{color:#6f806b;font-size:12px}.connect-tools button{min-height:48px}
+.connect-ready{text-align:center}.connect-ready>p{font-weight:700;margin:4px 0 16px}
+.connect-next{min-height:58px;min-width:230px;font-size:20px!important}
+.connect-save{font-size:13px;padding:15px;background:#fff2d6;border-radius:10px;margin-top:20px}
+.connect-play .primary,.connect-play .secondary{white-space:normal}
+@keyframes connect-click{0%{transform:translateX(18px) rotate(6deg)}65%{transform:translateX(-3px)}100%{transform:none}}
+@keyframes assembly-couple{0%{transform:translateX(500px);opacity:0}20%{opacity:1}82%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+@keyframes coupler-glint{0%,75%{box-shadow:none}85%{box-shadow:0 0 15px 7px #ffedac;background:#fff}100%{box-shadow:none}}
+@keyframes assembly-tour{0%,15%{transform:translateX(var(--train-start)) scale(var(--train-scale))}85%,100%{transform:translateX(var(--train-end)) scale(var(--train-scale))}}
+@media(max-width:650px){
+ .connect-play{padding:0 12px 24px}.connect-picker,.connect-workshop{padding:15px;border-radius:22px}
+ .connect-trains{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.connect-train img{height:100px}.connect-train b{font-size:15px}
+ .connect-top{font-size:11px;margin-bottom:6px}.connect-top .quiet{font-size:11px}
+ .connect-heading{display:block;margin:12px 0}.connect-heading h1{font-size:22px}
+ .connect-heading .listen-button{display:block;margin:8px 0 0 auto;font-size:12px;min-height:38px;padding:7px 12px}
+ .connect-assembly{height:205px}.assembly-belt{top:55px}.assembly-caption{font-size:10px}
+ .connect-showcase{height:165px}.connect-car{flex-basis:64px;height:60px;font-size:37px}.connect-track{min-height:103px;padding-top:16px;padding-bottom:20px}
+ .connect-letter{min-width:70px;height:74px;font-size:43px}.connect-tray{gap:14px;min-height:82px}
+ .connect-instruction{font-size:18px;margin-bottom:12px}.connect-tools{gap:10px;margin-top:12px}.connect-tools span{max-width:100px;font-size:10px}
+ .connect-next{min-width:0;width:100%;font-size:18px!important}.connect-ready p{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){.connect-play *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
