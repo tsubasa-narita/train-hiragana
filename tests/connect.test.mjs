@@ -27,8 +27,8 @@ test('first supported train builds guided cars; other first trains need one lett
   assert.equal(next.phase, 'ready');
 });
 
-test('all nine dedicated trains have full guided assembly and reusable middle cars', () => {
-  assert.equal(Object.keys(CONNECT_MODELS).length, 9);
+test('all nineteen dedicated trains have full guided assembly and reusable middle cars', () => {
+  assert.equal(Object.keys(CONNECT_MODELS).length, 19);
   for (const [id, model] of Object.entries(CONNECT_MODELS)) {
     const train = TRAINS.find(t => t.id === id), state = newConnect(train, true);
     assert.equal(state.index, 0);

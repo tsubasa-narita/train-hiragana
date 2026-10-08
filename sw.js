@@ -1,5 +1,5 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v14';
+const CACHE = PREFIX + 'v15';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
@@ -7,6 +7,7 @@ const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/data.js',
   'src/trace.js', 'src/trace-engine.js', 'src/kana-strokes.js', 'src/trace.css',
   'src/connect.js', 'src/connect-engine.js', 'src/connect.css',
   'src/connect-assets.js',
+  'src/announcement-manifest.js',
   'assets/connect/komachi-carriages.png',
   'src/reward.js', 'src/reward-trains.js', 'src/reward-models.js', 'src/reward-model-assets.js', 'src/reward-scene.js', 'src/reward.css', 'src/voice.js', 'src/voice-lines.js', 'src/voice-manifest.js', 'src/pwa.js',
   'assets/icon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png'];

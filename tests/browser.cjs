@@ -70,6 +70,7 @@ const fs = require('node:fs');
       await page.locator(`[data-connect="letter"][data-letter="${letter}"]`).click();
     }
   }
+  await page.locator('[data-connect="next"]').click();
   await page.locator('.reward-dialog[open]').waitFor();
   await dismissReward();
   assert.equal(await page.locator('.earned-trains>div').count(), 3);

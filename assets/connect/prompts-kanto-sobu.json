@@ -1,0 +1,7 @@
+{
+  "id": "sobu",
+  "file": "assets/connect/sobu-carriages.png",
+  "prompt": "Use case: stylized-concept. Production transparent sprite atlas for a Japanese train coupling game. A single 1536x1024 landscape RGBA image containing exactly THREE separate railway carriages in three equal-height horizontal rows: top front cab car facing LEFT; middle ordinary passenger car with flat coupling ends, NO cab; bottom rear cab car facing RIGHT. All cars strict side elevation orthographic camera, no perspective, no visible front face, same scale and wheel baseline within each row. Fill almost entire row width with small equal margins, leave transparent gap between rows. Premium polished photorealistic 3D railway model rendering, finely detailed bogies, wheels, suspension, couplers, metallic roof air conditioners, slightly reflective brushed stainless steel body, dark tinted passenger windows. Soft studio lighting. Subject: JR East E231-500 Chuo-Sobu Local Line commuter train, silver stainless body with vivid YELLOW horizontal stripe below windows, yellow accented nearly flat squared short commuter cab and dark cab windshield, four double sliding doors per carriage. Top cab on LEFT, bottom cab on RIGHT. Genuine alpha transparency outside the three carriages; no background, no tracks, no ground shadows, no scene, no logos, no letters, no people, no watermark. Do not make a diagram, cartoon or flat vector; match realistic glossy 3D premium train toy photography.",
+  "tool": "built-in image_gen",
+  "date": "2026-10-08"
+}

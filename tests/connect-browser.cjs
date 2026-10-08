@@ -12,7 +12,7 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173/';
   page.on('pageerror', error => errors.push(error.message));
   const state = () => page.evaluate(() => history.state.connectState);
   const click = action => page.locator('[data-connect="' + action + '"]').first().click();
-  const waitInput = () => page.waitForFunction(() => Date.now() >= (history.state.connectState.lockedUntil || 0));
+  const waitInput = () => page.waitForFunction(() => Date.now() >= (history.state.connectState.lockedUntil || 0) && !document.querySelector('.connect-letter')?.disabled);
   const complete = async () => {
    while ((await state()).phase === 'build') {
     await waitInput();
@@ -45,6 +45,7 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173/';
   await page.locator('[data-action="settings"]').click();
   await page.goBack();
   assert.equal((await state()).index, 2);
+  assert.ok((await state()).lockedUntil - Date.now() <= 1800, 'returning never preserves the temporary 20-second audio lock');
   await complete();
   assert.equal((await state()).completedCards.length, 1);
   await page.waitForTimeout(1400);
@@ -74,6 +75,11 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173/';
   assert.equal(await page.locator('.reward-dialog').count(), 0);
   await click('next');
   await complete();
+  assert.equal(await page.locator('.reward-dialog').count(), 0);
+  assert.equal(await page.locator('.connect-next').isDisabled(), true);
+  await page.waitForTimeout(2000);
+  assert.equal(await page.locator('.reward-dialog').count(), 0);
+  await click('next');
   await page.locator('.reward-dialog').waitFor();
   assert.equal(await page.locator('.earned-trains>div').count(), 3);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')).trips), 1);

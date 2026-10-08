@@ -55,14 +55,15 @@ const assert = require('node:assert/strict');
     for (let completed = 1; completed < 3; completed++) {
       await page.locator('[data-connect="next"]').click();
       while (await page.locator('.connect-car.waiting').count()) {
-        await page.clock.runFor(400);
+        await page.clock.runFor(800);
         const letter = await page.locator('.connect-car.waiting .connect-ghost').textContent();
         await page.locator(`[data-connect="letter"][data-letter="${letter}"]`).click();
       }
+      await page.clock.runFor(2000);
     }
     await page.clock.runFor(1299);
     assert.equal(await page.locator('.reward-dialog').count(), 0);
-    await page.clock.runFor(1);
+    await page.locator('[data-connect="next"]').click();
     assert.equal(await page.locator('.reward-dialog[open]').count(), 1);
     const trips = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')).trips);
     assert.equal(trips, 1);

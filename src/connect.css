@@ -27,7 +27,7 @@
 .assembly-sign small{color:#98b2bf;font-size:11px;margin-left:8px}
 .assembly-belt{position:absolute;top:75px;left:0;display:flex;width:840px;transform-origin:left bottom}
 .assembly-car{position:relative;flex:0 0 280px;width:280px;height:100px}
-.train-sprite{width:100%;height:84px;background-size:100% 300%;background-repeat:no-repeat;filter:drop-shadow(0 5px 3px #06131d99)}
+.train-sprite{position:absolute;bottom:16px;width:100%;height:84px;background-size:100% 300%;background-repeat:no-repeat;filter:drop-shadow(0 5px 3px #06131d99)}
 .sprite-0{background-position:0 0}.sprite-1{background-position:0 50%}.sprite-2{background-position:0 100%}
 .assembly-car.missing{opacity:.12;filter:grayscale(1)}
 .assembly-letter{position:absolute;bottom:-12px;left:45%;font-size:18px;color:#fff;background:#315267;border:1px solid #87b6c4;border-radius:8px;min-width:32px;text-align:center;font-weight:700}

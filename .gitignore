@@ -2,4 +2,9 @@ node_modules/
 .tools/
 dist/
 test-results/
+__pycache__/
+*.pyc
+*.tmp
+assets/voice/announcements/
+assets/voice/announcements-lite/*.wav
 .DS_Store
