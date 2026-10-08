@@ -7,6 +7,7 @@ export const TRAINS = [
   { id: 'nozomi', name: 'のぞみ', image: 'n700s_nozomi.png', color: '#467ea6', detail: 'しろい しんかんせん' },
   { id: 'tsubasa', name: 'つばさ', image: 'e8_tsubasa.png', color: '#9466a0', detail: 'むらさきいろの おはな' },
   { id: 'yamanote', name: 'やまのてせん', image: 'yamanote.jpg', color: '#76a247', detail: 'まちを ぐるぐる はしるよ' },
+  { id: 'shonan-shinjuku', name: 'しょうなんしんじゅくらいん', image: 'shonan-shinjuku.png', color: '#55a068', detail: 'オレンジと みどりの おびで、しんじゅくを はしるよ' },
   { id: 'enoden', name: 'えのでん', image: 'enoden.png', color: '#477f61', detail: 'うみの そばを はしるよ' },
   { id: 'tsubame', name: 'つばめ', image: 'kyushu_800_tsubame.png', color: '#b74742', detail: 'しろと あかの しんかんせん' },
   { id: 'azusa', name: 'あずさ', image: 'azusa.webp', color: '#8966a6', detail: 'むらさきの とっきゅう' },

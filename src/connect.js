@@ -1,12 +1,15 @@
+import { CONNECT_MODELS, carriageRow, spriteStyle } from './connect-assets.js';
 import { TRAINS } from './data.js';
 import { REWARD_TRAINS } from './reward.js';
 import { connectChoices, connectLetter } from './connect-engine.js';
 const cutoutFor = t => REWARD_TRAINS.find(r => r.id === t.id);
 const picture = t => cutoutFor(t) ? `./assets/rewards/${cutoutFor(t).image}` : `./assets/trains/${t.image}`;
-const card = t => `<button class="connect-train" data-connect="choose" data-id="${t.id}"><img src="${picture(t)}" alt="" loading="lazy"><b>${t.name}</b><span>つなぐ →</span></button>`;
+const card = t => `<button class="connect-train" data-connect="choose" data-id="${t.id}">${CONNECT_MODELS[t.id] ? `<div class="connect-model-preview" style="${spriteStyle(CONNECT_MODELS[t.id], 0)}" role="img" aria-label="${t.name}"></div>` : `<img src="${picture(t)}" alt="" loading="lazy">`}<b>${t.name}</b><span>つなぐ →</span></button>`;
 function assembly(train, state) {
-  if (train.id !== 'komachi') return `<div class="connect-showcase ${cutoutFor(train) ? 'cutout' : 'photo'}"><img src="${picture(train)}" alt="${train.name}"></div>`;
-  return `<div class="connect-assembly ${state.phase === 'ready' ? 'assembled' : ''}" aria-label="こまちの しゃりょうが ${state.index}りょう つながったよ"><div class="assembly-lights" aria-hidden="true"></div><span class="assembly-sign">こまち <small>E6</small></span><div class="assembly-belt">${[...train.name].map((letter, i) => `<div class="assembly-car ${i < state.index ? 'coupled' : 'missing'} ${state.joined && i === state.index - 1 ? 'incoming' : ''}" style="--car:${i}"><div class="komachi-sprite sprite-${i}" role="img" aria-label="${i + 1}りょうめ"></div><span class="assembly-letter">${i < state.index ? letter : '・'}</span>${i && i < state.index ? '<i class="assembly-coupler"></i>' : ''}</div>`).join('')}</div><div class="assembly-rail" aria-hidden="true"></div><span class="assembly-caption" aria-hidden="true">${state.phase === 'ready' ? 'こ・ま・ち　れんけつ かんりょう！' : 'もじを のせると、しゃりょうが つながるよ'}</span></div>`;
+  const model = CONNECT_MODELS[train.id];
+  if (!model) return `<div class="connect-showcase ${cutoutFor(train) ? 'cutout' : 'photo'}"><img src="${picture(train)}" alt="${train.name}"></div>`;
+  const letters = [...train.name];
+  return `<div class="connect-assembly ${state.phase === 'ready' ? 'assembled' : ''}" aria-label="${train.name}の しゃりょうが ${state.index}りょう つながったよ"><div class="assembly-lights" aria-hidden="true"></div><span class="assembly-sign">${train.name} <small>${model.series}</small></span><div class="assembly-belt">${letters.map((letter, i) => `<div class="assembly-car ${i < state.index ? 'coupled' : 'missing'} ${state.joined && i === state.index - 1 ? 'incoming' : ''}" style="--car:${i}"><div class="train-sprite sprite-${carriageRow(i, letters.length)}" style="${spriteStyle(model, carriageRow(i, letters.length))}" role="img" aria-label="${i + 1}りょうめ"></div><span class="assembly-letter">${i < state.index ? letter : '・'}</span>${i && i < state.index ? '<i class="assembly-coupler"></i>' : ''}</div>`).join('')}</div><div class="assembly-rail" aria-hidden="true"></div><span class="assembly-caption" aria-hidden="true">${state.phase === 'ready' ? 'れんけつ かんりょう！' : 'もじを のせると、しゃりょうが つながるよ'}</span></div>`;
 }
 export function connectMarkup(state, garage, storageFailed) {
   const train = TRAINS.find(t => t.id === state?.trainId), completed = state?.completedCards?.length || 0;
@@ -14,8 +17,8 @@ export function connectMarkup(state, garage, storageFailed) {
   const warning = storageFailed ? '<p class="connect-save" role="status">きろくを ほぞんできないけれど、このまま あそべるよ。</p>' : '';
   if (!state || ['garage', 'pick'].includes(state.phase) || !train) {
     const inGarage = state?.phase === 'garage', collected = TRAINS.filter(t => garage.includes(t.id));
-    const featured = [TRAINS.find(t => t.id === 'komachi'), ...TRAINS.slice(0, 8).filter(t => t.id !== 'komachi')];
-    return `<main class="connect-play">${top}<section class="connect-picker"><span class="eyebrow">${inGarage ? 'きみだけの しゃこ' : 'ひともじずつ、カチャン！'}</span><h1>${inGarage ? 'きみの でんしゃ' : 'どの でんしゃから はじめる？'}</h1><p>${inGarage ? 'でんしゃを タッチして、また つなごう。' : 'なまえを 3つ つなぐと、ごほうびの でんしゃ！'}</p>${state?.resume ? '<button class="primary" data-connect="resume">▶ つづきから</button>' : ''}${inGarage && !collected.length ? '<div class="connect-empty">🚉<p>つくった でんしゃが ここに ならぶよ。</p></div>' : ''}<div class="connect-trains">${(inGarage ? collected : featured).map(card).join('')}</div>${inGarage ? '<button class="secondary" data-connect="pick">ほかの でんしゃを えらぶ</button>' : `<details class="connect-more"><summary>ほかの でんしゃも みる</summary><div class="connect-trains">${TRAINS.slice(8).map(card).join('')}</div></details>`}${warning}</section></main>`;
+    const featured = Object.keys(CONNECT_MODELS).map(id => TRAINS.find(t => t.id === id)).filter(Boolean);
+    return `<main class="connect-play">${top}<section class="connect-picker"><span class="eyebrow">${inGarage ? 'きみだけの しゃこ' : 'ひともじずつ、カチャン！'}</span><h1>${inGarage ? 'きみの でんしゃ' : 'どの でんしゃから はじめる？'}</h1><p>${inGarage ? 'でんしゃを タッチして、また つなごう。' : 'なまえを 3つ つなぐと、ごほうびの でんしゃ！'}</p>${state?.resume ? '<button class="primary" data-connect="resume">▶ つづきから</button>' : ''}${inGarage && !collected.length ? '<div class="connect-empty">🚉<p>つくった でんしゃが ここに ならぶよ。</p></div>' : ''}<div class="connect-trains">${(inGarage ? collected : featured).map(card).join('')}</div>${inGarage ? '<button class="secondary" data-connect="pick">ほかの でんしゃを えらぶ</button>' : `<details class="connect-more"><summary>ほかの でんしゃも みる</summary><div class="connect-trains">${TRAINS.filter(t => !CONNECT_MODELS[t.id]).map(card).join('')}</div></details>`}${warning}</section></main>`;
   }
   const letters = [...train.name], building = state.phase === 'build';
   const cars = `<div class="connect-track" aria-label="${train.name}の しゃりょう">${letters.map((c, i) => `<button class="connect-car ${i < state.index ? 'filled' : 'empty'} ${building && i === state.index ? 'waiting' : ''} ${state.joined && i === state.index - 1 ? 'just-joined' : ''}" data-connect="car" data-letter="${c}" data-index="${i}" aria-label="${i + 1}ばんめ ${c}${i < state.index ? '、つないだよ' : ''}" ${i > state.index && building ? 'disabled' : ''}><span>${i < state.index ? c : i === state.index ? `<span class="connect-ghost">${c}</span>` : '・'}</span><i></i></button>`).join('')}</div>`;
@@ -95,13 +98,15 @@ export function mountConnect(root, state, callbacks) {
   const stage = root.querySelector('.connect-assembly'), belt = root.querySelector('.assembly-belt');
   const positionTrain = () => {
     if (!stage || !belt) return;
+    const totalWidth = [...train.name].length * 280;
+    belt.style.width = totalWidth + 'px';
     const complete = state.phase === 'ready', reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const scale = complete && reduced ? Math.min(1, (stage.clientWidth - 24) / 840) : Math.min(1.3, (stage.clientWidth - 32) / 310);
+    const scale = complete && reduced ? Math.min(1, (stage.clientWidth - 24) / totalWidth) : Math.min(1.3, (stage.clientWidth - 32) / 310);
     belt.style.setProperty('--train-start', '16px');
-    belt.style.setProperty('--train-end', `${Math.min(16, stage.clientWidth - 16 - 840 * scale)}px`);
+    belt.style.setProperty('--train-end', `${Math.min(16, stage.clientWidth - 16 - totalWidth * scale)}px`);
     belt.style.setProperty('--train-scale', scale);
     stage.style.setProperty('--rail-top', `${belt.offsetTop + 100 - 20 * scale}px`);
-    belt.style.transform = `translateX(${complete ? (stage.clientWidth - 840 * scale) / 2 : 16 - Math.max(0, state.index - 1) * 280 * scale}px) scale(${scale})`;
+    belt.style.transform = `translateX(${complete ? (stage.clientWidth - totalWidth * scale) / 2 : 16 - Math.max(0, state.index - 1) * 280 * scale}px) scale(${scale})`;
   };
   positionTrain();
   const observer = stage && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(positionTrain) : null;

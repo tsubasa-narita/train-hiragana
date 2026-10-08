@@ -1,6 +1,7 @@
 // Serializable play state; timers and audio belong to the mounted view.
+import { CONNECT_MODELS } from './connect-assets.js';
 export function newConnect(train, first = false) {
-  return { trainId: train.id, phase: 'build', index: first && train.id !== 'komachi' ? [...train.name].length - 1 : 0,
+  return { trainId: train.id, phase: 'build', index: first && !CONNECT_MODELS[train.id] ? [...train.name].length - 1 : 0,
     guided: first, help: 0, credited: false, joined: false, completedCards: [] };
 }
 

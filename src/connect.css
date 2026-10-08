@@ -27,7 +27,7 @@
 .assembly-sign small{color:#98b2bf;font-size:11px;margin-left:8px}
 .assembly-belt{position:absolute;top:75px;left:0;display:flex;width:840px;transform-origin:left bottom}
 .assembly-car{position:relative;flex:0 0 280px;width:280px;height:100px}
-.komachi-sprite{width:100%;height:84px;background-image:url('../assets/connect/komachi-carriages.png');background-size:100% 300%;background-repeat:no-repeat;filter:drop-shadow(0 5px 3px #06131d99)}
+.train-sprite{width:100%;height:84px;background-size:100% 300%;background-repeat:no-repeat;filter:drop-shadow(0 5px 3px #06131d99)}
 .sprite-0{background-position:0 0}.sprite-1{background-position:0 50%}.sprite-2{background-position:0 100%}
 .assembly-car.missing{opacity:.12;filter:grayscale(1)}
 .assembly-letter{position:absolute;bottom:-12px;left:45%;font-size:18px;color:#fff;background:#315267;border:1px solid #87b6c4;border-radius:8px;min-width:32px;text-align:center;font-weight:700}
@@ -74,3 +74,7 @@
  .connect-next{min-width:0;width:100%;font-size:18px!important}.connect-ready p{font-size:15px}
 }
 @media(prefers-reduced-motion:reduce){.connect-play *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.connect-model-preview{height:auto;aspect-ratio:10/3;width:100%;margin:25px 0;background-size:100% 300%;background-position:0 0;background-repeat:no-repeat;border-radius:12px}
+.assembly-sign{max-width:calc(100% - 32px);font-size:16px;overflow-wrap:anywhere}
+@media(max-width:650px){.connect-model-preview{margin:30px 0}.assembly-sign{font-size:13px}}
