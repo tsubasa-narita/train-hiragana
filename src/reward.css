@@ -1,0 +1,81 @@
+/* Keep the rail plane horizontal, with calm, illustrated scenery behind the train. */
+.reward-dialog{border:1px solid #e4d9c4;box-shadow:0 24px 90px #142e3a55;background:#fffaf0}
+.reward-dialog::backdrop{background:#163344b8;backdrop-filter:blur(7px)}
+.reward-sky{background:linear-gradient(#f8fbf4,#e7f0e7);padding-top:27px}
+.reward-sky h2{font-size:clamp(21px,3.2vw,32px);line-height:1.5;margin:12px 18px 8px;color:#294954}
+.reward-eyebrow{color:#617d67;letter-spacing:.08em}
+.reward-route{background:#fffdf1;border:1px solid #d5dfcd;color:#466c59;padding:6px 18px;font-size:13px;box-shadow:0 2px 0 #6281690c}
+.reward-status{color:#4d6d62;min-height:20px;margin:9px 16px 4px;line-height:1.7}
+.reward-scene{height:365px;margin-top:10px;background:#d8e8e6}
+.reward-landscape,.reward-landscape-svg,.reward-vignette{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.reward-landscape{z-index:0;overflow:hidden}
+.reward-landscape-svg{display:none}
+.landscape-rainbow{display:block}
+[data-route="station"] .landscape-rainbow,[data-route="night"] .landscape-rainbow{display:none}
+[data-route="station"] .landscape-station,[data-route="night"] .landscape-night{display:block}
+.reward-vignette{background:linear-gradient(90deg,#102a3310,transparent 14%,transparent 86%,#102a3310)}
+.reward-sun,.reward-mountains,.reward-track,.reward-platform,.reward-scenery{display:none}
+.reward-controls{padding:20px 24px;background:#fffaf0;border-top:1px solid #e6dfce;gap:14px}
+.reward-controls button{min-height:48px;font-size:14px}
+.reward-controls button:focus-visible{outline:3px solid #399aaa;outline-offset:4px}
+[data-route="station"] .reward-sky{background:linear-gradient(#fff8e9,#f7e5ca)}
+[data-route="night"] .reward-sky{background:linear-gradient(#182d46,#263f55);color:#fff7dc}
+[data-route="night"] .reward-sky h2{color:#fff7df}
+[data-route="night"] .reward-status,[data-route="night"] .reward-eyebrow{color:#e6e7d9}
+[data-route="night"] .reward-route{background:#324c60;border-color:#647782;color:#fff1c6;box-shadow:none}
+[data-route="night"] .reward-controls{background:#eff2eb}
+@media(max-width:580px){
+ .reward-dialog{width:calc(100vw - 20px);border-radius:22px}
+ .reward-sky{padding-top:20px}
+ .reward-eyebrow{font-size:10px}
+ .reward-sky h2{font-size:22px;margin:10px 14px 6px}
+ .reward-route{font-size:12px;padding:5px 14px}
+ .reward-status{font-size:12px;margin:8px 13px 4px}
+ .reward-scene{height:250px;margin-top:4px}
+ .reward-controls{padding:16px 12px;gap:10px}
+ .reward-controls button{font-size:12px;padding:12px 14px}
+}
+@media(prefers-reduced-motion:reduce){.reward-landscape *{animation:none;transition:none}}
+/* Every image uses the same 1600 × 300 side view and wheel baseline at y=278. */
+.reward-scene{container-type:inline-size}
+.reward-dialog .reward-runner,.reward-dialog .reward-fallback{position:absolute;width:90%;height:auto;aspect-ratio:1600/300;object-fit:contain;left:5%;top:auto;bottom:calc(65px - 1.2375cqw);z-index:2;font-size:0;visibility:hidden;filter:drop-shadow(0 5px 3px #19353d25);transform:none}
+.reward-fallback-train{display:block;width:100%;height:auto}
+.reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]){visibility:visible;animation:reward-side-pass 5.2s linear both}
+.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){visibility:visible;width:98%;left:1%;bottom:calc(65px - 1.3475cqw);animation:reward-side-arrive .35s ease-out both}
+[data-route="night"] .reward-runner,[data-route="night"] .reward-fallback{filter:brightness(.86) saturate(.88) drop-shadow(0 4px 3px #0a1c3460)}
+@keyframes reward-side-pass{0%{transform:translateX(-125%)}28%{transform:translateX(-22%)}65%{transform:translateX(15%)}100%{transform:translateX(125%)}}
+@keyframes reward-side-arrive{from{opacity:0}to{opacity:1}}
+@media(max-width:580px){
+ .reward-dialog .reward-runner,.reward-dialog .reward-fallback{width:135%;left:-17.5%;bottom:calc(45px - 1.85625cqw)}
+ .reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){width:98%;left:1%;bottom:calc(45px - 1.3475cqw)}
+}
+@media(prefers-reduced-motion:reduce){
+ .reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]),.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){animation:none;width:98%;left:1%;bottom:calc(65px - 1.3475cqw);visibility:visible;transform:none}
+}
+@media(max-width:580px) and (prefers-reduced-motion:reduce){
+ .reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]),.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){bottom:calc(45px - 1.3475cqw)}
+}
+
+/* Raster sprites are cropped to their wheel edge rather than the fallback SVG margin. */
+.reward-dialog[data-route] .reward-runner.reward-model{aspect-ratio:var(--model-ratio);background-repeat:no-repeat;bottom:65px}
+@media(max-width:580px){.reward-dialog[data-route] .reward-runner.reward-model{bottom:45px}}
+/* Keep the moon inside the centered crop on phones. */
+@media(max-width:580px){.reward-moon{transform:translateX(-170px)}}
+/* Short viewports show the celebration, whole train, and controls together. */
+@media(max-height:500px){
+ .reward-dialog{max-height:calc(100dvh - 20px)}
+ .reward-sky{padding-top:8px}
+ .reward-eyebrow{font-size:9px;letter-spacing:.04em}
+ .reward-sky h2{font-size:clamp(15px,2.8vw,18px);line-height:1.3;margin:5px 12px 4px}
+ .reward-route{font-size:10px;padding:3px 12px;margin-bottom:0}
+ .reward-status{font-size:10px;min-height:17px;line-height:1.4;margin:4px 12px}
+ .reward-scene{--scene-height:clamp(100px,calc(100dvh - 205px),170px);--rail-ground:max(5.416667cqw,calc(var(--scene-height)*.17808219));height:var(--scene-height);margin-top:3px}
+ .reward-controls{padding:10px 12px;gap:8px}
+ .reward-controls button{font-size:12px;min-height:42px;padding:9px 13px}
+ .reward-dialog[data-route]:is(.running,.arrived) .reward-runner.reward-model{bottom:var(--rail-ground)}
+ .reward-dialog .reward-runner,.reward-dialog .reward-fallback,.reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]),.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){width:98%;left:1%;bottom:calc(var(--rail-ground) - 1.3475cqw)}
+ .reward-rainbow-arc{transform:translateY(65px) scale(.65);transform-origin:600px 171px}
+ .reward-moon{transform:translateY(55px)}
+ .reward-day-sun{transform:translateY(35px)}
+}
+@media(max-height:500px) and (max-width:580px){.reward-moon{transform:translate(-170px,55px)}}

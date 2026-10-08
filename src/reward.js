@@ -1,6 +1,9 @@
 import { stopVoice } from './voice.js';
 import { rewardText } from './voice-lines.js';
 import { BOOK_REWARD_TRAINS } from './book-rewards.js';
+import { rewardTrainMarkup } from './reward-trains.js';
+import { sceneryMarkup } from './reward-scene.js';
+import { rewardModelMarkup, REWARD_MODEL_ASSETS } from './reward-models.js';
 export const REWARD_TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'reward-hayabusa-v2.webp' },
   { id: 'komachi', name: 'こまち', image: 'reward_train_komachi.png' },
@@ -93,15 +96,15 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   stopTrainReward();
   // Also unlocked on the start tap, since automatic progression has no user activation.
   unlockRewardAudio(sound);
+  const model = REWARD_MODEL_ASSETS[train.id];
+  const trainVisual = rewardModelMarkup(train) || rewardTrainMarkup(train);
+  const fallbackVisual = (rewardTrainMarkup(train) || rewardTrainMarkup({ id: 'nozomi', name: 'でんしゃ' })).replace('reward-runner', 'reward-fallback-train');
   const dialog = document.createElement('dialog');
   dialog.className = 'reward-dialog';
   dialog.setAttribute('aria-labelledby', 'reward-title');
-  dialog.innerHTML = `<div class="reward-sky"><span class="reward-eyebrow">✦ せいかい！ ごほうび でんしゃ ✦</span><h2 id="reward-title">${train.name} が やってきた！</h2><p class="reward-status" role="status">でんしゃを よんでいるよ…</p><div class="reward-scene"><div class="reward-sun"></div><div class="reward-mountains"></div><div class="reward-track"></div><img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/><div class="reward-fallback" hidden>🚄</div><span class="reward-platform">ひらがなえき</span></div></div><div class="reward-controls"><button class="secondary" data-reward="replay" disabled>↻ もういっかい はしる</button><button class="primary" data-reward="continue" autofocus>つづける →</button></div>`;
+  dialog.innerHTML = `<div class="reward-sky"><span class="reward-eyebrow">✦ せいかい！ ごほうび でんしゃ ✦</span><h2 id="reward-title">${train.name} が やってきた！</h2><p class="reward-status" role="status">でんしゃを よんでいるよ…</p><div class="reward-scene">${trainVisual || `<img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/>`}<div class="reward-fallback" hidden>${fallbackVisual}</div></div></div><div class="reward-controls"><button class="secondary" data-reward="replay" disabled>↻ もういっかい はしる</button><button class="primary" data-reward="continue" autofocus>つづける →</button></div>`;
   document.body.append(dialog);
-  const scenery = document.createElement('div');
-  scenery.className = 'reward-scenery'; scenery.setAttribute('aria-hidden', 'true');
-  scenery.innerHTML = `<div class="reward-rainbow"></div><div class="reward-stars">✦ <i>✧</i> ✦ <i>✧</i> ✦</div><div class="reward-stop"><span class="station-roof"></span><b>ひらがなえき</b><span class="station-friends">🐰 🐻</span></div><div class="reward-sparkles">✧ <i>✦</i> ✧</div>`;
-  dialog.querySelector('.reward-scene').append(scenery);
+  dialog.querySelector('.reward-scene').insertAdjacentHTML('beforeend', sceneryMarkup());
   const routeLabel = document.createElement('p'); routeLabel.className = 'reward-route';
   dialog.querySelector('.reward-status').before(routeLabel);
   const runner = dialog.querySelector('.reward-runner');
@@ -147,7 +150,12 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
     }
     run();
   };
-  runner.decode().then(() => ready()).catch(() => ready(true));
+  if (model) {
+    const image = new Image();
+    image.src = new URL(`../assets/rewards/sideview/${model.file}`, import.meta.url).href;
+    image.decode().then(() => ready()).catch(() => ready(true));
+  } else if (trainVisual) Promise.resolve().then(() => ready());
+  else runner.decode().then(() => ready()).catch(() => ready(true));
   loadTimer = setTimeout(() => ready(true), 5000);
   dialog.querySelector('[data-reward="continue"]').onclick = () => close();
   replay.onclick = run;

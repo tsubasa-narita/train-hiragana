@@ -134,7 +134,7 @@ const fs = require('node:fs');
   await reduced.locator('[data-reward="continue"]').click();
   assert.equal(await reduced.locator('.reward-dialog').count(), 0);
   await reduced.route('**/assets/rewards/**', route => route.abort());
-  await reduced.locator('[data-action="replay-reward"]').click();
+  await reduced.evaluate(async () => { const { showTrainReward } = await import('./src/reward.js'); showTrainReward({ train: { id: 'unavailable', name: 'でんしゃ', image: 'missing.png' }, sound: false }); });
   await reduced.locator('.reward-fallback:not([hidden])').waitFor();
   await reduced.locator('[data-reward="continue"]').click();
   assert.equal(await reduced.locator('.reward-dialog').count(), 0);
