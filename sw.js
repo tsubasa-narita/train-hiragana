@@ -1,11 +1,12 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v15';
+const CACHE = PREFIX + 'v16';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
   'src/book-trains.js', 'src/book-express.js', 'src/book-tourist-a.js', 'src/book-tourist-b.js', 'src/book-local-work.js', 'src/book-rewards.js',
   'src/trace.js', 'src/trace-engine.js', 'src/kana-strokes.js', 'src/trace.css',
   'src/connect.js', 'src/connect-engine.js', 'src/connect.css',
+  'src/fill.js', 'src/fill-engine.js', 'src/fill.css',
   'src/connect-assets.js',
   'src/announcement-manifest.js',
   'assets/connect/komachi-carriages.png',
