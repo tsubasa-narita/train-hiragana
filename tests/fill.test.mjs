@@ -79,13 +79,15 @@ test('support preferences survive storage, and invalid values are ignored', () =
   assert.equal(readFillPreferences({getItem:()=>'{'}).auto, true);
   assert.equal(readFillPreferences({getItem:()=>'{"level":"bad"}'}).level, 'match');
 });
-test('one gap and large focus remain present in long-name markup without requiring a scroll track', () => {
+test('one inline gap keeps the entire long name without a duplicate focus row', () => {
   const state = newFillJourney({preferredId:TRAINS.reduce((a,b)=>a.name.length>b.name.length?a:b).id});
   state.phase = 'answer';
   const html = fillMarkup(state, {auto:true}, []);
   assert.equal((html.match(/class="fill-name-hole /g)||[]).length, 1);
   assert.equal((html.match(/data-fill="answer"/g)||[]).length, 2);
-  assert.ok(html.includes('class="fill-focus"'));
+  assert.equal((html.match(/class="fill-name-letter"/g)||[]).length, [...state.cards[0].name].length - 1);
+  assert.ok(!html.includes('fill-focus'));
+  assert.ok(!html.includes('🚃'));
   assert.ok(!html.includes('connect-track'));
   assert.deepEqual(JSON.parse(JSON.stringify(state)),state);
 });
@@ -113,8 +115,8 @@ test('listen mode supplies a visible answer when sound is off', () => {
   state.phase = 'answer';
   const target = [...state.cards[0].name][state.cards[0].hole];
   const html = fillMarkup(state,{auto:true},[],false,false);
-  assert.ok(html.includes(`class="fill-seat  ">${target}</div>`));
-  assert.ok(html.includes('おなじ もじを のせよう'));
+  assert.ok(html.includes(`aria-label="おてほん ${target}">${target}</span>`));
+  assert.ok(html.includes('おなじ もじを タッチ'));
 });
 test('rapid repeated taps award only one completion and never advance a question', () => {
   const state = newFillJourney(); state.phase = 'answer';
@@ -138,4 +140,43 @@ test('history movement cancels narration callbacks even before the old DOM is di
   assert.equal(changes,0); assert.equal(chimes,0);
   assert.equal(state.phase,'celebrate');
   dispose();
+});
+
+
+test('completion fills the same name slot and never introduces decorative trains', () => {
+  const state = newFillJourney({preferredId:'komachi'});
+  for (const hole of [0,1,2]) {
+    state.cards[0].hole = hole;
+    state.phase = 'answer';
+    const before = fillMarkup(state,{auto:true},[]);
+    const expected = [...state.cards[0].name][hole];
+    state.phase = 'celebrate';
+    const after = fillMarkup(state,{auto:true},[]);
+    assert.equal((after.match(/<img /g)||[]).length,1);
+    assert.ok(after.includes(`aria-label="${expected}">${expected}</span>`));
+    assert.ok(after.includes('fill-name-hole filled'));
+    for (const html of [before,after]) {
+      assert.ok(!html.includes('fill-linked'));
+      assert.ok(!html.includes('fill-focus'));
+      assert.ok(!html.includes('🚃'));
+      assert.equal((html.match(/class="fill-name-hole /g)||[]).length,1);
+    }
+  }
+});
+
+test('help preserves the correct choice position instead of recentering it', () => {
+  const state = newFillJourney({preferredId:'komachi'});
+  const card = state.cards[0], target = [...card.name][card.hole];
+  state.phase = 'answer';
+  for (const options of [[target,'ゆ'],['ゆ',target]]) {
+    card.options = options; state.helped = true;
+    const html = fillMarkup(state,{auto:true},[]);
+    const correct = html.indexOf('data-fill="answer"');
+    const space = html.indexOf('class="fill-option-space"');
+    assert.equal((html.match(/data-fill="answer"/g)||[]).length,1);
+    assert.equal(correct < space, options[0] === target);
+  }
+  state.level = 'listen'; state.helped = false;
+  const silent = fillMarkup(state,{auto:true},[]);
+  assert.ok(silent.includes('aria-label="あいている ところ"></span>'));
 });

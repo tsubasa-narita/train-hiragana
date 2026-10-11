@@ -1,6 +1,5 @@
 import { TRAINS } from './data.js';
 import { fillIndices, fillAnswer } from './fill-engine.js';
-import { CONNECT_MODELS, spriteStyle } from './connect-assets.js';
 import { questionText, hintText, praiseText } from './voice-lines.js';
 
 export function fillMarkup(state, preferences, rows, failed = false, sound = true) {
@@ -13,13 +12,12 @@ export function fillMarkup(state, preferences, rows, failed = false, sound = tru
   const card = state.cards[state.station], letters = [...card.name], target = letters[card.hole];
   const done = ['celebrate', 'ready'].includes(state.phase), intro = state.phase === 'intro';
   const show = state.level !== 'listen' || !sound || state.helped || done;
-  const options = state.helped ? [target] : card.options;
-  const model = CONNECT_MODELS[card.id];
-  const name = letters.map((c, i) => i === card.hole ? `<span class="fill-name-hole ${done ? 'filled' : ''}">${done ? c : '□'}</span>` : c).join('');
-  return `<main class="fill-play">${top}<section class="fill-workshop"><div class="fill-progress" aria-label="5もんちゅう ${state.station + (done ? 1 : 0)}もん できたよ">${[0,1,2,3,4].map(i => `<span class="${i < state.station || i === state.station && done ? 'done' : ''}">${i < state.station || i === state.station && done ? '✓' : i + 1}</span>`).join('')}<small>5つで ごほうび</small></div><div class="fill-picture ${done ? 'fill-celebrate' : ''}"><img src="./assets/trains/${card.image}" alt="${card.name}のイラスト"></div><div class="fill-full-name" aria-label="${done ? card.name : 'なまえの ひとつが あいているよ'}">${name}</div>
-  <div class="fill-focus" aria-label="${done ? 'できた もじ ' + target : 'ここに もじを のせよう'}"><span>${letters[card.hole - 1] || '🚃'}</span><div class="fill-seat ${done ? 'filled' : ''} ${state.helped ? 'helped' : ''}">${show ? target : '？'}</div><span>${letters[card.hole + 1] || '🚃'}</span></div>
-  <p class="fill-instruction" role="status">${done ? 'なまえが できたね！' : intro ? 'なまえと もじを きこう ♪' : state.phase === 'hint' ? 'この もじを のせてみよう' : show ? 'おなじ もじを のせよう' : 'きこえた もじを のせよう'}</p>
-  ${done ? `<div class="fill-linked" aria-hidden="true">${model ? [0,1,2].map(row => `<div style="${spriteStyle(model, row)}"></div>`).join('') : '<span>🚃</span><i></i><span>🚃</span><i></i><span>🚃</span>'}</div><div class="fill-complete-actions"><button class="primary" data-fill="next" ${state.phase !== 'ready' ? 'disabled' : ''}>${state.station === 4 ? '★ ごほうびの でんしゃ！' : 'つぎの でんしゃ →'}</button><button class="quiet" data-fill="pause" aria-pressed="${!preferences.auto}">${preferences.auto ? 'Ⅱ じどうで すすむのを とめる' : '▶ じどうで すすむ'}</button></div>` : `<div class="fill-options" aria-label="のせる もじ">${options.map(c => `<button data-fill="answer" data-letter="${c}" ${state.phase !== 'answer' ? 'disabled' : ''}>${c}</button>`).join('')}</div><div class="fill-tools"><button class="secondary" data-fill="repeat" ${state.phase !== 'answer' ? 'disabled' : ''}>♪ もういちど</button><button class="secondary" data-fill="help" ${state.phase !== 'answer' ? 'disabled' : ''}>おてつだい</button>${intro ? '<button class="quiet" data-fill="skip">すぐ あそぶ →</button>' : ''}</div>`}${warning}</section></main>`;
+  const name = letters.map((c, i) => i === card.hole
+    ? `<span class="fill-name-hole ${done ? 'filled' : 'open'} ${state.helped ? 'helped' : ''}" aria-label="${done ? c : show ? 'おてほん ' + c : 'あいている ところ'}">${show ? c : ''}</span>`
+    : `<span class="fill-name-letter">${c}</span>`).join('');
+  return `<main class="fill-play">${top}<section class="fill-workshop"><div class="fill-progress" aria-label="5もんちゅう ${state.station + (done ? 1 : 0)}もん できたよ">${[0,1,2,3,4].map(i => `<span class="${i < state.station || i === state.station && done ? 'done' : ''}">${i < state.station || i === state.station && done ? '✓' : i + 1}</span>`).join('')}<small>5つで ごほうび</small></div><div class="fill-picture"><img src="./assets/trains/${card.image}" alt="${card.name}のイラスト"></div><div class="fill-full-name" aria-label="${done ? card.name : 'なまえの もじを のせよう'}">${name}</div>
+  <p class="fill-instruction" role="status">${done ? 'できたね！' : intro ? 'なまえと もじを きこう ♪' : show ? 'おなじ もじを タッチ' : 'きこえた もじを タッチ'}</p>
+  ${done ? `<div class="fill-complete-actions"><button class="primary" data-fill="next" ${state.phase !== 'ready' ? 'disabled' : ''}>${state.station === 4 ? '★ ごほうびの でんしゃ！' : 'つぎの でんしゃ →'}</button><button class="quiet" data-fill="pause" aria-pressed="${!preferences.auto}">${preferences.auto ? 'Ⅱ じどうで すすむのを とめる' : '▶ じどうで すすむ'}</button></div>` : `<div class="fill-options" aria-label="のせる もじ">${card.options.map(c => state.helped && c !== target ? '<span class="fill-option-space" aria-hidden="true"></span>' : `<button data-fill="answer" data-letter="${c}" ${state.phase !== 'answer' ? 'disabled' : ''}>${c}</button>`).join('')}</div><div class="fill-tools"><button class="secondary" data-fill="repeat" ${state.phase !== 'answer' ? 'disabled' : ''}>♪ もういちど</button><button class="secondary" data-fill="help" ${state.phase !== 'answer' ? 'disabled' : ''}>おてつだい</button>${intro ? '<button class="quiet" data-fill="skip">すぐ あそぶ →</button>' : ''}</div>`}${warning}</section></main>`;
 }
 
 export function mountFill(root, state, callbacks) {
