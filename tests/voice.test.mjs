@@ -7,11 +7,12 @@ import { VOICE_FILES } from '../src/voice-manifest.js';
 import { ANNOUNCEMENT_FILES } from '../src/announcement-manifest.js';
 import { questionText, hintText, praiseText, rewardText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
 import { playVoice, playVoiceSequence, stopVoice } from '../src/voice.js';
+import { trainFactText } from '../src/train-facts.js';
 
 test('all reachable narration has a generated audio file', () => {
   const expected = [VOICE_SAMPLE, 'おとが でるよ', 'のばす おと', 'できたね！'];
   for (const train of QUIZ_CARDS) {
-    expected.push(train.name, praiseText(train));
+    expected.push(train.name, praiseText(train), trainFactText(train));
     for (const c of BASIC_KANA) if (train.name.startsWith(c) || ('をん'.includes(c) && train.name.includes(c))) expected.push(tracePromptText(train, c));
     for (const c of train.name) expected.push(questionText(train, c), hintText(c));
   }

@@ -162,8 +162,9 @@ export function readProgress(storage) {
       trips: Number.isSafeInteger(value.trips) && value.trips >= 0 ? value.trips : 0,
       sound: value.sound !== false,
       level: ['match', 'listen'].includes(value.level) ? value.level : 'match',
+      findChoices: [2, 3].includes(value.findChoices) ? value.findChoices : value.level === 'listen' ? 3 : 2,
       rows: normalizeRows(value.rows),
       journeyOffset: Number.isSafeInteger(value.journeyOffset) && value.journeyOffset >= 0 ? value.journeyOffset % orderedLetters(value.rows).length : 0,
     };
-  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
+  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', findChoices: 2, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
 }

@@ -12,13 +12,20 @@ STYLE = ('Japanese railway onboard announcement, professional warm female announ
          'Read only the supplied Japanese text verbatim. No introductory speech, music or sound effects. '
          'For a single kana, clearly pronounce the complete isolated syllable; do not whisper.')
 
-def selected_lines(lines, sample=False, all_lines=False):
+def selected_lines(lines, sample=False, all_lines=False, facts=False):
     """Resolve exact runtime names instead of maintaining another train-name list."""
     if sample:
         return [line for line in lines if line['text'] in ['こ', 'こまち']]
     if all_lines:
         return lines
     node = shutil.which('node') or 'C:/Program Files/nodejs/node.exe'
+    if facts:
+        source = "import { TRAINS } from './src/data.js'; import { trainFactText } from './src/train-facts.js'; console.log(JSON.stringify(TRAINS.map(trainFactText)));"
+        texts = set(json.loads(subprocess.check_output([node, '--input-type=module', '-e', source], cwd=ROOT, encoding='utf-8')))
+        selected = [line for line in lines if line['text'] in texts]
+        if len(selected) != len(texts):
+            raise SystemExit('Run node scripts/voice-manifest.mjs first; missing train facts.')
+        return selected
     source = """import { TRAINS } from './src/data.js';
 import { CONNECT_MODELS } from './src/connect-assets.js';
 import { REWARD_TRAINS } from './src/reward.js';
@@ -87,6 +94,7 @@ def main():
     parser.add_argument('--key-file', type=Path)
     parser.add_argument('--sample', action='store_true')
     parser.add_argument('--all', action='store_true')
+    parser.add_argument('--facts', action='store_true', help='Generate only the train facts used after correct answers.')
     parser.add_argument('--model', default='gemini-3.8-flash-lite-tts')
     parser.add_argument('--workers', type=int, choices=[1, 2, 3], default=3)
     parser.add_argument('--requests-per-minute', type=float, default=10,
@@ -99,7 +107,7 @@ def main():
     key = match.group(0) if match else secret
     if not key: raise SystemExit('Set GEMINI_API_KEY or --key-file.')
     lines = json.loads((ROOT/'assets/voice/lines.json').read_text(encoding='utf-8'))['lines']
-    selected = selected_lines(lines, args.sample, args.all)
+    selected = selected_lines(lines, args.sample, args.all, args.facts)
     # Keep models separate: switching to Lite must never reuse Flash speech.
     if args.model == 'gemini-3.8-flash-lite-tts':
         folder = 'announcements-lite'

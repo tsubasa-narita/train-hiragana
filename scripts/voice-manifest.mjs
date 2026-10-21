@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { QUIZ_CARDS, KANA_ROWS, BASIC_KANA } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
 import { BOOK_TRAINS } from '../src/book-trains.js';
+import { trainFactText } from '../src/train-facts.js';
 import { questionText, hintText, praiseText, rewardText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
 const lines = new Map();
 const names = { yamanote: '山手線', enoden: '江ノ電', 'doctor-yellow': 'ドクターイエロー', 'narita-express': '成田エクスプレス', marunouchi: '丸ノ内線', rapit: 'ラピート', keikyu: '京急線', sonic: 'ソニック', nemuro: '根室本線', hitachi: 'ひたち', 'heisei-chikuho': '平成筑豊鉄道', yufuin: 'ゆふいんの森', yokosuka: '横須賀線' };
@@ -29,6 +30,7 @@ for (const train of QUIZ_CARDS) {
   }
   add(train.name, name + '。');
   add(praiseText(train), `できたね！ ${name}！`);
+  add(trainFactText(train));
   for (const letter of train.name) {
     add(questionText(train, letter), `${name}の、${spokenKana(letter)}。同じ文字は、どれかな？`);
     add(hintText(letter), `${spokenKana(letter)}を、探してみよう。`);

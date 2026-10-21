@@ -18,14 +18,14 @@ def save_json(path, value):
     generation.replace_file(temporary,path)
 
 def cached_clip(line):
-    if generation.valid_audio(OUT/filename(line)):return True
     # Published, validated MP3s remain reusable after local WAV cleanup.
     record=OUT/'manifest.json'
-    if not record.exists():return False
-    manifest=json.loads(record.read_text(encoding='utf-8'))
-    expected='announcements-lite/'+filename(line).replace('.wav','.mp3')
-    target=OUT/Path(expected).name
-    return manifest.get('model')==MODEL and manifest.get('files',{}).get(line['text'])==expected and target.exists() and target.stat().st_size>256
+    if record.exists():
+        manifest=json.loads(record.read_text(encoding='utf-8'))
+        expected='announcements-lite/'+filename(line).replace('.wav','.mp3')
+        target=OUT/Path(expected).name
+        if manifest.get('model')==MODEL and manifest.get('files',{}).get(line['text'])==expected and target.exists() and target.stat().st_size>256:return True
+    return generation.valid_audio(OUT/filename(line))
 
 def inline_results(result):
     # REST batch resources use output; operations use response; SDK-shaped
