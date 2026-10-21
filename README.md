@@ -8,7 +8,7 @@
 
 - **なぞって はしろう**：清音46文字を指で書くモード。書き順・進む方向に沿って電車が走り、1文字完成すると対応する電車の絵が登場します。お手本、途中再開、行・文字の選択に対応。完成後は自分のペースで次へ進めます。[詳細・字形の出典・検証](docs/tracing.md)。
 
-- **もじをみつけよう**：清音46文字すべてに対応。44文字は実在の列車・路線・鉄道会社の名前や愛称の先頭から出題。「を」「ん」のみ言葉や名前の途中を使います。「ぬ」は昔の沼尻軽便鉄道、「る」は昔の留萌本線です。[46文字の対応表](docs/kana-coverage.md)を参照してください。最初は見本ありの2択です。保護者設定で見本の有無とは別に2択・3択を選べます。正解後は電車ごとの短い紹介を、現在のアナウンス音声と同じ声で読み上げます。[設定・紹介文の根拠](docs/find-mode.md)。
+- **もじをみつけよう**：清音46文字すべてに対応。44文字は実在の列車・路線・鉄道会社の名前や愛称の先頭から出題。「を」「ん」のみ言葉や名前の途中を使います。「ぬ」は昔の沼尻軽便鉄道、「る」は昔の留萌本線です。[46文字の対応表](docs/kana-coverage.md)を参照してください。最初は見本ありの2択です。保護者設定で見本の有無とは別に2択・3択を選べます。正解後は電車ごとに2種類以上の短い紹介を、明るいPuckの声で読み上げます。外観の説明をやめ、路線・役割・名前の由来などを紹介します。直前と同じ紹介は続かず、再起動しても記録を引き継ぎます。[設定・紹介文の根拠](docs/find-mode.md)。
 - **行をえらぶ**：ホームで「あ・か・さ・た・な・は・ま・や・ら・わ」を複数選択できます。「あ→い→う→え→お」のように五十音順に出題します。1行だけなら毎回行の最初から。や行・わ行は3文字を順番に繰り返して5問です。複数行・「ぜんぶ」は5文字ずつ進み、完走した続きの位置をブラウザに保存します。図鑑から遊ぶと、その電車の行に切り替わって行の最初から始まります。
 - **なまえをつなごう**：好きな電車の名前を、音と形のお手本で一文字ずつ連結します。3つの名前を完成させると、ごほうび電車が走ります。タップとドラッグに対応し、こまちは新しい専用画像で実際の車両も一文字ずつ連結します。
 - **もじをのせよう**：長い電車名も1か所の穴埋めで完成する新モード。見本付き2択を基本に、1択のお手伝いと音声2択も選べます。穴は名前のどこからでも選び、選択した行の文字に限定します。5問でごほうび。完成音声の後に自動で次へ進む設定と、手動で進む設定があります。既存の画像・アナウンス録音を再利用します。[設計と検証](docs/fill-play.md)。
@@ -36,7 +36,7 @@ ES Modulesを利用するため、index.htmlの直接ダブルクリックでは
 
 ## 音声・保存・外部接続
 
-- アプリの全2,182台詞をGemini 3.8 Flash-Lite TTS（Kore）で事前生成。同じ車内アナウンス風の声をMP3として同梱し、端末によらず同じ声を再生します。「おうちのかたへ」で試聴できます。
+- アプリの全台詞を試聴用と同じGemini 3.8 Flash TTS（Puck）と話し方で事前生成。明るく親しみやすい声をMP3として同梱し、端末によらず同じ声を再生します。「おうちのかたへ」で試聴できます。
 - 一文字の「は」は「ハ」として生成し、助詞の読みとの混同を避けています。小さい文字は「ちいさい、ツ」などと案内します。
 - 音声ファイルが利用できない場合はWeb Speech APIに切り替えます。このときの声・発音は端末依存です。効果音はWeb Audio APIで合成します。
 - 特にiOSではユーザー操作後に音声が利用可能になります。「もういちど きく」で再生できます。消音・画面移動で案内音声を停止します。
@@ -44,19 +44,20 @@ ES Modulesを利用するため、index.htmlの直接ダブルクリックでは
 - フォントはGoogle FontsのZen Maru Gothicを使用し、接続不可の場合はシステムの日本語フォントに切り替わります。OSの読み上げエンジンによってはネットワークを利用する場合があります。
 - 初期の電車イラストは依頼者の既存プロジェクト `C:\develop\go-home-puzzle\public\images` から再利用。追加のクイズ用24枚・ごほうび用5枚は、既存の絵に合わせて組み込みImageGenで新規生成しました。[画像生成記録](docs/image-generation.md)に保存先とプロンプトをまとめています。ホームの電車は独自のSVGです。既存画像の一般向け再利用ライセンスは付与していません。
 
-### Geminiアナウンスの再生成（開発時のみ）
+### Puck音声の再生成（開発時のみ）
+
+環境変数 `GEMINI_API_KEY` をローカルで設定したうえで実行します。
 
 ```powershell
-python scripts/generate-voice-batch.py submit --key-file "APIキーを保存したローカルファイルのパス"
-python scripts/generate-voice-batch.py collect --key-file "APIキーを保存したローカルファイルのパス"
-python scripts/publish-announcements.py
+node scripts/voice-manifest.mjs
+python scripts/puck-narration.py submit
+python scripts/puck-narration.py collect
+python scripts/puck-narration.py publish
 ```
 
-`collect` はバッチ完了まで再実行します。ジョブIDを `.tools/voice-batch-jobs.json` に保存し、既存の有効なファイルを再利用します。`publish-announcements.py` は `imageio-ffmpeg` が必要で、全台詞の圧縮・無音検査が成功してから再生用マニフェストを更新します。MP3は24kHz・モノラル・64kbps。音声の前後には短い間を残します。生成原本WAVはローカルだけに保持し、ビルド・Gitには含めません。
+`collect` はバッチ完了まで再実行します。原本とジョブIDは `.tools/puck-audio/` と `.tools/puck-batch-jobs.json` に保存します。`scripts/puck-profile.json` にモデル・声・話し方を固定し、既存の別の声を再利用しません。原本を検証し、全台詞の圧縮・無音検査が成功してから再生用マニフェストを更新します。MP3は24kHz・モノラル・64kbps。原本WAV・APIキーはGitやビルドへ含めません。[Gemini TTSの公式仕様](https://ai.google.dev/gemini-api/docs/speech-generation)。
 
-同期生成は `python scripts/generate-announcements.py --all --key-file "ローカルファイルのパス"` に対応。環境変数 `GEMINI_API_KEY` も利用できます。キー・音声生成APIはブラウザへ渡しません。[Gemini TTSの公式仕様](https://ai.google.dev/gemini-api/docs/speech-generation)を参照。
-
-生成後は `scripts/audit-announcements.py` の `submit` / `collect` で全音声を認識し、原稿との一致・読み落とし・繰り返しを検査します。認識はGemini 3.8 Flash、音声生成はGemini 3.8 Flash-Lite TTSです。監査は音声と原稿のハッシュを記録し、変更した台詞だけを再検査します。明確な不良は `scripts/repair-announcements.py` の `submit --keys 修復対象.json` / `collect` で作り直し、再圧縮・再監査します。生成・監査ともローカルのジョブ記録から再開でき、保存失敗を理由に有料生成を重複送信しません。
+生成後は `python scripts/audit-announcements.py submit --record-prefix .tools/puck` / `collect --record-prefix .tools/puck` で、公開対象の録音と原稿の一致・読み落とし・繰り返しを確認できます。音声と原稿のハッシュが変わった録音だけが対象です。旧Kore用の生成・修復スクリプトは従来音声の制作記録として残しています。通常のプレイで音声生成APIは呼びません。
 
 固有名詞の読みは `assets/voice/pronunciation-overrides.json` に保存します。画面の表記を変えず、`node scripts/voice-manifest.mjs` で音声原稿へ反映できます。小さい文字は単文字・問題・ヒントで共通の読み方を使います。
 

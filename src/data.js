@@ -162,9 +162,10 @@ export function readProgress(storage) {
       trips: Number.isSafeInteger(value.trips) && value.trips >= 0 ? value.trips : 0,
       sound: value.sound !== false,
       level: ['match', 'listen'].includes(value.level) ? value.level : 'match',
+      recentFacts: Object.fromEntries(Object.entries(value.recentFacts && typeof value.recentFacts === 'object' ? value.recentFacts : {}).filter(([id,index]) => TRAINS.some(t => t.id === id) && Number.isSafeInteger(index) && index >= 0 && index < 10)),
       findChoices: [2, 3].includes(value.findChoices) ? value.findChoices : value.level === 'listen' ? 3 : 2,
       rows: normalizeRows(value.rows),
       journeyOffset: Number.isSafeInteger(value.journeyOffset) && value.journeyOffset >= 0 ? value.journeyOffset % orderedLetters(value.rows).length : 0,
     };
-  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', findChoices: 2, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
+  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', findChoices: 2, recentFacts: {}, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
 }

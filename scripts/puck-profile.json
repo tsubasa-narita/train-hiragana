@@ -1,0 +1,5 @@
+{
+  "model": "gemini-3.8-flash-tts",
+  "voice": "Puck",
+  "style": "cheerful, friendly, encouraging, clear and slightly unhurried"
+}

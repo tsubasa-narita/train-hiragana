@@ -5,7 +5,7 @@ python scripts/audit-announcements.py collect --key-file PATH
 python scripts/audit-announcements.py retry-failed --key-file PATH
 Use submit --dry-run to validate and size every request without API calls.
 Official specifications: ai.google.dev/gemini-api/docs/audio and /batch-api.
-TTS generation remains a separate Flash-Lite job; this script only transcribes.
+TTS generation is a separate job; this script only transcribes.
 """
 import argparse
 import base64
@@ -227,12 +227,24 @@ def release_failures(jobs, report, current):
 
 
 def main():
+    global JOBS, REPORT
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument('command', choices=['submit', 'collect', 'retry-failed'])
     parser.add_argument('--key-file', type=Path)
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--texts-file', type=Path, help='Optional JSON array of exact phrases to audit.')
+    parser.add_argument('--record-prefix', type=Path, help='Separate resumable audit records, e.g. .tools/puck.')
     args = parser.parse_args()
+    if args.record_prefix:
+        JOBS = Path(str(args.record_prefix) + '-asr-jobs.json')
+        REPORT = Path(str(args.record_prefix) + '-asr-audit.json')
     current = {clip['key']: clip for clip in clips()}
+    if args.texts_file:
+        texts = set(json.loads(args.texts_file.read_text(encoding='utf-8-sig')))
+        available = {clip['text'] for clip in current.values()}
+        if texts - available:
+            raise SystemExit('Some requested audit phrases are not published.')
+        current = {key: clip for key, clip in current.items() if clip['text'] in texts}
     jobs = load_json(JOBS, {'model': MODEL, 'version': VERSION, 'jobs': []})
     report = load_json(REPORT, {'model': MODEL, 'version': VERSION, 'clips': {}})
     if any(record.get('model') != MODEL or record.get('version') != VERSION for record in (jobs, report)):

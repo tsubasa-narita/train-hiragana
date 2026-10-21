@@ -100,7 +100,7 @@ export const BOOK_TOURIST_B_TRAINS = [
   },
   {
     id: 'book-tabito', name: 'たびと', image: 'book-tabito.webp', color: '#a27356',
-    detail: 'だざいふの はなや けしきが えがかれた れっしゃ', bookName: '旅人', spokenName: '旅人、たびと',
+    detail: 'だざいふの はなや けしきが えがかれた れっしゃ', bookName: '旅人', spokenName: 'たびと',
     model: '西鉄3000形（5両編成）',
     sources: ['https://inf.nishitetsu.jp/train/tabito/introduction/index.html', 'https://inf.nishitetsu.jp/train/tabito/index.html', 'https://www.nishitetsu.co.jp/ja/news/news20170825103047/main/0/link/17_118.pdf'],
   },

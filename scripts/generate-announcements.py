@@ -20,7 +20,7 @@ def selected_lines(lines, sample=False, all_lines=False, facts=False):
         return lines
     node = shutil.which('node') or 'C:/Program Files/nodejs/node.exe'
     if facts:
-        source = "import { TRAINS } from './src/data.js'; import { trainFactText } from './src/train-facts.js'; console.log(JSON.stringify(TRAINS.map(trainFactText)));"
+        source = "import { TRAINS } from './src/data.js'; import { trainFacts } from './src/train-facts.js'; console.log(JSON.stringify(TRAINS.flatMap(t => trainFacts(t).map(f => f.text))));"
         texts = set(json.loads(subprocess.check_output([node, '--input-type=module', '-e', source], cwd=ROOT, encoding='utf-8')))
         selected = [line for line in lines if line['text'] in texts]
         if len(selected) != len(texts):

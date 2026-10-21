@@ -11,7 +11,7 @@ test('find settings, narration timing, manual skip and history work together', a
   const rootEvents = {}, windowEvents = {}, stored = new Map();
   const root = {innerHTML:'', addEventListener:(name,fn)=>rootEvents[name]=fn,querySelectorAll:()=>[]};
   const players = [];
-  const factFile = card => ANNOUNCEMENT_FILES[trainFactText(card)] || VOICE_FILES[trainFactText(card)];
+  const factFile = text => ANNOUNCEMENT_FILES[text] || VOICE_FILES[text];
   const entries = [];
   globalThis.document = {querySelector:selector=>selector==='#app'?root:null};
   globalThis.location = {pathname:'/',search:''};
@@ -33,10 +33,12 @@ test('find settings, narration timing, manual skip and history work together', a
   assert.equal(history.state.station,0);
   const card = history.state.journey[0], target = card.name[history.state.letterIndex];
   click('answer',{letter:target});
-  assert.ok(root.innerHTML.includes(trainFactText(card)));
+  assert.ok(root.innerHTML.includes(history.state.currentFact));
   const clip = players.at(-1);
-  assert.ok(clip.src.endsWith(factFile(card)));
+  assert.ok(clip.src.endsWith(factFile(history.state.currentFact)));
+  const selectedFact = history.state.currentFact;
   click('answer',{letter:target});
+  assert.equal(history.state.currentFact,selectedFact);
   assert.equal(players.at(-1),clip,'repeated taps do not restart the fact');
   t.mock.timers.tick(5000);await flush();
   assert.equal(history.state.station,0,'intro does not advance before audio finishes');
@@ -61,7 +63,7 @@ test('find settings, narration timing, manual skip and history work together', a
   click('answer',{letter:third.name[history.state.letterIndex]});
   click('sound');click('sound');await flush();
   const resumed = players.at(-1);
-  assert.ok(resumed.src.endsWith(factFile(third)));
+  assert.ok(resumed.src.endsWith(factFile(history.state.currentFact)));
   t.mock.timers.tick(5000);await flush();
   assert.equal(history.state.station,2,'sound-on resumes the fact instead of cutting it off');
   resumed.onended();await flush();t.mock.timers.tick(1);await flush();
