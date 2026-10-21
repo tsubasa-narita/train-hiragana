@@ -1,4 +1,5 @@
 import { trainFacts, trainFactText, pickTrainFact } from './train-facts.js';
+import { quizImageFile } from './quiz-images.js';
 import { newTrace, traceMarkup, mountTrace } from './trace.js';
 import { connectMarkup, mountConnect } from './connect.js';
 import { newConnect, readGarage } from './connect-engine.js';
@@ -152,7 +153,7 @@ function rowSelection() {
   return `<section class="row-selection" aria-labelledby="row-heading"><div class="section-heading"><h2 id="row-heading">どの ぎょうで あそぶ？</h2><span>いくつでも えらべるよ</span></div><div class="row-buttons"><button data-action="all-rows" aria-pressed="${!progress.rows.length}">ぜんぶ</button>${ROWS.map(row => `<button data-action="row" data-row="${row.id}" aria-pressed="${progress.rows.includes(row.id)}"><b>${row.id}</b><span>ぎょう</span></button>`).join('')}</div><p>つぎの たび：${preview}。じゅんばんに あそぼう！</p></section>`;
 }
 const icon = (name) => ({ sound: '♪', back: '←', arrow: '→', star: '☆', book: '▤', home: '⌂' }[name]);
-const imagePath = t => `./assets/trains/${t.image}`;
+const imagePath = t => `./assets/trains/${quizImageFile(t.image)}`;
 function save() {
   try { storage.setItem('train-hiragana-v1', JSON.stringify(progress)); }
   catch { savingFailed = true; }

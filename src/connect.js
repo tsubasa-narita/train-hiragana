@@ -1,9 +1,10 @@
 import { CONNECT_MODELS, carriageRow, spriteStyle } from './connect-assets.js';
 import { TRAINS } from './data.js';
+import { quizImageFile } from './quiz-images.js';
 import { REWARD_TRAINS } from './reward.js';
 import { connectChoices, connectLetter } from './connect-engine.js';
 const cutoutFor = t => REWARD_TRAINS.find(r => r.id === t.id);
-const picture = t => cutoutFor(t) ? `./assets/rewards/${cutoutFor(t).image}` : `./assets/trains/${t.image}`;
+const picture = t => cutoutFor(t) ? `./assets/rewards/${cutoutFor(t).image}` : `./assets/trains/${quizImageFile(t.image)}`;
 const settling = state => state.phase === 'ready' && Date.now() < (state.lockedUntil || 0);
 const card = t => `<button class="connect-train" data-connect="choose" data-id="${t.id}">${CONNECT_MODELS[t.id] ? `<div class="connect-model-preview" style="${spriteStyle(CONNECT_MODELS[t.id], 0)}" role="img" aria-label="${t.name}"></div>` : `<img src="${picture(t)}" alt="" loading="lazy">`}<b>${t.name}</b><span>つなぐ →</span></button>`;
 function assembly(train, state) {

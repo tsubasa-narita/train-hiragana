@@ -1,5 +1,6 @@
 import { EXTRA_TRAINS, GO_HOME_TRAINS, REQUESTED_TRAINS, METRO_EXPRESS_TRAINS, IMAGE_VARIANTS } from './train-expansion.js';
 import { BOOK_TRAINS } from './book-trains.js';
+import { quizImageFile } from './quiz-images.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -52,11 +53,11 @@ export const TRAINS = [
   ...REQUESTED_TRAINS,
   ...METRO_EXPRESS_TRAINS,
   ...BOOK_TRAINS,
-];
+].map(train => ({ ...train, image: quizImageFile(train.image) }));
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
 export const QUIZ_CARDS = [...TRAINS, ...IMAGE_VARIANTS.map(variant => ({
-  ...TRAINS.find(t => t.id === variant.id), image: variant.image, quizId: `${variant.id}-variant`,
+  ...TRAINS.find(t => t.id === variant.id), image: quizImageFile(variant.image), quizId: `${variant.id}-variant`,
 })), {
   ...TRAINS.find(t => t.id === 'keikyu'), name: 'でんしゃをみる', image: 'dog-train.webp',
   quizId: 'keikyu-scene-1', kind: 'scene', focusLetter: 'を',
