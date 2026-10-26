@@ -23,7 +23,7 @@ Object.assign(names, Object.fromEntries(BOOK_TRAINS.map(train => [train.id, trai
 add('おとが でるよ', '音が出るよ！');
 add('できたね！');
 for (const train of QUIZ_CARDS) {
-  const name = train.kind ? train.name : names[train.id] || train.name;
+  const name = train.kind ? train.name : train.spokenName || names[train.id] || train.name;
   for (const letter of BASIC_KANA) {
     if (train.name.startsWith(letter) || (['を', 'ん'].includes(letter) && train.name.includes(letter)))
       add(tracePromptText(train, letter), `${name}の、${kana(letter)}。電車と一緒に、なぞってみよう。`);

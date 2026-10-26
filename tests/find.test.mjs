@@ -28,6 +28,11 @@ test('each train and scene has its pictured train fact instead of generic praise
     assert.equal(new Set(entries.map(f=>f.text)).size,entries.length,card.id);
     for (const entry of entries) {
       assert.match(entry.source,/^https:\/\//);
+      assert.ok(Array.isArray(entry.places) && entry.places.length > 0, `${card.id}: every introduction needs a location`);
+      for (const place of entry.places) {
+        assert.ok(typeof place === 'string' && place.length >= 2, card.id);
+        assert.ok(entry.text.includes(place), `${card.id}: missing spoken place ${place}`);
+      }
       assert.ok(entry.text.endsWith('。'));
       assert.ok(!/ながい おはな|おびの|まあるい|ぴかぴか|いろの からだ/.test(entry.text));
     }

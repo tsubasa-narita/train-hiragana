@@ -1,480 +1,481 @@
-# 電車の紹介文 C：一次資料と事実確認
+# Train facts C: route and source notes
 
-確認日：2026-10-21。対象は `src/data.js` をNodeでimportして取得した `TRAINS.slice(104, 156)`（index 104〜155、52件）。出力は `src/train-facts-c.js` の `TRAIN_FACTS_C`、各IDに異なる話題を2件ずつ収録。
-
-既存の `t.sources` と `docs/book-express-sources.md`、`docs/book-tourist-a-sources.md`、`docs/prefix-train-sources.md` を入口に、運行会社・メーカー・施設運営者のWeb一次資料を再確認した。既存detailのコピーや加工、画像の外観説明は採用していない。地名と設備用途は幼児向けに言い換えた。以下の1・2は配列の順番に対応する。
-
-車両固有の設備は、dataの代表車両（500系こだま、N700Sひかり、近鉄21000系Plusなど）について述べる。列車名を使う全形式の共通設備とはしない。運行区間は通常の列車の役割を説明するもので、当日の運転保証ではない。時刻・最高速度・開業予定は本文に入れない。多目的室の授乳利用など、実際の利用条件は各公式案内に従う。
-
-- アルプスエキスプレス：既存調査の観光運転休止を踏まえ、製作目的と設備を説明し、現在走っているとは断言しない。
-- L0系：磁石のしくみと山梨での試験を説明し、営業列車とはしない。
-- いさぶろう・しんぺい：過去の山越え運転を「むかし」と表現。2023年の[JR九州の改造開始案内](https://www.jrkyushu.co.jp/news/__icsFiles/afieldfile/2023/08/31/230831_isaburoushinpei_920.pdf)とも照合。
-- 500系：のぞみとしての来歴を過去形にし、こども運転台は設備として説明。将来の引退予定は採用しない。
+対象は `TRAINS.slice(104, 156)` の52車種です。各紹介文は地理情報から始まる独立した一文で、`places` は本文にそのまま含まれる地名です。各根拠URLは該当する運行区間・経路、または地理的な運転用途を示す事業者等の一次資料です。
 
 ## 104. `marine-liner`
 
-1. おかやまと、しこくの たかまつを つなぐ れっしゃだよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/marineliner/)
-   - 確認事項：JR西日本の車両案内で岡山〜高松を確認。detailの瀬戸大橋・2階建ては採用しない。
-2. すわる ばしょを、さきに きめておける せきも あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/marineliner/)
-   - 確認事項：グリーン車指定席・普通車指定席を確認。自由席もあるので「せきも」と限定。
+1. おかやまから たかまつまで、せとおおはしを わたる れっしゃだよ。
+   - 地名: おかやま、たかまつ
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/marineliner/](https://www.jr-odekake.net/railroad/train/marineliner/)
+2. しこくの たかまつへ むかう、せとないかいを わたる でんしゃだよ。
+   - 地名: しこく、たかまつ
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/marineliner/](https://www.jr-odekake.net/railroad/train/marineliner/)
 
 ## 105. `musashino`
 
-1. ふちゅうほんまちから、にしふなばしへ つながる せんろだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/press/2023/hachioji/20230914_hc02.pdf)
-   - 確認事項：府中本町〜新松戸の開業と西船橋への延伸を確認。
-2. けいようせんに はいって、とうきょうえきへ いく でんしゃも あるよ。
-   - 根拠：[一次資料](https://timetables.jreast.co.jp/timetable/list1039.html)
-   - 確認事項：東京駅の京葉線・武蔵野線、府中本町方面の案内で直通を確認。
+1. ふちゅうほんまちから にしふなばしまで、とうきょうの ちかくを はしるよ。
+   - 地名: ふちゅうほんまち、にしふなばし、とうきょう
+   - 経路・運転の根拠: [https://www.jreast.co.jp/press/2023/hachioji/20230914_hc02.pdf](https://www.jreast.co.jp/press/2023/hachioji/20230914_hc02.pdf)
+2. さいたまや ちばの まちを むすぶ、むさしのせんの れっしゃだよ。
+   - 地名: さいたま、ちば
+   - 経路・運転の根拠: [https://www.jreast.co.jp/press/2023/hachioji/20230914_hc02.pdf](https://www.jreast.co.jp/press/2023/hachioji/20230914_hc02.pdf)
 
 ## 106. `yokohama`
 
-1. はちおうじと、ひがしかながわを つなぐ でんしゃだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/map/pdf/map_tokyo.pdf)
-   - 確認事項：横浜線の区間を公式東京近郊路線図で確認。
-2. しんよこはまで、しんかんせんに のりかえられるよ。
-   - 根拠：[一次資料](https://media.jreast.co.jp/articles/5625)
-   - 確認事項：JR東日本公式記事の新横浜駅での東海道新幹線接続改善を確認。
+1. はちおうじから ひがしかながわまで、よこはませんを はしるよ。
+   - 地名: はちおうじ、ひがしかながわ
+   - 経路・運転の根拠: [https://www.jreast.co.jp/map/pdf/map_tokyo.pdf](https://www.jreast.co.jp/map/pdf/map_tokyo.pdf)
+2. まちだや しんよこはまを とおって、はちおうじと ひがしかながわを むすぶよ。
+   - 地名: まちだ、しんよこはま、はちおうじ、ひがしかながわ
+   - 経路・運転の根拠: [https://www.jreast.co.jp/map/pdf/map_tokyo.pdf](https://www.jreast.co.jp/map/pdf/map_tokyo.pdf)
 
 ## 107. `ryomo`
 
-1. あさくさから、あかぎの えきへ いく とっきゅうだよ。
-   - 根拠：[一次資料](https://www.tobu.co.jp/railway/special_express/vehicle/ryomo/)
-   - 確認事項：主に浅草〜赤城を伊勢崎線・桐生線経由で運転。全列車の行き先とはしない。
-2. いすを くるっと まわして、むかいあわせに すわれるよ。
-   - 根拠：[一次資料](https://www.tobu.co.jp/railway/special_express/vehicle/ryomo/)
-   - 確認事項：回転式リクライニングシートを向かい合わせにできることを確認。
+1. あさくさから ぐんまの あかぎへ むかう、とっきゅうだよ。
+   - 地名: あさくさ、ぐんま、あかぎ
+   - 経路・運転の根拠: [https://www.tobu.co.jp/railway/special_express/vehicle/ryomo/](https://www.tobu.co.jp/railway/special_express/vehicle/ryomo/)
+2. とうぶせんから きりゅうせんへ、ぐんまの まちを むすぶよ。
+   - 地名: とうぶせん、きりゅうせん、ぐんま
+   - 経路・運転の根拠: [https://www.tobu.co.jp/railway/special_express/vehicle/ryomo/](https://www.tobu.co.jp/railway/special_express/vehicle/ryomo/)
 
 ## 108. `haruka`
 
-1. きょうとや おおさかから、ひこうきの くうこうへ いけるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/haruka/)
-   - 確認事項：京都・大阪・関西空港の停車駅を確認。
-2. たびの おおきな かばんを、おいておく ばしょが あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/haruka/)
-   - 確認事項：内装の荷物スペースを確認。記号の凡例だけで設備ありと判定していない。
+1. きょうとや おおさかから、かんさいくうこうへ むかう とっきゅうだよ。
+   - 地名: きょうと、おおさか、かんさいくうこう
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/haruka/](https://www.jr-odekake.net/railroad/train/haruka/)
+2. てんのうじを とおって、おおさかから かんさいくうこうへ むかうよ。
+   - 地名: てんのうじ、おおさか、かんさいくうこう
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/haruka/](https://www.jr-odekake.net/railroad/train/haruka/)
 
 ## 109. `minatomirai`
 
-1. よこはまと、もとまちちゅうかがいを つなぐ でんしゃだよ。
-   - 根拠：[一次資料](https://www.mm21railway.co.jp/global/english/info/pdf/map.pdf?202403=)
-   - 確認事項：運営会社の路線図で横浜〜元町・中華街を確認。
-2. しぶやまで、のりかえなしで いける でんしゃも あるよ。
-   - 根拠：[一次資料](https://ftp.mm21railway.co.jp/info/route_map.html)
-   - 確認事項：相互直通の渋谷方面の案内を確認。時間帯により直通がないため「も」と限定。
+1. よこはまから もとまちちゅうかがいまで、みなとみらいせんを はしるよ。
+   - 地名: よこはま、もとまちちゅうかがい
+   - 経路・運転の根拠: [https://www.mm21railway.co.jp/global/english/info/pdf/map.pdf?202403=](https://www.mm21railway.co.jp/global/english/info/pdf/map.pdf?202403=)
+2. しぶやから よこはまへ、とうきゅうせんと つながる でんしゃだよ。
+   - 地名: しぶや、よこはま、とうきゅうせん
+   - 経路・運転の根拠: [https://www.mm21railway.co.jp/global/english/info/pdf/map.pdf?202403=](https://www.mm21railway.co.jp/global/english/info/pdf/map.pdf?202403=)
 
 ## 110. `kyoto-jr`
 
-1. しんかいそくも、えきごとに とまる でんしゃも はしるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/eki/time_04/Shin-Osaka270301.htm)
-   - 確認事項：JR京都線の新大阪駅時刻表に普通・快速・新快速の種別あり。時刻は本文に採らない。
-2. しんおおさかで、しんかんせんに のりかえられるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/eki/pdf/index_all.pdf)
-   - 確認事項：JR西日本公式路線図でJR京都線と山陽・東海道新幹線の新大阪接続を確認。
+1. おおさかから きょうとへ、しんかいそくも はしる せんろだよ。
+   - 地名: おおさか、きょうと
+   - 経路・運転の根拠: [https://www.jr-odekake.net/eki/time_04/Shin-Osaka270301.htm](https://www.jr-odekake.net/eki/time_04/Shin-Osaka270301.htm)
+2. しんおおさかから きょうとへ、ふつうも はしる でんしゃだよ。
+   - 地名: しんおおさか、きょうと
+   - 経路・運転の根拠: [https://www.jr-odekake.net/eki/time_04/Shin-Osaka270301.htm](https://www.jr-odekake.net/eki/time_04/Shin-Osaka270301.htm)
 
 ## 111. `sagano`
 
-1. きょうとから、かめおかや そのべへ いく でんしゃだよ。
-   - 根拠：[一次資料](https://timetable.jr-odekake.net/train-timetable/21741?date=20261012)
-   - 確認事項：京都〜亀岡〜園部の普通列車の停車駅一覧を確認。時刻値は不使用。
-2. てつどうはくぶつかんの ちかくにも、とまる えきが あるよ。
-   - 根拠：[一次資料](https://www.kyotorailwaymuseum.jp/sp/access/)
-   - 確認事項：京都鉄道博物館公式アクセスで嵯峨野線・梅小路京都西駅が最寄りと確認。
+1. きょうとから かめおかや そのべへ、さがのせんを はしるよ。
+   - 地名: きょうと、かめおか、そのべ
+   - 経路・運転の根拠: [https://timetable.jr-odekake.net/train-timetable/21741?date=20261012](https://timetable.jr-odekake.net/train-timetable/21741?date=20261012)
+2. うめこうじきょうとにしから きょうとへ、まちを むすぶよ。
+   - 地名: うめこうじきょうとにし、きょうと
+   - 経路・運転の根拠: [https://timetable.jr-odekake.net/train-timetable/21741?date=20261012](https://timetable.jr-odekake.net/train-timetable/21741?date=20261012)
 
 ## 112. `tokiwa-express`
 
-1. とうきょうから、みとの まちへ おでかけできるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/train/express/hitachi_tokiwa.html)
-   - 確認事項：ひたち・ときわの共通車両案内に東京・上野〜水戸の運行案内あり。仙台はときわの行き先としない。
-2. すわる ばしょを、さきに きめられる とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/ltd_exp/guide/)
-   - 確認事項：ときわが全車指定席サービス対象であることを確認。座席未指定券の存在は否定しない。
+1. とうきょうから みとへ、じょうばんせんの とっきゅうも あるよ。
+   - 地名: とうきょう、みと
+   - 経路・運転の根拠: [https://www.jreast.co.jp/train/express/hitachi_tokiwa.html](https://www.jreast.co.jp/train/express/hitachi_tokiwa.html)
+2. いばらきの みとや かつたへ、じょうばんせんを はしるよ。
+   - 地名: いばらき、みと、かつた、じょうばんせん
+   - 経路・運転の根拠: [https://www.jreast.co.jp/train/express/hitachi_tokiwa.html](https://www.jreast.co.jp/train/express/hitachi_tokiwa.html)
 
 ## 113. `sazanami`
 
-1. とうきょうと、ちばの きみつを つなぐ とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/chiba/railinfo/train/)
-   - 確認事項：千葉を走る列車で「さざなみ」は東京〜君津を主に運転と確認。
-2. あかちゃんの おむつを、かえられる ばしょが あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/multi/traininformation/sazanami_wakashio/index.html)
-   - 確認事項：E257系の車両編成図のベビーベッドを確認。寝台としてのベッドとは説明しない。
+1. とうきょうから ちばの きみつへ、うちぼうせんを はしるよ。
+   - 地名: とうきょう、ちば、きみつ
+   - 経路・運転の根拠: [https://www.jreast.co.jp/chiba/railinfo/train/](https://www.jreast.co.jp/chiba/railinfo/train/)
+2. ちばの きみつや きさらづの ほうへ むかう、とっきゅうだよ。
+   - 地名: ちば、きみつ、きさらづ
+   - 経路・運転の根拠: [https://www.jreast.co.jp/chiba/railinfo/train/](https://www.jreast.co.jp/chiba/railinfo/train/)
 
 ## 114. `shonan-express`
 
-1. おしごとや がっこうへ いく ひとの、おてつだいを するよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/press/2020/20201112_ho02.pdf)
-   - 確認事項：導入資料で通勤・通学に便利な特急「湘南」と説明。
-2. たびの おおきな にもつを、おいておく ばしょが あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/press/2020/20201112_ho02.pdf)
-   - 確認事項：湘南・踊り子用E257系の荷物置き場を確認。
+1. とうきょうから おだわらへ、しょうなんの まちを むすぶよ。
+   - 地名: とうきょう、おだわら、しょうなん
+   - 経路・運転の根拠: [https://timetables.jreast.co.jp/2610/train/065/068101.html](https://timetables.jreast.co.jp/2610/train/065/068101.html)
+2. かながわの ひらつかや おだわらへ むかう、とっきゅうだよ。
+   - 地名: かながわ、ひらつか、おだわら
+   - 経路・運転の根拠: [https://timetables.jreast.co.jp/2610/train/065/068101.html](https://timetables.jreast.co.jp/2610/train/065/068101.html)
 
 ## 115. `kusatsu-shima`
 
-1. うえのから、ながのはらくさつぐちへ いく とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/en/train/express/akagi.html)
-   - 確認事項：高崎線特急の公式車両案内の上野〜長野原草津口を確認。
-2. むかしは、ちばの とっきゅうとして はたらいた でんしゃだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/en/train/express/akagi.html)
-   - 確認事項：房総特急わかしお・さざなみ・しおさい等で活躍した車両を改造したことを確認。
+1. うえのから ながのはらくさつぐちへ、ぐんまを はしる とっきゅうだよ。
+   - 地名: うえの、ながのはらくさつぐち、ぐんま
+   - 経路・運転の根拠: [https://www.jreast.co.jp/en/train/express/akagi.html](https://www.jreast.co.jp/en/train/express/akagi.html)
+2. しぶかわから あがつませんへ、ぐんまの やまのほうへ むかうよ。
+   - 地名: しぶかわ、あがつません、ぐんま
+   - 経路・運転の根拠: [https://www.jreast.co.jp/en/train/express/akagi.html](https://www.jreast.co.jp/en/train/express/akagi.html)
 
 ## 116. `akagi`
 
-1. あかぎに なる まえは、ちばの とっきゅうで はたらいていたよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/en/train/express/akagi.html)
-   - 確認事項：E257系は房総特急の車両を改造・転用したもの。列車名が変わった来歴であり、初めて特急になったとはしない。
-2. おおきな かばんを、おいておく ばしょが あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/en/train/express/akagi.html)
-   - 確認事項：1・5号車の荷物置き場を確認。
+1. うえのから たかさきや まえばしへ、ぐんまを むすぶよ。
+   - 地名: うえの、たかさき、まえばし、ぐんま
+   - 経路・運転の根拠: [https://www.jreast.co.jp/en/train/express/akagi.html](https://www.jreast.co.jp/en/train/express/akagi.html)
+2. ぐんまの たかさきや まえばしへ むかう、とっきゅうだよ。
+   - 地名: ぐんま、たかさき、まえばし
+   - 経路・運転の根拠: [https://www.jreast.co.jp/en/train/express/akagi.html](https://www.jreast.co.jp/en/train/express/akagi.html)
 
 ## 117. `revaty`
 
-1. えきで なかまと わかれて、べつの ばしょへ いけるよ。
-   - 根拠：[一次資料](https://www.tobu.co.jp/corporation/rail/vehicles/)
-   - 確認事項：500系の途中駅での併分割機能を確認。編成の外形・両数の説明は不使用。
-2. くるまいすでも つかいやすい、おてあらいが あるよ。
-   - 根拠：[一次資料](https://www.tobu.co.jp/railway/special_express/vehicle/revaty/)
-   - 確認事項：車いす対応・オストメイト付多機能トイレを確認。
+1. あさくさから にっこうや きぬがわへ、とうぶの とっきゅうだよ。
+   - 地名: あさくさ、にっこう、きぬがわ
+   - 経路・運転の根拠: [https://www.tobu.co.jp/railway/special_express/timetable/](https://www.tobu.co.jp/railway/special_express/timetable/)
+2. とちぎの にっこうや きぬがわへ、あさくさから むかうよ。
+   - 地名: とちぎ、にっこう、きぬがわ、あさくさ
+   - 経路・運転の根拠: [https://www.tobu.co.jp/railway/special_express/timetable/](https://www.tobu.co.jp/railway/special_express/timetable/)
 
 ## 118. `romancecar-gse`
 
-1. いちばん まえで、すすむ ほうを ながめられる せきが あるよ。
-   - 根拠：[一次資料](https://www.odakyu.jp/romancecar/features/line_up/70000/)
-   - 確認事項：展望席という設備・体験を説明。窓の形や大きさは不使用。
-2. あかちゃんが、おちちを のむための おへやも あるよ。
-   - 根拠：[一次資料](https://www.odakyu.jp/news/o5oaa10000005sa7-att/8724_3273227_.pdf)
-   - 確認事項：GSE新製資料で授乳時・体調不良時に使える多目的室を確認。
+1. しんじゅくから はこねゆもとへ、はこねの とっきゅうだよ。
+   - 地名: しんじゅく、はこねゆもと、はこね
+   - 経路・運転の根拠: [https://www.odakyu.jp/romancecar/](https://www.odakyu.jp/romancecar/)
+2. かながわの はこねへ むかう、おだきゅうの れっしゃだよ。
+   - 地名: かながわ、はこね、おだきゅう
+   - 経路・運転の根拠: [https://www.odakyu.jp/romancecar/](https://www.odakyu.jp/romancecar/)
 
 ## 119. `fujisan-view`
 
-1. おおつきから、かわぐちこへ おでかけできるよ。
-   - 根拠：[一次資料](https://www.fujikyu-railway.jp/fujisan-view-express/)
-   - 確認事項：大月〜河口湖の運行区間を確認。
-2. よやくして、れっしゃで あまい おかしを たのしめるよ。
-   - 根拠：[一次資料](https://www.fujikyu-railway.jp/fujisan-view-express/)
-   - 確認事項：特別車両の予約制スイーツプランを確認。全列車・全席のサービスとはしない。
+1. おおつきから かわぐちこまで、ふじさんの ふもとを はしるよ。
+   - 地名: おおつき、かわぐちこ、ふじさん
+   - 経路・運転の根拠: [https://www.fujikyu-railway.jp/fujisan-view-express/](https://www.fujikyu-railway.jp/fujisan-view-express/)
+2. やまなしの かわぐちこへ むかう、ふじきゅうの れっしゃだよ。
+   - 地名: やまなし、かわぐちこ、ふじきゅう
+   - 経路・運転の根拠: [https://www.fujikyu-railway.jp/fujisan-view-express/](https://www.fujikyu-railway.jp/fujisan-view-express/)
 
 ## 120. `book-kodama`
 
-1. むかしは、のぞみとしても はたらいた しんかんせんだよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/navi/the_last_run/project-500k/)
-   - 確認事項：画像の500系を対象に、のぞみ運用終了→こだま転用の履歴を確認。
-2. うんてんしさん ごっこが できる、こどもの せきが あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/service/children.html)
-   - 確認事項：500系こだま8号車のお子様向け運転台を確認。実際に列車を運転できるとはしない。
+1. しんおおさかから はかたまで、さんようしんかんせんを はしるよ。
+   - 地名: しんおおさか、はかた、さんようしんかんせん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/train/500/](https://www.jr-odekake.net/train/500/)
+2. おかやまや ひろしまを とおって、しんおおさかと はかたを むすぶよ。
+   - 地名: おかやま、ひろしま、しんおおさか、はかた
+   - 経路・運転の根拠: [https://www.jr-odekake.net/train/500/](https://www.jr-odekake.net/train/500/)
 
 ## 121. `book-hikari`
 
-1. でんきが とまっても、でんちで うごける しくみが あるよ。
-   - 根拠：[一次資料](https://railway.jr-central.co.jp/train/shinkansen/n700s/index.html)
-   - 確認事項：画像のN700Sのバッテリ自走システムを説明。ひかり全形式に一般化しない。
-2. すべての せきに、でんきを つかえる さしこみぐちが あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/shinkansen/seat/standard/)
-   - 確認事項：N700Sは全座席にモバイルコンセント設置と明記。
+1. とうきょうから しんおおさかへ、ひかりの しんかんせんで つなぐよ。
+   - 地名: とうきょう、しんおおさか
+   - 経路・運転の根拠: [https://railway.jr-central.co.jp/pwd/_pdf/N700S-every.pdf](https://railway.jr-central.co.jp/pwd/_pdf/N700S-every.pdf)
+2. さんようしんかんせんには、おかやままで むかう ひかりも あるよ。
+   - 地名: さんようしんかんせん、おかやま
+   - 経路・運転の根拠: [https://railway.jr-central.co.jp/pwd/_pdf/N700S-every.pdf](https://railway.jr-central.co.jp/pwd/_pdf/N700S-every.pdf)
 
 ## 122. `book-hikari-railstar`
 
-1. さんようしんかんせんで、おきゃくさんを はこぶよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/700_8/)
-   - 確認事項：JR西日本の現行700系車両案内で新大阪〜博多の山陽新幹線運行を確認。
-2. なかまや かぞくで すごせる、こしつの せきも あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/700_8/)
-   - 確認事項：同ページで8号車の普通車指定席に4人用個室があると明記。メーカー資料でもコンパートメントを照合。
+1. しんおおさかから はかたまで、さんようしんかんせんを はしるよ。
+   - 地名: しんおおさか、はかた、さんようしんかんせん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/700_8/](https://www.jr-odekake.net/railroad/train/700_8/)
+2. おおさかと ふくおかを むすぶ、さんようの れっしゃだよ。
+   - 地名: おおさか、ふくおか、さんよう
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/700_8/](https://www.jr-odekake.net/railroad/train/700_8/)
 
 ## 123. `book-linear-chuo`
 
-1. じしゃくの ちからで、ふわっと うかんで はしるよ。
-   - 根拠：[一次資料](https://linear-chuo-shinkansen.jr-central.co.jp/about/)
-   - 確認事項：超電導磁石・浮上走行の原理を確認。低速時の車輪走行を否定しない。
-2. やまなしで、あんぜんに はしれるか ためす れっしゃだよ。
-   - 根拠：[一次資料](https://linear-chuo-shinkansen.jr-central.co.jp/yamanashi/about/)
-   - 確認事項：山梨リニア実験線での走行試験を確認。営業中としない。
+1. やまなしの じっけんせんで、りにあの はしりかたを しらべているよ。
+   - 地名: やまなし、じっけんせん
+   - 経路・運転の根拠: [https://linear-chuo-shinkansen.jr-central.co.jp/yamanashi/about/](https://linear-chuo-shinkansen.jr-central.co.jp/yamanashi/about/)
+2. やまなしで ちゅうおうしんかんせんの じっけんを つづけているよ。
+   - 地名: やまなし、ちゅうおうしんかんせん
+   - 経路・運転の根拠: [https://linear-chuo-shinkansen.jr-central.co.jp/yamanashi/about/](https://linear-chuo-shinkansen.jr-central.co.jp/yamanashi/about/)
 
 ## 124. `book-east-i`
 
-1. しんかんせんの せんろを、はしりながら しらべるよ。
-   - 根拠：[一次資料](https://media.jreast.co.jp/articles/1653)
-   - 確認事項：新幹線用East iの線路・架線等の検測役割を確認。
-2. おきゃくさんが、ふだんの たびで のる れっしゃでは ないよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/press/2021/sendai/20210721_s03.pdf)
-   - 確認事項：公式見学会資料の「普段は乗車することができない」を根拠に、検測役割と利用上の特徴を分ける。
+1. とうほくや ほくりくの しんかんせんを、はしって てんけんするよ。
+   - 地名: とうほく、ほくりく
+   - 経路・運転の根拠: [https://www.jreast.co.jp/press/2025/20251007_ho02.pdf](https://www.jreast.co.jp/press/2025/20251007_ho02.pdf)
+2. じょうえつや あきたの しんかんせんも、せんろを しらべるよ。
+   - 地名: じょうえつ、あきた
+   - 経路・運転の根拠: [https://www.jreast.co.jp/press/2025/20251007_ho02.pdf](https://www.jreast.co.jp/press/2025/20251007_ho02.pdf)
 
 ## 125. `book-urbanliner`
 
-1. おおさかの なんばと、なごやを つなぐ とっきゅうだよ。
-   - 根拠：[一次資料](https://www.kintetsu.co.jp/gyoumu/Express/train/urban.html)
-   - 確認事項：大阪難波〜近鉄名古屋を中心に運行と明記。
-2. あかちゃんの おむつを、かえられる だいが あるよ。
-   - 根拠：[一次資料](https://www.kintetsu.co.jp/gyoumu/Express/train/urban.html)
-   - 確認事項：公式のバリアフリー対応設備・多目的トイレに乳幼児のおしめ替え用ベビーベッドと記載。NEXT・PLUS共通案内。
+1. おおさかなんばから なごやへ、きんてつの とっきゅうだよ。
+   - 地名: おおさかなんば、なごや、きんてつ
+   - 経路・運転の根拠: [https://www.kintetsu.co.jp/gyoumu/Express/train/urban.html](https://www.kintetsu.co.jp/gyoumu/Express/train/urban.html)
+2. おおさかから なごやまで、まちを つなぐ れっしゃだよ。
+   - 地名: おおさか、なごや
+   - 経路・運転の根拠: [https://www.kintetsu.co.jp/gyoumu/Express/train/urban.html](https://www.kintetsu.co.jp/gyoumu/Express/train/urban.html)
 
 ## 126. `book-alps-express`
 
-1. とやまの しぜんを たのしむために、つくられた れっしゃだよ。
-   - 根拠：[一次資料](https://www.chitetsu.co.jp/?page_id=3838)
-   - 確認事項：富山の大自然との調和をモチーフに製作した観光列車。現在運転中とは記さない。
-2. こどもが けしきを たのしめる、とくべつな せきが あるよ。
-   - 根拠：[一次資料](https://www.chitetsu.co.jp/?page_id=3838)
-   - 確認事項：1・3号車の子供用ハイデッキシートを確認。座席の用途を説明し、車体サイズや窓は不使用。観光運転休止中の既存調査に配慮し乗車を勧めない。
+1. でんてつとやまから うなづきおんせんへ、むかし かんこうれっしゃで はしったよ。
+   - 地名: でんてつとやま、うなづきおんせん
+   - 経路・運転の根拠: [https://www.chitetsu.co.jp/?code=2&daycriterion=1&mode=3&page_id=1264](https://www.chitetsu.co.jp/?code=2&daycriterion=1&mode=3&page_id=1264)
+2. とやまの ちてつで、むかし しぜんを たのしむ たびを したよ。
+   - 地名: とやま
+   - 経路・運転の根拠: [https://www.chitetsu.co.jp/?page_id=3838](https://www.chitetsu.co.jp/?page_id=3838)
 
 ## 127. `book-elegant-saloon`
 
-1. おおさかと きょうとを つなぐ、けいはんの でんしゃだよ。
-   - 根拠：[一次資料](https://www.keihan.co.jp/traffic/premiumcar/train/)
-   - 確認事項：8000系プレミアムカー案内の大阪〜京都の役割を確認。
-2. よやくして、ゆったり すわれる とくべつな せきも あるよ。
-   - 根拠：[一次資料](https://www.keihan.co.jp/traffic/premiumcar/train/)
-   - 確認事項：8000系の座席指定特別車両プレミアムカー。全席が有料とはしない。
+1. おおさかから きょうとへ、けいはんせんで まちを むすぶよ。
+   - 地名: おおさか、きょうと、けいはんせん
+   - 経路・運転の根拠: [https://www.keihan.co.jp/traffic/premiumcar/train/](https://www.keihan.co.jp/traffic/premiumcar/train/)
+2. きょうとと おおさかの まちを むすぶ、けいはんの れっしゃだよ。
+   - 地名: きょうと、おおさか、けいはん
+   - 経路・運転の根拠: [https://www.keihan.co.jp/traffic/premiumcar/train/](https://www.keihan.co.jp/traffic/premiumcar/train/)
 
 ## 128. `book-ozora`
 
-1. さっぽろと、くしろを つなぐ とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr007_01.html)
-   - 確認事項：札幌〜釧路を確認。
-2. あかちゃんが、おちちを のむための おへやが あるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr007_01.html)
-   - 確認事項：車内紹介の多目的室は授乳時にも利用可。利用には車掌への申告が必要。
+1. さっぽろから くしろへ、ほっかいどうを よこぎる とっきゅうだよ。
+   - 地名: さっぽろ、くしろ、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr007_01.html](https://www.jrhokkaido.co.jp/train/tr007_01.html)
+2. ほっかいどうの ひがし、くしろへ むかう れっしゃだよ。
+   - 地名: ほっかいどう、くしろ
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr007_01.html](https://www.jrhokkaido.co.jp/train/tr007_01.html)
 
 ## 129. `book-kamui`
 
-1. おしごとで まちへ いく ひとの、おてつだいも するよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr013_01.html)
-   - 確認事項：都市間を結びビジネスの足としても活躍との公式説明。既存detailの札幌〜旭川は流用しない。
-2. おおきな たびの かばんを、おける ばしょが あるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr013_01.html)
-   - 確認事項：車内紹介の旅行用バッグ向け荷物置き場。
+1. さっぽろから あさひかわへ、ほっかいどうの まちを むすぶよ。
+   - 地名: さっぽろ、あさひかわ、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr013_01.html](https://www.jrhokkaido.co.jp/train/tr013_01.html)
+2. あさひかわへ むかう、さっぽろはつの とっきゅうだよ。
+   - 地名: あさひかわ、さっぽろ
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr013_01.html](https://www.jrhokkaido.co.jp/train/tr013_01.html)
 
 ## 130. `book-kounotori`
 
-1. しんおおさかから、きのさきおんせんへ いく とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/kounotori/)
-   - 確認事項：新大阪〜福知山・豊岡・城崎温泉の運行区間を確認。
-2. あかちゃんに おちちを あげる、おへやも あるよ。
-   - 根拠：[一次資料](https://www.westjr.co.jp/press/article/2011/08/page_476.html)
-   - 確認事項：287系こうのとりと同様の客室設備という公式説明に多目的室・授乳の記載。本文の代表車両は287系。
+1. しんおおさかから きのさきおんせんへ むかう とっきゅうも あるよ。
+   - 地名: しんおおさか、きのさきおんせん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/kounotori/](https://www.jr-odekake.net/railroad/train/kounotori/)
+2. ひょうごの とよおかや きのさきへ、さんいんせんを はしるよ。
+   - 地名: ひょうご、とよおか、きのさき、さんいんせん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/kounotori/](https://www.jr-odekake.net/railroad/train/kounotori/)
 
 ## 131. `book-sarobetsu`
 
-1. あさひかわから、わっかないへ おでかけできるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr011_01.html)
-   - 確認事項：サロベツは旭川〜稚内。札幌発の宗谷と区別する。
-2. てしおがわという かわに そって、たびを するよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr011_01.html)
-   - 確認事項：天塩川右岸をたどるという公式車窓案内。終点とは別の経路・自然の話題。
+1. あさひかわから わっかないへ、ほっかいどうを はしる とっきゅうだよ。
+   - 地名: あさひかわ、わっかない、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr011_01.html](https://www.jrhokkaido.co.jp/train/tr011_01.html)
+2. てしおがわぞいを とおって、ほっかいどうの わっかないへ むかうよ。
+   - 地名: てしおがわ、ほっかいどう、わっかない
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr011_01.html](https://www.jrhokkaido.co.jp/train/tr011_01.html)
 
 ## 132. `book-shinano`
 
-1. なごやから、ながのへ おでかけできる とっきゅうだよ。
-   - 根拠：[一次資料](https://railway.jr-central.co.jp/train/express/detail_02_01/)
-   - 確認事項：383系公式車両説明で名古屋〜長野を確認。
-2. からだを かたむけて、カーブを まがる しくみが あるよ。
-   - 根拠：[一次資料](https://railway.jr-central.co.jp/train/express/detail_02_01/)
-   - 確認事項：制御付振子による曲線通過時の乗り心地改善を幼児向けに説明。
+1. なごやから ながのへ、ちゅうおうせんの とっきゅうだよ。
+   - 地名: なごや、ながの、ちゅうおうせん
+   - 経路・運転の根拠: [https://railway.jr-central.co.jp/train/express/detail_02_01/](https://railway.jr-central.co.jp/train/express/detail_02_01/)
+2. きその やまなみを とおって、ながのへ むかう しなのだよ。
+   - 地名: きそ、ながの、しなの
+   - 経路・運転の根拠: [https://railway.jr-central.co.jp/train/express/detail_02_01/](https://railway.jr-central.co.jp/train/express/detail_02_01/)
 
 ## 133. `book-shirayuki`
 
-1. にいがたから、あらいへ いく とっきゅうも あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/train/express/inaho_shirayuki.html)
-   - 確認事項：しらゆきの新潟〜上越妙高・新井。全便新井発着ではないので限定。
-2. ほくりくしんかんせんへ、のりつぐ たびを てつだうよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/press/2014/20141222.pdf)
-   - 確認事項：しらゆき新設の役割を北陸新幹線アクセスと公式に説明。古い料金・本数は採らない。
+1. にいがたから じょうえつみょうこうへ むかう、とっきゅうも あるよ。
+   - 地名: にいがた、じょうえつみょうこう
+   - 経路・運転の根拠: [https://www.jreast.co.jp/train/express/inaho_shirayuki.html](https://www.jreast.co.jp/train/express/inaho_shirayuki.html)
+2. じょうえつみょうこうや あらいから、にいがたへ むかうよ。
+   - 地名: じょうえつみょうこう、あらい、にいがた
+   - 経路・運転の根拠: [https://www.jreast.co.jp/train/express/inaho_shirayuki.html](https://www.jreast.co.jp/train/express/inaho_shirayuki.html)
 
 ## 134. `book-suzuran`
 
-1. さっぽろから、むろらんの ほうへ むかう とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr012_01.html)
-   - 確認事項：札幌〜東室蘭・室蘭を確認。
-2. たびの とちゅうで、たいへいようの うみを ながめられるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr012_01.html)
-   - 確認事項：樽前山・太平洋を眺められる公式車窓案内。外観でなく沿線の話題。
+1. さっぽろから むろらんへ、ほっかいどうを むすぶ とっきゅうだよ。
+   - 地名: さっぽろ、むろらん、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr012_01.html](https://www.jrhokkaido.co.jp/train/tr012_01.html)
+2. ひがしむろらんを とおって、さっぽろと むろらんを むすぶよ。
+   - 地名: ひがしむろらん、さっぽろ、むろらん
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr012_01.html](https://www.jrhokkaido.co.jp/train/tr012_01.html)
 
 ## 135. `book-tsugaru`
 
-1. あきたと あおもりの あいだを、おううほんせんで はしるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/train/express/tsugaru.html)
-   - 確認事項：運行区間を奥羽本線と確認。既存detailの形式・配色は不使用。
-2. むかしは、はつかりという とっきゅうで はたらいたよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/train/express/tsugaru.html)
-   - 確認事項：画像のE751系は当初はつかり用に投入という車両来歴。現在のはつかり運転とはしない。
+1. あきたから あおもりまで、おううほんせんを はしるよ。
+   - 地名: あきた、あおもり、おううほんせん
+   - 経路・運転の根拠: [https://www.jreast.co.jp/train/express/tsugaru.html](https://www.jreast.co.jp/train/express/tsugaru.html)
+2. あおもりと あきたの あいだを むすぶ、とっきゅうだよ。
+   - 地名: あおもり、あきた
+   - 経路・運転の根拠: [https://www.jreast.co.jp/train/express/tsugaru.html](https://www.jreast.co.jp/train/express/tsugaru.html)
 
 ## 136. `book-tokachi`
 
-1. ゆきから せんろを まもる、おおいの なかも はしるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr005_01.html)
-   - 確認事項：雪対策用スノーシェルターを通るという公式車窓説明。一般的なトンネルとは区別。
-2. あかちゃんが、おちちを のむための おへやが あるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr005_01.html)
-   - 確認事項：車内紹介の授乳に利用できる多目的室を確認。
+1. さっぽろから おびひろへ、ほっかいどうを はしる とっきゅうだよ。
+   - 地名: さっぽろ、おびひろ、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr005_01.html](https://www.jrhokkaido.co.jp/train/tr005_01.html)
+2. とかちの おびひろへ むかう、ほっかいどうの れっしゃだよ。
+   - 地名: とかち、おびひろ、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr005_01.html](https://www.jrhokkaido.co.jp/train/tr005_01.html)
 
 ## 137. `book-hamakaze`
 
-1. おおさかから、とっとりへ いく とっきゅうも あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/hamakaze/)
-   - 確認事項：大阪〜豊岡・城崎温泉・香住・鳥取を確認。全便鳥取行きとはしない。
-2. すわる ばしょを、さきに きめられる とっきゅうだよ。
-   - 根拠：[一次資料](https://timetable.jr-odekake.net/train-timetable/239181?date=20260501)
-   - 確認事項：公式列車時刻表の「普通車全車指定席」を確認。時刻値は本文に採用しない。
+1. おおさかから とっとりや きのさきおんせんへ むかう とっきゅうだよ。
+   - 地名: おおさか、とっとり、きのさきおんせん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/hamakaze/](https://www.jr-odekake.net/railroad/train/hamakaze/)
+2. ひょうごの とよおかや かすみを とおって、とっとりへ はしるよ。
+   - 地名: ひょうご、とよおか、かすみ、とっとり
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/hamakaze/](https://www.jr-odekake.net/railroad/train/hamakaze/)
 
 ## 138. `book-hida`
 
-1. れっしゃの なかで、ちいさな こうげいひんを みられるよ。
-   - 根拠：[一次資料](https://railway.jr-central.co.jp/train/express/detail_02_08/index.html)
-   - 確認事項：HC85系のデッキに伝統工芸品を鑑賞できるナノミュージアム。
-2. くるまいすの ひとが、すごせる ばしょも あるよ。
-   - 根拠：[一次資料](https://railway.jr-central.co.jp/train/express/detail_02_08/index.html)
-   - 確認事項：HC85系の車いすスペースを確認。外観でなくバリアフリー用途。
+1. なごやから たかやまへ、ひだの まちを むすぶ とっきゅうだよ。
+   - 地名: なごや、たかやま、ひだ
+   - 経路・運転の根拠: [https://railway.jr-central.co.jp/train/express/detail_02_08/index.html](https://railway.jr-central.co.jp/train/express/detail_02_08/index.html)
+2. ぎふの ひだちほうから たかやまへ、まちを むすんで はしるよ。
+   - 地名: ぎふ、ひだちほう、たかやま
+   - 経路・運転の根拠: [https://railway.jr-central.co.jp/train/express/detail_02_08/index.html](https://railway.jr-central.co.jp/train/express/detail_02_08/index.html)
 
 ## 139. `book-fujisan-tokkyu`
 
-1. おおつきから、かわぐちこへ いく とっきゅうだよ。
-   - 根拠：[一次資料](https://www.fujikyu-railway.jp/train/fujisan_express.php)
-   - 確認事項：2026年版時刻表で大月〜河口湖。時刻・料金を文章に入れない。
-2. いちばん まえで、けしきを たのしめる せきが あるよ。
-   - 根拠：[一次資料](https://www.fujikyu-railway.jp/train/fujisan_express.php)
-   - 確認事項：1号車は指定席の展望車両。窓や先頭の形の説明ではなく席の用途。
+1. おおつきから かわぐちこへ、ふじさんの ふもとを はしるよ。
+   - 地名: おおつき、かわぐちこ、ふじさん
+   - 経路・運転の根拠: [https://www.fujikyu-railway.jp/train/fujisan_express.php](https://www.fujikyu-railway.jp/train/fujisan_express.php)
+2. やまなしの かわぐちこへ むかう、ふじさんとっきゅうだよ。
+   - 地名: やまなし、かわぐちこ
+   - 経路・運転の根拠: [https://www.fujikyu-railway.jp/train/fujisan_express.php](https://www.fujikyu-railway.jp/train/fujisan_express.php)
 
 ## 140. `book-yukemuri`
 
-1. ながのから、ゆだなかの えきへ おでかけできるよ。
-   - 根拠：[一次資料](https://www.nagaden-net.co.jp/news/docs/nagaden-reserve1.pdf?hsLang=ja)
-   - 確認事項：長野電鉄の特急予約案内で長野〜湯田中を確認。
-2. いちばん まえで、すすむ ほうを ながめられる せきが あるよ。
-   - 根拠：[一次資料](https://www.nagaden-net.co.jp/info/goods/info/goods/ticket/1000-15th.php)
-   - 確認事項：公式ゆけむり15周年案内に先頭展望席の記載。旧小田急車という既存detailは使わない。
+1. ながのけんの ながのから ゆだなかへ、ながのでんてつを はしるよ。
+   - 地名: ながの、ゆだなか、ながのでんてつ
+   - 経路・運転の根拠: [https://www.nagaden-net.co.jp/news/docs/nagaden-reserve1.pdf?hsLang=ja](https://www.nagaden-net.co.jp/news/docs/nagaden-reserve1.pdf?hsLang=ja)
+2. ながのけんの やまを こえて、ゆだなかへ むかう とっきゅうだよ。
+   - 地名: ながのけん、ゆだなか
+   - 経路・運転の根拠: [https://www.nagaden-net.co.jp/news/docs/nagaden-reserve1.pdf?hsLang=ja](https://www.nagaden-net.co.jp/news/docs/nagaden-reserve1.pdf?hsLang=ja)
 
 ## 141. `book-lilac`
 
-1. さっぽろと、あさひかわを つなぐ とっきゅうだよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr033_01.html)
-   - 確認事項：札幌〜旭川を確認。
-2. あかちゃんが、おちちを のめる おへやも あるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr033_01.html)
-   - 確認事項：車内紹介の多目的室の授乳用途を確認。
+1. さっぽろから あさひかわへ、ほっかいどうの とっきゅうだよ。
+   - 地名: さっぽろ、あさひかわ、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr033_01.html](https://www.jrhokkaido.co.jp/train/tr033_01.html)
+2. ほっかいどうの まんなかを とおって、あさひかわへ むかうよ。
+   - 地名: ほっかいどう、あさひかわ
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr033_01.html](https://www.jrhokkaido.co.jp/train/tr033_01.html)
 
 ## 142. `book-soya`
 
-1. かわの いすで、ゆったり すごせる せきも あるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr000_01.html)
-   - 確認事項：宗谷キハ261系0代の革張りグリーン席。全席の素材とはしない。
-2. くるまいすでも つかいやすい、おてあらいが あるよ。
-   - 根拠：[一次資料](https://www.jrhokkaido.co.jp/train/tr000_01.html)
-   - 確認事項：車いす対応トイレの設備紹介を確認。既存detailの北への行き先は流用しない。
+1. さっぽろから わっかないへ、ほっかいどうを きたへ むかう とっきゅうだよ。
+   - 地名: さっぽろ、わっかない、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr000_01.html](https://www.jrhokkaido.co.jp/train/tr000_01.html)
+2. そうやの わっかないへ むかう、ほっかいどうの れっしゃだよ。
+   - 地名: そうや、わっかない、ほっかいどう
+   - 経路・運転の根拠: [https://www.jrhokkaido.co.jp/train/tr000_01.html](https://www.jrhokkaido.co.jp/train/tr000_01.html)
 
 ## 143. `book-noto-kagaribi`
 
-1. かなざわから、わくらおんせんへ おでかけできるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/train/notokagaribi/)
-   - 確認事項：金沢〜七尾・和倉温泉を確認。
-2. のとの おまつりの ひを おもって、つけられた なまえだよ。
-   - 根拠：[一次資料](https://www.westjr.co.jp/press/article/2014/10/page_6267.html)
-   - 確認事項：キリコ祭り等、火・灯りと結びついた能登の風景と篝火の勢いが命名由来。
+1. かなざわから わくらおんせんへ、いしかわを はしるよ。
+   - 地名: かなざわ、わくらおんせん、いしかわ
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/notokagaribi/](https://www.jr-odekake.net/railroad/train/notokagaribi/)
+2. のとの ななおや わくらおんせんへ、かなざわから むかうよ。
+   - 地名: のと、ななお、わくらおんせん、かなざわ
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/train/notokagaribi/](https://www.jr-odekake.net/railroad/train/notokagaribi/)
 
 ## 144. `book-36plus3`
 
-1. ようびに よって、ちがう みちを たびする れっしゃだよ。
-   - 根拠：[一次資料](https://www.jrkyushu-36plus3.jp/)
-   - 確認事項：曜日によって異なるルートを運行するとの案内。休止・再開予定や特定曜日の時刻は採らない。
-2. れっしゃの なかに、のみものを かえる おみせが あるよ。
-   - 根拠：[一次資料](https://www.jrkyushu-36plus3.jp/spend/)
-   - 確認事項：公式の楽しみ方ページでビュッフェの商品販売を確認。ソフトドリンク等の個別商品や価格は限定しない。
+1. はかたから かごしまへ むかう たびなど、きゅうしゅうを めぐるよ。
+   - 地名: はかた、かごしま、きゅうしゅう
+   - 経路・運転の根拠: [https://www.jrkyushu-36plus3.jp/](https://www.jrkyushu-36plus3.jp/)
+2. ようびで かわる きゅうしゅうの みちを、れっしゃで めぐるよ。
+   - 地名: きゅうしゅう
+   - 経路・運転の根拠: [https://www.jrkyushu-36plus3.jp/](https://www.jrkyushu-36plus3.jp/)
 
 ## 145. `book-52seki`
 
-1. はしる レストランで、ごはんを たのしむ れっしゃだよ。
-   - 根拠：[一次資料](https://www.seiburailway.jp/railways/seibu52-shifuku/overview/)
-   - 確認事項：オープンダイニング・オープンキッチンを備える旅するレストラン。
-2. ちちぶへ おでかけできる、せいぶの れっしゃだよ。
-   - 根拠：[一次資料](https://www.seiburailway.jp/railways/seibu52-shifuku/overview/)
-   - 確認事項：池袋・西武新宿〜西武秩父の運行区間を確認。他の運行区間を否定しない。
+1. いけぶくろや しんじゅくから ちちぶへ、せいぶせんを はしるよ。
+   - 地名: いけぶくろ、しんじゅく、ちちぶ、せいぶせん
+   - 経路・運転の根拠: [https://www.seiburailway.jp/railways/seibu52-shifuku/overview/](https://www.seiburailway.jp/railways/seibu52-shifuku/overview/)
+2. さいたまの ちちぶへ でかける、せいぶの かんこうれっしゃだよ。
+   - 地名: さいたま、ちちぶ、せいぶ
+   - 経路・運転の根拠: [https://www.seiburailway.jp/railways/seibu52-shifuku/overview/](https://www.seiburailway.jp/railways/seibu52-shifuku/overview/)
 
 ## 146. `book-bbbase`
 
-1. じてんしゃを、そのまま のせられる れっしゃだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/bbbase.html)
-   - 確認事項：自転車用ラックにセットして持ち込む役割を確認。
-2. りょうごくから、ちょうしへ おでかけする たびも あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/bbbase.html)
-   - 確認事項：佐倉・銚子コースの両国〜銚子を確認。自転車設備とは別の具体的な行き先。
+1. りょうごくから ちょうしへ、ちばを めぐる たびも あるよ。
+   - 地名: りょうごく、ちょうし、ちば
+   - 経路・運転の根拠: [https://www.jreast.co.jp/railway/joyful/bbbase.html](https://www.jreast.co.jp/railway/joyful/bbbase.html)
+2. ちばの うみぞいへ、じてんしゃを のせて りょうごくから むかうよ。
+   - 地名: ちば、りょうごく
+   - 経路・運転の根拠: [https://www.jreast.co.jp/railway/joyful/bbbase.html](https://www.jreast.co.jp/railway/joyful/bbbase.html)
 
 ## 147. `book-etsetora`
 
-1. せとうちの うみを ながめて、たびを たのしむ れっしゃだよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/kankoutrain/etsetora/)
-   - 確認事項：呉線経由で瀬戸内の景色を楽しむ観光列車。旧経路資料に依存しない。
-2. よやくして、れっしゃで あまい おかしを たのしめるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/kankoutrain/etsetora/)
-   - 確認事項：公式のスイーツ予約サービス。予約期限・内容・曜日は採らない。
+1. ひろしまから みはらへ、せとうちの うみぞいを はしるよ。
+   - 地名: ひろしま、みはら、せとうち
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/kankoutrain/etsetora/](https://www.jr-odekake.net/railroad/kankoutrain/etsetora/)
+2. くれせんを とおって、ひろしまから みはらの うみべを めぐるよ。
+   - 地名: くれせん、ひろしま
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/kankoutrain/etsetora/](https://www.jr-odekake.net/railroad/kankoutrain/etsetora/)
 
 ## 148. `book-highrail1375`
 
-1. こぶちざわと、こもろを つなぐ れっしゃだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/highrail1375.html)
-   - 確認事項：現行の公式列車案内で小淵沢〜小諸の運行区間を確認。旧URLから現行URLへ更新。
-2. れっしゃの なかで、ほしぞらの えいぞうを みられるよ。
-   - 根拠：[一次資料](https://recruit.jreast.co.jp/project/pj_highrail/)
-   - 確認事項：2号車の半球型ドームに星空映像を投影するギャラリーHIGH RAIL。星柄や車体の絵ではない。
+1. こぶちざわから こもろへ、やまなしと ながのを むすぶよ。
+   - 地名: こぶちざわ、こもろ、やまなし、ながの
+   - 経路・運転の根拠: [https://www.jreast.co.jp/railway/joyful/highrail1375.html](https://www.jreast.co.jp/railway/joyful/highrail1375.html)
+2. やつがたけの ふもとから さくだいらへ、こうみせんを はしるよ。
+   - 地名: やつがたけ、さくだいら、こうみせん
+   - 経路・運転の根拠: [https://www.jreast.co.jp/railway/joyful/highrail1375.html](https://www.jreast.co.jp/railway/joyful/highrail1375.html)
 
 ## 149. `book-pokemon-with-you`
 
-1. とうほくの こどもたちを、えがおに したくて うまれたよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/pokemon.html)
-   - 確認事項：東日本大震災で被災した東北の子どもたちに笑顔を届けたいという誕生の目的。
-2. うんてんしさん ごっこが できる、あそびばが あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/pokemon.html)
-   - 確認事項：プレイルームの運転台・機関室による運転士気分の体験。描かれた動物・キャラクターの説明は不使用。
+1. いちのせきから けせんぬまへ、おおふなとせんを はしるよ。
+   - 地名: いちのせき、けせんぬま、おおふなとせん
+   - 経路・運転の根拠: [https://www.jreast.co.jp/railway/joyful/pokemon.html](https://www.jreast.co.jp/railway/joyful/pokemon.html)
+2. とうほくの けせんぬまへ むかう、こどもの たびの れっしゃだよ。
+   - 地名: とうほく、けせんぬま
+   - 経路・運転の根拠: [https://www.jreast.co.jp/railway/joyful/pokemon.html](https://www.jreast.co.jp/railway/joyful/pokemon.html)
 
 ## 150. `book-royal-express`
 
-1. れっしゃの なかで、がっきの なまえんそうを きけるよ。
-   - 根拠：[一次資料](https://www.the-royalexpress.jp/concept/design/)
-   - 確認事項：6号車ダイニングのヴァイオリンとピアノの生演奏。
-2. れっしゃの なかで、ほんを よんで すごせる ばしょも あるよ。
-   - 根拠：[一次資料](https://www.the-royalexpress.jp/concept/design/)
-   - 確認事項：8号車に本棚・書斎デスクのあるライブラリー。
+1. よこはまから いずきゅうしもだへ、いずの うみぞいを はしるよ。
+   - 地名: よこはま、いずきゅうしもだ、いず
+   - 経路・運転の根拠: [https://www.the-royalexpress.jp/plan/4697/](https://www.the-royalexpress.jp/plan/4697/)
+2. いずきゅうしもだへ むかう いずの たびでは、れっしゃで ごはんを たべるよ。
+   - 地名: いずきゅうしもだ、いず
+   - 経路・運転の根拠: [https://www.the-royalexpress.jp/plan/4697/](https://www.the-royalexpress.jp/plan/4697/)
 
 ## 151. `book-tohoku-emotion`
 
-1. はちのへと、くじを つなぐ ごはんの れっしゃだよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/tohoku.html)
-   - 確認事項：八戸〜久慈、列車全体がレストランであることを確認。
-2. おりょうりを つくる ところを、めの まえで みられるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/railway/joyful/tohoku.html)
-   - 確認事項：ライブキッチンで調理風景を見る体験を確認。行き先と設備の2話題。
+1. はちのへから くじへ、あおもりと いわての うみぞいを はしるよ。
+   - 地名: はちのへ、くじ、あおもり、いわて
+   - 経路・運転の根拠: [https://www.jreast.co.jp/tohokuemotion/](https://www.jreast.co.jp/tohokuemotion/)
+2. さんりくの うみを ながめて、はちのへと くじを むすぶよ。
+   - 地名: さんりく、はちのへ、くじ
+   - 経路・運転の根拠: [https://www.jreast.co.jp/tohokuemotion/](https://www.jreast.co.jp/tohokuemotion/)
 
 ## 152. `book-shikishima`
 
-1. れっしゃの なかの おへやで、おとまりが できるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/shiki-shima/suite.html)
-   - 確認事項：客室スイートのソファが夜はベッドになるという公式設備案内を確認。運休等の状況と切り離した設備の説明。
-2. ごはんを たのしむための、とくべつな しょくどうが あるよ。
-   - 根拠：[一次資料](https://www.jreast.co.jp/shiki-shima/index.html)
-   - 確認事項：車内のダイニングの用途を確認。単なる宿泊と食事施設を分けた。
+1. うえのから いわてや あおもりを めぐる、ふゆの たびも あるよ。
+   - 地名: うえの、いわて、あおもり
+   - 経路・運転の根拠: [https://www.jreast.co.jp/shiki-shima/2026course23winter.html](https://www.jreast.co.jp/shiki-shima/2026course23winter.html)
+2. うえのから やまなしの こぶちざわや はくしゅうへ むかう、ふゆの たびも あるよ。
+   - 地名: うえの、やまなし、こぶちざわ、はくしゅう
+   - 経路・運転の根拠: [https://www.jreast.co.jp/shiki-shima/2026course12winter.html](https://www.jreast.co.jp/shiki-shima/2026course12winter.html)
 
 ## 153. `book-west-express-ginga`
 
-1. よこに なって、のんびり すごせる せきも あるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/westexginga/train/)
-   - 確認事項：ノビノビ座席クシェット等を確認。車体サイズではなく休息設備の用途。
-2. こまを もっていくと、しょうぎや チェスで あそべるよ。
-   - 根拠：[一次資料](https://www.jr-odekake.net/railroad/westexginga/train/)
-   - 確認事項：4号車遊星のテーブルに将棋・チェスの盤面。駒は持参との条件も文中に反映。
+1. おおさかから いずもへ、さんいんを めぐる たびも あるよ。
+   - 地名: おおさか、いずも、さんいん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/westexginga/train/](https://www.jr-odekake.net/railroad/westexginga/train/)
+2. さんいんや さんようの まちを むすぶ、にしにほんの れっしゃだよ。
+   - 地名: さんいん、さんよう、にしにほん
+   - 経路・運転の根拠: [https://www.jr-odekake.net/railroad/westexginga/train/](https://www.jr-odekake.net/railroad/westexginga/train/)
 
 ## 154. `book-aoniyoshi`
 
-1. おおさかと ならと きょうとへ、のりかえなしで いけるよ。
-   - 根拠：[一次資料](https://www.kintetsu.co.jp/senden/aoniyoshi/about/)
-   - 確認事項：大阪・奈良・京都の三都を乗り換えなしで結ぶと明記。
-2. れっしゃの なかで、ほんを よんで すごせる ばしょが あるよ。
-   - 根拠：[一次資料](https://www.kintetsu.co.jp/senden/aoniyoshi/index.html)
-   - 確認事項：4号車ライブラリーで沿線書籍を自由閲覧可。
+1. おおさかから ならや きょうとへ、きんてつで むかうよ。
+   - 地名: おおさか、なら、きょうと、きんてつ
+   - 経路・運転の根拠: [https://www.kintetsu.co.jp/senden/aoniyoshi/about/](https://www.kintetsu.co.jp/senden/aoniyoshi/about/)
+2. ならと きょうとの まちを むすぶ、かんこうとっきゅうだよ。
+   - 地名: なら、きょうと
+   - 経路・運転の根拠: [https://www.kintetsu.co.jp/senden/aoniyoshi/about/](https://www.kintetsu.co.jp/senden/aoniyoshi/about/)
 
 ## 155. `book-isaburo-shinpei`
 
-1. むかし、やまの さかを いったり きたりして のぼったよ。
-   - 根拠：[一次資料](https://www.jrkyushu.co.jp/company/ir/library/individual_investors/pdf/jrkyushureport2018.pdf)
-   - 確認事項：いさぶろう・しんぺいの肥薩線スイッチバックを過去形で説明。2023年改造資料も確認済み。
-2. てつどうを つくる おしごとの、ふたりの なまえを もらったよ。
-   - 根拠：[一次資料](https://www.jrkyushu.co.jp/news/__icsFiles/afieldfile/2023/08/31/230831_isaburoushinpei_920.pdf)
-   - 確認事項：山縣伊三郎（当時逓信大臣）・後藤新平（鉄道院総裁）に由来。現役運転とはしない。
+1. むかし ひとよしから よしまつまで、ひさつせんを はしったよ。
+   - 地名: ひとよし、よしまつ、ひさつせん
+   - 経路・運転の根拠: [https://www.jrkyushu.co.jp/company/ir/library/individual_investors/pdf/jrkyushureport2018.pdf](https://www.jrkyushu.co.jp/company/ir/library/individual_investors/pdf/jrkyushureport2018.pdf)
+2. くまもとの ひとよしから かごしまの よしまつへ、むかし むすんだよ。
+   - 地名: くまもと、ひとよし、かごしま、よしまつ
+   - 経路・運転の根拠: [https://www.jrkyushu.co.jp/company/ir/library/individual_investors/pdf/jrkyushureport2018.pdf](https://www.jrkyushu.co.jp/company/ir/library/individual_investors/pdf/jrkyushureport2018.pdf)
+
+## 個別に確認した点
+
+- 500系こだまはJR西日本の車両案内にある新大阪〜博多の運行区間を記載。2026年10月時点では運行中のため現在形です。
+- 特急しらゆきは新潟〜上越妙高などの運行便があると限定し、全便が同じ区間を走るとはしていません。
+- アルプスエキスプレスは富山地方鉄道が観光列車としての運行見合わせを告知しているため、その役割を過去形で記載。地理的な路線確認には同社の2026年時刻表を併記しています。
+- THE ROYAL EXPRESSは2026年の公式下田クルーズ行程にある横浜〜伊豆急下田を記載。稚内・北海道の未確認行程は本文から除いています。
+- TRAIN SUITE 四季島はJR東日本の2026年度冬の2コースを使用し、東北方面（上野・岩手・青森）と山梨方面（小淵沢・白州）を記載。北海道の未確認行程は本文から除いています。
+- リニア中央新幹線は営業路線の運行として書かず、山梨実験線での走行試験として記載。
+- いさぶろう・しんぺいは肥薩線の過去の運転として記載し、吉松（よしまつ）の読みを確認。

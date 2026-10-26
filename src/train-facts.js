@@ -3,8 +3,9 @@ import { TRAIN_FACTS_A } from './train-facts-a.js';
 import { TRAIN_FACTS_B } from './train-facts-b.js';
 import { TRAIN_FACTS_C } from './train-facts-c.js';
 import { TRAIN_FACTS_D } from './train-facts-d.js';
+import { CAPITAL_TRAIN_FACTS } from './capital-trains.js';
 
-const FACTS = { ...TRAIN_FACTS_A, ...TRAIN_FACTS_B, ...TRAIN_FACTS_C, ...TRAIN_FACTS_D };
+const FACTS = { ...TRAIN_FACTS_A, ...TRAIN_FACTS_B, ...TRAIN_FACTS_C, ...TRAIN_FACTS_D, ...CAPITAL_TRAIN_FACTS };
 
 export function trainFacts(card) {
   if (!TRAINS.some(t => t.id === card.id) || !FACTS[card.id]?.length) throw new Error(`Unknown train facts: ${card.id}`);
