@@ -2,6 +2,7 @@ import { EXTRA_TRAINS, GO_HOME_TRAINS, REQUESTED_TRAINS, METRO_EXPRESS_TRAINS, I
 import { BOOK_TRAINS } from './book-trains.js';
 import { quizImageFile } from './quiz-images.js';
 import { CAPITAL_TRAINS } from './capital-trains.js';
+import { METRO_TRAINS } from './metro-trains.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -55,6 +56,7 @@ export const TRAINS = [
   ...METRO_EXPRESS_TRAINS,
   ...BOOK_TRAINS,
   ...CAPITAL_TRAINS,
+  ...METRO_TRAINS,
 ].map(train => ({ ...train, image: quizImageFile(train.image) }));
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
