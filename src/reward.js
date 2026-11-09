@@ -33,6 +33,25 @@ export const REWARD_TRAINS = [
   { id: 'chuo-e233', name: 'ちゅうおうせん', image: 'reward-chuo-e233.webp' },
   ...BOOK_REWARD_TRAINS,
 ];
+// Explicit identities avoid guessing from names or linking a different train.
+export const REWARD_BOOK_IDS = Object.freeze({
+  hayabusa: 'hayabusa', komachi: 'komachi', nozomi: 'nozomi', kagayaki: 'kagayaki',
+  yamanote: 'yamanote', 'doctor-yellow': 'doctor-yellow', azusa: 'azusa', sakura: 'sakura',
+  'narita-express': 'narita-express', marunouchi: 'marunouchi', rapit: 'rapit', tsubasa: 'tsubasa',
+  enoden: 'enoden', sonic: 'sonic', yufuin: 'yufuin', momotaro: 'momotaro', 'spacia-x': 'spacia-x',
+  laview: 'laview', hinotori: 'hinotori', 'saphir-odoriko': 'saphir-odoriko', cassiopeia: 'cassiopeia',
+  'e4-max': 'e4-max', sunrise: 'sunrise', haruka: 'haruka', 'chuo-e233': 'chuo',
+  'reward-book-urbanliner': 'book-urbanliner', 'reward-book-shinano': 'book-shinano',
+  'reward-book-hida': 'book-hida', 'reward-book-lilac': 'book-lilac',
+  'reward-book-aoniyoshi': 'book-aoniyoshi', 'reward-book-seven-stars': 'book-nanatsuboshi',
+  'reward-book-shikishima': 'book-shikishima', 'reward-book-royal-express': 'book-royal-express',
+  'reward-book-west-express-ginga': 'book-west-express-ginga',
+  'reward-book-resort-shirakami': 'book-resort-shirakami',
+});
+export function rewardBookId(train, trains) {
+  const id = Object.hasOwn(REWARD_BOOK_IDS, train?.id) ? REWARD_BOOK_IDS[train.id] : null;
+  return trains.some(item => item.id === id) ? id : null;
+}
 export const REWARD_ROUTES = [
   { id: 'rainbow', name: 'にじの はしを わたろう', start: 'にじに むかって、しゅっぱつ！', middle: 'にじの はしを、すいすい！' },
   { id: 'station', name: 'えきで ひとやすみ', start: 'がたん ごとん、えきへ いこう！', middle: 'とうちゃく！ どうぶつさんに ごあいさつ' },
@@ -92,7 +111,7 @@ function playPassSound(enabled) {
   } catch { return () => {}; }
 }
 
-export function showTrainReward({ train = chooseReward(), sound = true, speak, onDone } = {}) {
+export function showTrainReward({ train = chooseReward(), sound = true, speak, onDone, onBook } = {}) {
   stopTrainReward();
   // Also unlocked on the start tap, since automatic progression has no user activation.
   unlockRewardAudio(sound);
@@ -102,7 +121,7 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   const dialog = document.createElement('dialog');
   dialog.className = 'reward-dialog';
   dialog.setAttribute('aria-labelledby', 'reward-title');
-  dialog.innerHTML = `<div class="reward-sky"><span class="reward-eyebrow">✦ せいかい！ ごほうび でんしゃ ✦</span><h2 id="reward-title">${train.name} が やってきた！</h2><p class="reward-status" role="status">でんしゃを よんでいるよ…</p><div class="reward-scene">${trainVisual || `<img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/>`}<div class="reward-fallback" hidden>${fallbackVisual}</div></div></div><div class="reward-controls"><button class="secondary" data-reward="replay" disabled>↻ もういっかい はしる</button><button class="primary" data-reward="continue" autofocus>つづける →</button></div>`;
+  dialog.innerHTML = `<div class="reward-sky"><span class="reward-eyebrow">✦ せいかい！ ごほうび でんしゃ ✦</span><h2 id="reward-title">${train.name} が やってきた！</h2><p class="reward-status" role="status">しゅっぱつを おしてね！</p><div class="reward-scene">${trainVisual || `<img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/>`}<div class="reward-fallback" hidden>${fallbackVisual}</div><button class="reward-touch" data-reward="touch" aria-label="でんしゃを タッチ" hidden></button></div></div><div class="reward-controls"><button class="primary" data-reward="start" autofocus>🚃 しゅっぱつ！</button><button class="primary" data-reward="replay" hidden>↻ もういちど！</button><button class="secondary" data-reward="book" hidden>📖 この でんしゃを ずかんで みる</button><button class="secondary" data-reward="continue">つづける →</button></div>`;
   document.body.append(dialog);
   dialog.querySelector('.reward-scene').insertAdjacentHTML('beforeend', sceneryMarkup());
   const routeLabel = document.createElement('p'); routeLabel.className = 'reward-route';
@@ -110,6 +129,11 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   const runner = dialog.querySelector('.reward-runner');
   const status = dialog.querySelector('.reward-status');
   const replay = dialog.querySelector('[data-reward="replay"]');
+  const start = dialog.querySelector('[data-reward="start"]');
+  const book = dialog.querySelector('[data-reward="book"]');
+  const touch = dialog.querySelector('[data-reward="touch"]');
+  dialog.dataset.route = 'rainbow';
+  routeLabel.textContent = 'しゅっぱつ しんこう！';
   let timer, phaseTimer, loadTimer, stopSound = () => {}, closed = false, runId = 0;
   const close = (continueGame = true) => {
     if (closed) return;
@@ -127,8 +151,8 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
     // Restart the same train when the child chooses to see it again.
     void runner.offsetWidth;
     dialog.classList.add('running');
-    status.textContent = route.start;
-    replay.disabled = true;
+    status.textContent = `${route.start} でんしゃを タッチしてね！`;
+    start.hidden = true; replay.hidden = true; book.hidden = true; touch.hidden = false;
     speak?.(rewardText(train));
     stopSound = playPassSound(sound);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -136,8 +160,8 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
     timer = setTimeout(() => {
       if (closed) return;
       dialog.classList.remove('running'); dialog.classList.add('arrived');
-      status.textContent = 'かっこいいね！ もういっかい みる？';
-      replay.disabled = false; clearTimeout(phaseTimer); stopSound();
+      status.textContent = 'とうちゃく！ たのしかったね！';
+      replay.hidden = false; book.hidden = false; touch.hidden = true; clearTimeout(phaseTimer); stopSound();
     }, reduced ? 1200 : 5400);
   };
   const loadId = ++runId;
@@ -148,7 +172,6 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
     if (failed) {
       runner.hidden = true; dialog.querySelector('.reward-fallback').hidden = false;
     }
-    run();
   };
   if (model) {
     const image = new Image();
@@ -158,7 +181,23 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   else runner.decode().then(() => ready()).catch(() => ready(true));
   loadTimer = setTimeout(() => ready(true), 5000);
   dialog.querySelector('[data-reward="continue"]').onclick = () => close();
+  start.onclick = run;
   replay.onclick = run;
+  touch.onclick = () => {
+    if (!dialog.classList.contains('running')) return;
+    status.textContent = 'ぽーっ！ しゅっしゅっ！';
+    if (!sound) return;
+    try {
+      context ??= new (window.AudioContext || window.webkitAudioContext)();
+      context.resume().catch(() => {});
+      const oscillator = context.createOscillator(), gain = context.createGain(), now = context.currentTime;
+      oscillator.frequency.setValueAtTime(440, now); gain.gain.setValueAtTime(.08, now);
+      gain.gain.exponentialRampToValueAtTime(.001, now + .35);
+      oscillator.connect(gain); gain.connect(context.destination); oscillator.start(now); oscillator.stop(now + .35);
+      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+    } catch {}
+  };
+  book.onclick = () => { close(false); onBook?.(train); };
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   dialog.showModal();
   return train;

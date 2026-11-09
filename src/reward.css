@@ -79,3 +79,29 @@
  .reward-day-sun{transform:translateY(35px)}
 }
 @media(max-height:500px) and (max-width:580px){.reward-moon{transform:translate(-170px,55px)}}
+
+/* The train is visible before departure; the large scene target works even in silence. */
+.reward-dialog:not(.running):not(.arrived) .reward-runner:not([hidden]),
+.reward-dialog:not(.running):not(.arrived) .reward-fallback:not([hidden]){visibility:visible;width:98%;left:1%;bottom:calc(65px - 1.3475cqw)}
+.reward-dialog:not(.running):not(.arrived) .reward-runner.reward-model{bottom:65px}
+.reward-touch{position:absolute;inset:0;z-index:3;width:100%;height:100%;border:0;background:transparent;cursor:pointer}
+.reward-touch[hidden],.reward-controls button[hidden]{display:none}
+.reward-touch:focus-visible{outline:4px solid #1590a0;outline-offset:-5px}
+.reward-controls button{min-height:56px;font-size:clamp(16px,2vw,20px)}
+@media(max-width:580px){
+ .reward-dialog:not(.running):not(.arrived) .reward-runner:not([hidden]),.reward-dialog:not(.running):not(.arrived) .reward-fallback:not([hidden]){bottom:calc(45px - 1.3475cqw)}
+ .reward-dialog:not(.running):not(.arrived) .reward-runner.reward-model{bottom:45px}
+ .reward-controls button{font-size:16px;min-height:52px}
+}
+@media(max-height:500px){
+ .reward-dialog:not(.running):not(.arrived) .reward-runner:not([hidden]),.reward-dialog:not(.running):not(.arrived) .reward-fallback:not([hidden]){bottom:calc(var(--rail-ground) - 1.3475cqw)}
+ .reward-dialog:not(.running):not(.arrived) .reward-runner.reward-model{bottom:var(--rail-ground)}
+}
+@media(max-height:500px){
+ .reward-scene{--scene-height:clamp(75px,calc(100dvh - 260px),115px)}
+ .reward-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 12px}
+ .reward-controls button{min-width:0;min-height:48px;font-size:14px;line-height:1.2;padding:8px}
+ .reward-controls [data-reward="start"],.reward-controls [data-reward="replay"]{order:1}
+ .reward-controls [data-reward="continue"]{order:2}
+ .reward-controls [data-reward="book"]{order:3;grid-column:1 / -1}
+}

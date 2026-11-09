@@ -12,6 +12,8 @@ def delivery(line,repair=False):
     style=PROFILE['style']+'; Read ONLY the supplied Japanese text verbatim in Japanese. Never translate or paraphrase it. Do not drop syllables, add words, repeat or replace short kana with full words. Enunciate each word carefully.'
     if line['text'].startswith('「'):style+=' The quoted kana is one short Japanese mora. Do not elongate it or add a long vowel.'
     if line['text']=='はろーきてぃはるか':style+=' ハローキティ is Hello Kitty: pronounce キティ (ki-ti), never 来て (ki-te). Then say はるか.'
+    if line['text'].startswith('しこくとさときのよあけのものがたり'):
+        style+=' Pronounce this train name exactly as しこく・とさ・ときの・よあけの・ものがたり. The word とき must be read toki, not jidai; do not substitute any other train name.'
     return style
 RAW=ROOT/'.tools/puck-audio';OUT=ROOT/'assets/voice/puck';JOBS=ROOT/'.tools/puck-batch-jobs.json'
 spec=importlib.util.spec_from_file_location('audio_generation',ROOT/'scripts/generate-announcements.py')

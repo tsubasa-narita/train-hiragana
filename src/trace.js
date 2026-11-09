@@ -4,12 +4,12 @@ import { QUIZ_CARDS, ROWS, orderedLetters, pickQuizCard } from './data.js';
 import { KANA_STROKES } from './kana-strokes.js';
 import { sampleStroke, createTracker } from './trace-engine.js';
 
-export function newTrace(rows = [], letter, recent = {}, imageDecks = {}) {
+export function newTrace(rows = [], letter, recent = {}, imageDecks = {}, stamps = []) {
   const letters = orderedLetters(rows);
   letter = letters.includes(letter) ? letter : letters[0];
   const matching = QUIZ_CARDS.filter(t => t.name.startsWith(letter));
   const pool = matching.length ? matching : QUIZ_CARDS.filter(t => t.focusLetter === letter || (!t.focusLetter && t.name.includes(letter)));
-  const card = pickQuizCard(pool, letter, recent, imageDecks);
+  const card = pickQuizCard(pool, letter, recent, imageDecks, stamps);
   return { rows: [...rows], letters, letter, card, stroke: 0, index: 0, complete: false, completedCards: [], credited: false, rewardPending: false };
 }
 

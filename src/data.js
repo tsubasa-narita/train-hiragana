@@ -3,6 +3,7 @@ import { BOOK_TRAINS } from './book-trains.js';
 import { quizImageFile } from './quiz-images.js';
 import { CAPITAL_TRAINS } from './capital-trains.js';
 import { METRO_TRAINS } from './metro-trains.js';
+import { POPULAR_TRAINS } from './popular-trains.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -57,6 +58,7 @@ export const TRAINS = [
   ...BOOK_TRAINS,
   ...CAPITAL_TRAINS,
   ...METRO_TRAINS,
+  ...POPULAR_TRAINS,
 ].map(train => ({ ...train, image: quizImageFile(train.image) }));
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
@@ -108,14 +110,23 @@ export function shuffle(items, random = secureRandom) {
 function cardKey(card) { return `${card.quizId || card.id}:${card.image}`; }
 // A persistent shuffled bag means the first picture is not tied to source-file order,
 // and every available picture gets a turn before the bag is refilled.
-export function pickQuizCard(cards, letter, recentImages = {}, imageDecks = {}) {
+export function pickQuizCard(cards, letter, recentImages = {}, imageDecks = {}, stamps = []) {
   const keys = cards.map(cardKey);
   let deck = Array.isArray(imageDecks[letter]) ? imageDecks[letter].filter(key => keys.includes(key)) : [];
   if (!deck.length) {
     deck = shuffle(keys);
     if (deck.length > 1 && cards.find(c => cardKey(c) === deck[0])?.image === recentImages[letter]) [deck[0], deck[1]] = [deck[1], deck[0]];
   }
-  const key = deck.shift();
+  const unplayed = cards.filter(card => !stamps.includes(card.id));
+  const eligible = unplayed.length ? unplayed : cards;
+  let index = deck.findIndex(key => eligible.some(card => cardKey(card) === key));
+  if (index < 0) {
+    const refill = shuffle(eligible.map(cardKey));
+    if (refill.length > 1 && cards.find(c => cardKey(c) === refill[0])?.image === recentImages[letter]) [refill[0], refill[1]] = [refill[1], refill[0]];
+    deck.push(...refill);
+    index = deck.length - refill.length;
+  }
+  const [key] = deck.splice(index, 1);
   imageDecks[letter] = deck;
   return cards.find(card => cardKey(card) === key);
 }
@@ -131,7 +142,7 @@ export function orderedLetters(rows = []) {
 export function nextJourneyOffset(rows, offset = 0) {
   return normalizeRows(rows).length === 1 ? 0 : (offset + 5) % orderedLetters(rows).length;
 }
-export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, recentImages = {}, imageDecks = {}) {
+export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, recentImages = {}, imageDecks = {}, stamps = []) {
   const selected = normalizeRows(rows);
   const eligible = QUIZ_CARDS.filter(t => targetIndices(t, rows).length);
   if (!eligible.length) return [];
@@ -151,7 +162,7 @@ export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, r
     const pool = preferred.length ? preferred : candidates;
     const fresh = pool.filter(t => !used.has(t.quizId || t.id));
     const choices = fresh.length ? fresh : pool;
-    const train = pickQuizCard(choices, letter, recent, imageDecks);
+    const train = pickQuizCard(choices, letter, recent, imageDecks, preferred.length ? [] : stamps);
     add(train, [...train.name].findIndex(character => canonicalQuizKana(character) === letter));
     recent[letter] = train.image;
   }

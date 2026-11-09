@@ -15,9 +15,10 @@ export function fillOptions(letter, level = 'match', random = Math.random) {
   const pool = BASIC_KANA.filter(c => c !== letter && c !== base && !similar.some(group => group.includes(letter) && group.includes(c)));
   return shuffle([letter, shuffle(pool, random)[0]], random);
 }
-export function newFillJourney({ rows = [], level = 'match', extras = false, recent = {}, preferredId, random = Math.random } = {}) {
+export function newFillJourney({ rows = [], level = 'match', extras = false, recent = {}, preferredId, stamps = [], random = Math.random } = {}) {
   const eligible = TRAINS.filter(t => fillIndices(t, rows, extras).length);
   const pool = shuffle(eligible, random);
+  pool.sort((a, b) => Number(stamps.includes(a.id)) - Number(stamps.includes(b.id)));
   const preferred = pool.findIndex(t => t.id === preferredId);
   if (preferred > 0) pool.unshift(...pool.splice(preferred, 1));
   const cards = [];

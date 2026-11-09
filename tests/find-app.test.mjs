@@ -70,5 +70,5 @@ test('find settings, narration timing, manual skip and history work together', a
   assert.equal(history.state.station,3);
   click('home');
   t.mock.timers.reset();
-  assert.equal(TRAINS.length,229);
+  assert.equal(TRAINS.length,239);
 });

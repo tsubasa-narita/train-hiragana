@@ -1,5 +1,12 @@
 // Serializable play state; timers and audio belong to the mounted view.
 import { CONNECT_MODELS } from './connect-assets.js';
+export function nextConnectTrain(trains, completedCards = [], garage = [], stamps = []) {
+  const candidates = trains.filter(train => CONNECT_MODELS[train.id] && !completedCards.some(card => card.id === train.id));
+  candidates.sort((a, b) => Number(stamps.includes(a.id)) - Number(stamps.includes(b.id)) ||
+    Number(garage.includes(a.id)) - Number(garage.includes(b.id)) || garage.indexOf(a.id) - garage.indexOf(b.id));
+  return candidates[0] || trains[0];
+}
+
 export function newConnect(train, first = false) {
   return { trainId: train.id, phase: 'build', index: first && !CONNECT_MODELS[train.id] ? [...train.name].length - 1 : 0,
     guided: first, help: 0, credited: false, joined: false, completedCards: [] };
