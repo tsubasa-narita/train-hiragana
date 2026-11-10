@@ -14,6 +14,12 @@ def delivery(line,repair=False):
     if line['text']=='はろーきてぃはるか':style+=' ハローキティ is Hello Kitty: pronounce キティ (ki-ti), never 来て (ki-te). Then say はるか.'
     if line['text'].startswith('しこくとさときのよあけのものがたり'):
         style+=' Pronounce this train name exactly as しこく・とさ・ときの・よあけの・ものがたり. The word とき must be read toki, not jidai; do not substitute any other train name.'
+    if 'はしれめろすごう' in line['text']:
+        style+=' Pronounce the complete train name はしれ・めろす・ごう; always say ごう (gou), never omit it or say すごい.'
+    if 'いれじ' in line['text']:
+        style+=' Pronounce the station name いれじ (i-re-ji), with a voiced ji, not chi.'
+    if 'ことでんしどせん' in line['text']:
+        style+=' Pronounce the entire train name ことでん・しど・せん, without omitting any syllables.'
     return style
 RAW=ROOT/'.tools/puck-audio';OUT=ROOT/'assets/voice/puck';JOBS=ROOT/'.tools/puck-batch-jobs.json'
 spec=importlib.util.spec_from_file_location('audio_generation',ROOT/'scripts/generate-announcements.py')

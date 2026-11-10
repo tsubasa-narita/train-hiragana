@@ -4,6 +4,9 @@ import { quizImageFile } from './quiz-images.js';
 import { CAPITAL_TRAINS } from './capital-trains.js';
 import { METRO_TRAINS } from './metro-trains.js';
 import { POPULAR_TRAINS } from './popular-trains.js';
+import { NEW15_MENDEL_TRAINS } from './new15-mendel.js';
+import { NEW15_HERSCHEL_TRAINS } from './new15-herschel.js';
+import { NEW15_EINSTEIN_TRAINS } from './new15-einstein.js';
 export const TRAINS = [
   { id: 'hayabusa', name: 'はやぶさ', image: 'hayabusa.jpg', color: '#16836d', detail: 'みどりの ながい おはな' },
   { id: 'komachi', name: 'こまち', image: 'komachi.jpg', color: '#cf5961', detail: 'あかくて ぴかぴか' },
@@ -59,6 +62,9 @@ export const TRAINS = [
   ...CAPITAL_TRAINS,
   ...METRO_TRAINS,
   ...POPULAR_TRAINS,
+  ...NEW15_MENDEL_TRAINS,
+  ...NEW15_HERSCHEL_TRAINS,
+  ...NEW15_EINSTEIN_TRAINS,
 ].map(train => ({ ...train, image: quizImageFile(train.image) }));
 // A real train scene also supports letters that are awkward in train names.
 // These cards credit the pictured Keikyu train in the collection.
