@@ -9,8 +9,10 @@ import { POPULAR_FACTS } from './popular-trains.js';
 import { NEW15_MENDEL_FACTS } from './new15-mendel.js';
 import { NEW15_HERSCHEL_FACTS } from './new15-herschel.js';
 import { NEW15_EINSTEIN_FACTS } from './new15-einstein.js';
+import { WORD_SHORT_FACTS } from './word-short-trains.js';
+import { WORD_EXTRA_FACTS } from './word-extra-trains.js';
 
-const FACTS = { ...TRAIN_FACTS_A, ...TRAIN_FACTS_B, ...TRAIN_FACTS_C, ...TRAIN_FACTS_D, ...CAPITAL_TRAIN_FACTS, ...METRO_FACTS, ...POPULAR_FACTS, ...NEW15_MENDEL_FACTS, ...NEW15_HERSCHEL_FACTS, ...NEW15_EINSTEIN_FACTS };
+const FACTS = { ...TRAIN_FACTS_A, ...TRAIN_FACTS_B, ...TRAIN_FACTS_C, ...TRAIN_FACTS_D, ...CAPITAL_TRAIN_FACTS, ...METRO_FACTS, ...POPULAR_FACTS, ...NEW15_MENDEL_FACTS, ...NEW15_HERSCHEL_FACTS, ...NEW15_EINSTEIN_FACTS, ...WORD_SHORT_FACTS, ...WORD_EXTRA_FACTS };
 
 export function trainFacts(card) {
   if (!TRAINS.some(t => t.id === card.id) || !FACTS[card.id]?.length) throw new Error(`Unknown train facts: ${card.id}`);

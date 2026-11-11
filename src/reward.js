@@ -122,7 +122,7 @@ function playPassSound(enabled) {
   } catch { return () => {}; }
 }
 
-export function showTrainReward({ train = chooseReward(), letters = [], sound = true, speak, onDone, onBook } = {}) {
+export function showTrainReward({ train = chooseReward(), letters = [], words = [], sound = true, speak, onDone, onBook } = {}) {
   stopTrainReward();
   // Also unlocked on the start tap, since automatic progression has no user activation.
   unlockRewardAudio(sound);
@@ -132,7 +132,10 @@ export function showTrainReward({ train = chooseReward(), letters = [], sound = 
   const dialog = document.createElement('dialog');
   dialog.className = 'reward-dialog';
   dialog.setAttribute('aria-labelledby', 'reward-title');
-  const review = letters.filter(letter => /^[ぁ-ゖー]$/.test(letter)).slice(0, 5);
+  const wordReview = words.filter(word => /^[ぁ-ゖー]{2,4}$/.test(word)).slice(0, 5);
+  const review = wordReview.length ? wordReview : letters.filter(letter => /^[ぁ-ゖー]$/.test(letter)).slice(0, 5);
+  const reviewLabel = wordReview.length ? 'きょう よんだ なまえ' : 'きょうの もじ';
+  if (wordReview.length) dialog.classList.add('reward-word-review');
   dialog.innerHTML = `<header class="reward-heading">
     <span class="reward-eyebrow">✦ ごほうび でんしゃ ✦</span>
     <h2 id="reward-title">${train.name}</h2>
@@ -147,10 +150,10 @@ export function showTrainReward({ train = chooseReward(), letters = [], sound = 
     <div class="reward-boarding" aria-hidden="true">${review.map((letter, index) => `<span style="--ticket-index:${index};--ticket-offset:${index - (review.length - 1) / 2}">${letter}</span>`).join('')}</div>
     <div class="reward-horn" aria-hidden="true">ぽーっ！</div>
     <button class="reward-touch" data-reward="touch" aria-hidden="true" tabindex="-1" hidden></button>
-    <p class="reward-status" role="status">もじを のせて しゅっぱつ！</p>
+    <p class="reward-status" role="status">${wordReview.length ? 'なまえの きっぷを のせよう！' : 'もじを のせて しゅっぱつ！'}</p>
   </div>
-  ${review.length ? `<section class="reward-review" aria-label="きょうの もじ">
-    <div class="reward-review-label"><b>きょうの もじ</b>${sound ? '<button data-reward="listen">♪ ぜんぶ きく</button>' : ''}</div>
+  ${review.length ? `<section class="reward-review" aria-label="${reviewLabel}">
+    <div class="reward-review-label"><b>${reviewLabel}</b>${sound ? '<button data-reward="listen">♪ ぜんぶ きく</button>' : ''}</div>
     <div class="reward-tickets">${review.map((letter, index) => `<button class="reward-ticket" data-reward-letter="${letter}" style="--ticket-index:${index}">${letter}</button>`).join('')}</div>
   </section>` : ''}
   <div class="reward-controls">

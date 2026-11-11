@@ -360,3 +360,6 @@
   .reward-dialog:is(.running,.arrived) .reward-burst { opacity: .75; }
   .reward-dialog.arrived .reward-confetti i, .reward-dialog.honking .reward-horn { opacity: 1; }
 }
+.reward-word-review .reward-tickets { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.reward-word-review .reward-ticket { width: auto; min-width: 75px; padding-inline: 12px; font-size: clamp(18px, 3vw, 25px); }
+.reward-word-review .reward-boarding span { font-size: 20px; white-space: nowrap; }

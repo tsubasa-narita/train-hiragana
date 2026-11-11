@@ -20,6 +20,12 @@ def delivery(line,repair=False):
         style+=' Pronounce the station name いれじ (i-re-ji), with a voiced ji, not chi.'
     if 'ことでんしどせん' in line['text']:
         style+=' Pronounce the entire train name ことでん・しど・せん, without omitting any syllables.'
+    if 'ゆふ' in line['text']:
+        style+=' ゆふ is a Japanese train name pronounced yu-fu. Never say an English cheer such as yahoo or yay.'
+    if 'なすの' in line['text']:
+        style+=' なすの is a Japanese shinkansen service name, exactly na-su-no, three mora. Never replace it with praise or another word.'
+    if 'あしずり' in line['text']:
+        style+=' あしずり is the train name a-shi-zu-ri, four mora. Read it exactly, never ashishizuku.'
     return style
 RAW=ROOT/'.tools/puck-audio';OUT=ROOT/'assets/voice/puck';JOBS=ROOT/'.tools/puck-batch-jobs.json'
 spec=importlib.util.spec_from_file_location('audio_generation',ROOT/'scripts/generate-announcements.py')

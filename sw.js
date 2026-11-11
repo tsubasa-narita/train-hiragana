@@ -1,5 +1,5 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v26';
+const CACHE = PREFIX + 'v27';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-facts.js', 'src/train-facts-a.js', 'src/train-facts-b.js', 'src/train-facts-c.js', 'src/train-facts-d.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
@@ -12,6 +12,9 @@ const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-fac
   'src/trace.js', 'src/trace-engine.js', 'src/kana-strokes.js', 'src/trace.css',
   'src/connect.js', 'src/connect-engine.js', 'src/connect.css',
   'src/fill.js', 'src/fill-engine.js', 'src/fill.css',
+  'src/word.js', 'src/word-engine.js', 'src/word.css',
+  'src/word-short-trains.js',
+  'src/word-extra-trains.js',
   'src/connect-assets.js',
   'src/announcement-manifest.js',
   'assets/connect/komachi-carriages.png',

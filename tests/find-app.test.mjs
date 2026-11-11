@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TRAINS } from '../src/data.js';
 import { trainFactText } from '../src/train-facts.js';
 import { ANNOUNCEMENT_FILES } from '../src/announcement-manifest.js';
 import { VOICE_FILES } from '../src/voice-manifest.js';
@@ -70,5 +69,4 @@ test('find settings, narration timing, manual skip and history work together', a
   assert.equal(history.state.station,3);
   click('home');
   t.mock.timers.reset();
-  assert.equal(TRAINS.length,254);
 });
