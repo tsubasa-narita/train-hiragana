@@ -1,5 +1,5 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v25';
+const CACHE = PREFIX + 'v26';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-facts.js', 'src/train-facts-a.js', 'src/train-facts-b.js', 'src/train-facts-c.js', 'src/train-facts-d.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',

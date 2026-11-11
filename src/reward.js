@@ -1,4 +1,4 @@
-import { stopVoice } from './voice.js';
+import { playVoiceSequence, stopVoice } from './voice.js';
 import { rewardText } from './voice-lines.js';
 import { BOOK_REWARD_TRAINS } from './book-rewards.js';
 import { rewardTrainMarkup } from './reward-trains.js';
@@ -52,9 +52,18 @@ export function rewardBookId(train, trains) {
   const id = Object.hasOwn(REWARD_BOOK_IDS, train?.id) ? REWARD_BOOK_IDS[train.id] : null;
   return trains.some(item => item.id === id) ? id : null;
 }
+export function rewardLetters(mode, journey) {
+  return journey.map(card => {
+    const letters = [...card.name];
+    if (mode === 'trace') return card.reviewLetter ?? card.focusLetter;
+    if (mode === 'fill') return letters[card.hole];
+    if (mode === 'connect') return letters.at(-1);
+    return letters[card.targets?.[0]];
+  }).filter(letter => /^[ぁ-ゖー]$/.test(letter));
+}
 export const REWARD_ROUTES = [
   { id: 'rainbow', name: 'にじの はしを わたろう', start: 'にじに むかって、しゅっぱつ！', middle: 'にじの はしを、すいすい！' },
-  { id: 'station', name: 'えきで ひとやすみ', start: 'がたん ごとん、えきへ いこう！', middle: 'とうちゃく！ どうぶつさんに ごあいさつ' },
+  { id: 'station', name: 'えきで ひとやすみ', start: 'がたん ごとん、えきへ いこう！', middle: 'えきが みえてきたよ！' },
   { id: 'night', name: 'ほしぞら きゅうこう', start: 'きらきら おほしさまへ、しゅっぱつ！', middle: 'おほしさまが いっぱい！' },
 ];
 let previousRoute;
@@ -85,12 +94,13 @@ function playPassSound(enabled) {
   if (!enabled) return () => {};
   try {
     context ??= new (window.AudioContext || window.webkitAudioContext)();
-    context.resume();
+    context.resume().catch(() => {});
     const now = context.currentTime, duration = 5.2;
     const gain = context.createGain(), filter = context.createBiquadFilter();
     const panner = context.createStereoPanner?.();
     gain.gain.setValueAtTime(.001, now);
-    gain.gain.exponentialRampToValueAtTime(.12, now + 2);
+    gain.gain.exponentialRampToValueAtTime(.025, now + 1.2);
+    gain.gain.exponentialRampToValueAtTime(.15, now + 3.95);
     gain.gain.exponentialRampToValueAtTime(.001, now + duration);
     if (panner) {
       gain.connect(panner); panner.connect(context.destination);
@@ -99,19 +109,20 @@ function playPassSound(enabled) {
     const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
     const samples = buffer.getChannelData(0);
     for (let i = 0; i < samples.length; i++) {
-      const beat = (i / context.sampleRate) % .36;
-      samples[i] = (Math.random() * 2 - 1) * (beat < .025 || (beat > .10 && beat < .125) ? .9 : .23);
+      const time = i / context.sampleRate;
+      const beat = (time * 2.4 + .48 * time * time) % 1;
+      samples[i] = (Math.random() * 2 - 1) * (beat < .06 || (beat > .30 && beat < .37) ? .9 : .23);
     }
     const noise = context.createBufferSource(); noise.buffer = buffer;
     filter.type = 'lowpass'; filter.frequency.setValueAtTime(300, now);
-    filter.frequency.linearRampToValueAtTime(1400, now + 2.5);
+    filter.frequency.linearRampToValueAtTime(1600, now + 3.95);
     filter.frequency.linearRampToValueAtTime(220, now + duration);
     noise.connect(filter); filter.connect(gain); noise.start(now); noise.stop(now + duration);
     return () => { try { noise.stop(); } catch {} gain.disconnect(); panner?.disconnect(); };
   } catch { return () => {}; }
 }
 
-export function showTrainReward({ train = chooseReward(), sound = true, speak, onDone, onBook } = {}) {
+export function showTrainReward({ train = chooseReward(), letters = [], sound = true, speak, onDone, onBook } = {}) {
   stopTrainReward();
   // Also unlocked on the start tap, since automatic progression has no user activation.
   unlockRewardAudio(sound);
@@ -121,53 +132,84 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   const dialog = document.createElement('dialog');
   dialog.className = 'reward-dialog';
   dialog.setAttribute('aria-labelledby', 'reward-title');
-  dialog.innerHTML = `<div class="reward-sky"><span class="reward-eyebrow">✦ せいかい！ ごほうび でんしゃ ✦</span><h2 id="reward-title">${train.name} が やってきた！</h2><p class="reward-status" role="status">しゅっぱつを おしてね！</p><div class="reward-scene">${trainVisual || `<img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/>`}<div class="reward-fallback" hidden>${fallbackVisual}</div><button class="reward-touch" data-reward="touch" aria-label="でんしゃを タッチ" hidden></button></div></div><div class="reward-controls"><button class="primary" data-reward="start" autofocus>🚃 しゅっぱつ！</button><button class="primary" data-reward="replay" hidden>↻ もういちど！</button><button class="secondary" data-reward="book" hidden>📖 この でんしゃを ずかんで みる</button><button class="secondary" data-reward="continue">つづける →</button></div>`;
+  const review = letters.filter(letter => /^[ぁ-ゖー]$/.test(letter)).slice(0, 5);
+  dialog.innerHTML = `<header class="reward-heading">
+    <span class="reward-eyebrow">✦ ごほうび でんしゃ ✦</span>
+    <h2 id="reward-title">${train.name}</h2>
+  </header>
+  <div class="reward-scene">
+    ${sceneryMarkup()}
+    <div class="reward-signal" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="reward-train-shot">
+      ${trainVisual || `<img class="reward-runner" src="./assets/rewards/${train.image}" alt="${train.name}"/>`}
+      <div class="reward-fallback" hidden>${fallbackVisual}</div>
+    </div>
+    <div class="reward-boarding" aria-hidden="true">${review.map((letter, index) => `<span style="--ticket-index:${index};--ticket-offset:${index - (review.length - 1) / 2}">${letter}</span>`).join('')}</div>
+    <div class="reward-horn" aria-hidden="true">ぽーっ！</div>
+    <button class="reward-touch" data-reward="touch" aria-hidden="true" tabindex="-1" hidden></button>
+    <p class="reward-status" role="status">もじを のせて しゅっぱつ！</p>
+  </div>
+  ${review.length ? `<section class="reward-review" aria-label="きょうの もじ">
+    <div class="reward-review-label"><b>きょうの もじ</b>${sound ? '<button data-reward="listen">♪ ぜんぶ きく</button>' : ''}</div>
+    <div class="reward-tickets">${review.map((letter, index) => `<button class="reward-ticket" data-reward-letter="${letter}" style="--ticket-index:${index}">${letter}</button>`).join('')}</div>
+  </section>` : ''}
+  <div class="reward-controls">
+    <button class="reward-launch" data-reward="start" autofocus>🚆 しゅっぱつ！</button>
+    <button class="reward-launch" data-reward="horn" aria-label="きてきを ならす" hidden>♪ ぽーっ！</button>
+    <button class="reward-launch" data-reward="replay" hidden>↻ もういちど！</button>
+    <button class="reward-secondary" data-reward="book" aria-label="この でんしゃを ずかんで みる" hidden>▤ ずかんへ</button>
+    <button class="reward-secondary" data-reward="continue">おしまい →</button>
+  </div>`;
   document.body.append(dialog);
-  dialog.querySelector('.reward-scene').insertAdjacentHTML('beforeend', sceneryMarkup());
-  const routeLabel = document.createElement('p'); routeLabel.className = 'reward-route';
-  dialog.querySelector('.reward-status').before(routeLabel);
   const runner = dialog.querySelector('.reward-runner');
   const status = dialog.querySelector('.reward-status');
   const replay = dialog.querySelector('[data-reward="replay"]');
   const start = dialog.querySelector('[data-reward="start"]');
   const book = dialog.querySelector('[data-reward="book"]');
   const touch = dialog.querySelector('[data-reward="touch"]');
-  dialog.dataset.route = 'rainbow';
-  routeLabel.textContent = 'しゅっぱつ しんこう！';
-  let timer, phaseTimer, loadTimer, stopSound = () => {}, closed = false, runId = 0;
+  const horn = dialog.querySelector('[data-reward="horn"]');
+  let route = chooseRewardRoute();
+  dialog.dataset.route = route.id;
+  let timer, phaseTimer, loadTimer, hornTimer, stopSound = () => {}, closed = false;
+  let runningMessage;
   const close = (continueGame = true) => {
     if (closed) return;
-    closed = true; runId++; clearTimeout(timer); clearTimeout(phaseTimer); clearTimeout(loadTimer); stopSound();
+    closed = true; clearTimeout(timer); clearTimeout(phaseTimer); clearTimeout(loadTimer); clearTimeout(hornTimer); stopSound();
     stopVoice(); dialog.close(); dialog.remove(); activeClose = null;
     if (continueGame) onDone?.();
   };
   activeClose = close;
   const run = () => {
-    if (closed) return;
+    if (closed || dialog.classList.contains('running')) return;
     clearTimeout(timer); clearTimeout(phaseTimer); stopSound();
-    dialog.classList.remove('running', 'arrived');
-    const route = chooseRewardRoute();
-    dialog.dataset.route = route.id; routeLabel.textContent = route.name;
-    // Restart the same train when the child chooses to see it again.
-    void runner.offsetWidth;
+    if (dialog.classList.contains('arrived')) route = chooseRewardRoute();
+    dialog.classList.remove('arrived', 'honking');
+    dialog.dataset.route = route.id;
     dialog.classList.add('running');
-    status.textContent = `${route.start} でんしゃを タッチしてね！`;
-    start.hidden = true; replay.hidden = true; book.hidden = true; touch.hidden = false;
+    runningMessage = route.start;
+    status.textContent = runningMessage;
+    start.hidden = true; replay.hidden = true; book.hidden = true; touch.hidden = false; horn.hidden = false;
+    horn.focus({ preventScroll: true });
     speak?.(rewardText(train));
     stopSound = playPassSound(sound);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!reduced) phaseTimer = setTimeout(() => { if (!closed) status.textContent = route.middle; }, 2100);
+    if (!reduced) phaseTimer = setTimeout(() => {
+      runningMessage = route.middle;
+      if (!closed && !dialog.classList.contains('honking')) status.textContent = runningMessage;
+    }, 2100);
     timer = setTimeout(() => {
       if (closed) return;
-      dialog.classList.remove('running'); dialog.classList.add('arrived');
-      status.textContent = 'とうちゃく！ たのしかったね！';
-      replay.hidden = false; book.hidden = false; touch.hidden = true; clearTimeout(phaseTimer); stopSound();
-    }, reduced ? 1200 : 5400);
+      dialog.classList.remove('running', 'honking'); dialog.classList.add('arrived');
+      status.textContent = '★ とうちゃく！ ★';
+      const focusReplay = document.activeElement === horn || document.activeElement === touch;
+      replay.hidden = false; book.hidden = false; touch.hidden = true; horn.hidden = true;
+      clearTimeout(phaseTimer); clearTimeout(hornTimer); stopSound();
+      if (focusReplay) replay.focus({ preventScroll: true });
+    }, reduced ? 1200 : 5300);
   };
-  const loadId = ++runId;
   let loaded = false;
   const ready = (failed = false) => {
-    if (closed || loadId !== runId || loaded) return;
+    if (closed || loaded) return;
     loaded = true; clearTimeout(loadTimer);
     if (failed) {
       runner.hidden = true; dialog.querySelector('.reward-fallback').hidden = false;
@@ -183,9 +225,22 @@ export function showTrainReward({ train = chooseReward(), sound = true, speak, o
   dialog.querySelector('[data-reward="continue"]').onclick = () => close();
   start.onclick = run;
   replay.onclick = run;
-  touch.onclick = () => {
-    if (!dialog.classList.contains('running')) return;
+  for (const ticket of dialog.querySelectorAll('[data-reward-letter]')) {
+    ticket.onclick = () => {
+      if (sound) speak?.(ticket.dataset.rewardLetter);
+      ticket.classList.add('collected');
+    };
+  }
+  const listen = dialog.querySelector('[data-reward="listen"]');
+  if (listen) listen.onclick = () => playVoiceSequence(review);
+  touch.onclick = horn.onclick = () => {
+    if (!dialog.classList.contains('running') || dialog.classList.contains('honking')) return;
     status.textContent = 'ぽーっ！ しゅっしゅっ！';
+    dialog.classList.add('honking');
+    hornTimer = setTimeout(() => {
+      dialog.classList.remove('honking');
+      status.textContent = runningMessage;
+    }, 560);
     if (!sound) return;
     try {
       context ??= new (window.AudioContext || window.webkitAudioContext)();

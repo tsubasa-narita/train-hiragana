@@ -1,107 +1,362 @@
-/* Keep the rail plane horizontal, with calm, illustrated scenery behind the train. */
-.reward-dialog{border:1px solid #e4d9c4;box-shadow:0 24px 90px #142e3a55;background:#fffaf0}
-.reward-dialog::backdrop{background:#163344b8;backdrop-filter:blur(7px)}
-.reward-sky{background:linear-gradient(#f8fbf4,#e7f0e7);padding-top:27px}
-.reward-sky h2{font-size:clamp(21px,3.2vw,32px);line-height:1.5;margin:12px 18px 8px;color:#294954}
-.reward-eyebrow{color:#617d67;letter-spacing:.08em}
-.reward-route{background:#fffdf1;border:1px solid #d5dfcd;color:#466c59;padding:6px 18px;font-size:13px;box-shadow:0 2px 0 #6281690c}
-.reward-status{color:#4d6d62;min-height:20px;margin:9px 16px 4px;line-height:1.7}
-.reward-scene{height:365px;margin-top:10px;background:#d8e8e6}
-.reward-landscape,.reward-landscape-svg,.reward-vignette{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.reward-landscape{z-index:0;overflow:hidden}
-.reward-landscape-svg{display:none}
-.landscape-rainbow{display:block}
-[data-route="station"] .landscape-rainbow,[data-route="night"] .landscape-rainbow{display:none}
-[data-route="station"] .landscape-station,[data-route="night"] .landscape-night{display:block}
-.reward-vignette{background:linear-gradient(90deg,#102a3310,transparent 14%,transparent 86%,#102a3310)}
-.reward-sun,.reward-mountains,.reward-track,.reward-platform,.reward-scenery{display:none}
-.reward-controls{padding:20px 24px;background:#fffaf0;border-top:1px solid #e6dfce;gap:14px}
-.reward-controls button{min-height:48px;font-size:14px}
-.reward-controls button:focus-visible{outline:3px solid #399aaa;outline-offset:4px}
-[data-route="station"] .reward-sky{background:linear-gradient(#fff8e9,#f7e5ca)}
-[data-route="night"] .reward-sky{background:linear-gradient(#182d46,#263f55);color:#fff7dc}
-[data-route="night"] .reward-sky h2{color:#fff7df}
-[data-route="night"] .reward-status,[data-route="night"] .reward-eyebrow{color:#e6e7d9}
-[data-route="night"] .reward-route{background:#324c60;border-color:#647782;color:#fff1c6;box-shadow:none}
-[data-route="night"] .reward-controls{background:#eff2eb}
-@media(max-width:580px){
- .reward-dialog{width:calc(100vw - 20px);border-radius:22px}
- .reward-sky{padding-top:20px}
- .reward-eyebrow{font-size:10px}
- .reward-sky h2{font-size:22px;margin:10px 14px 6px}
- .reward-route{font-size:12px;padding:5px 14px}
- .reward-status{font-size:12px;margin:8px 13px 4px}
- .reward-scene{height:250px;margin-top:4px}
- .reward-controls{padding:16px 12px;gap:10px}
- .reward-controls button{font-size:12px;padding:12px 14px}
+.reward-dialog {
+  --reward-sky: #6649a4;
+  --reward-neon: #79f4ef;
+  --reward-gold: #ffdb91;
+  width: min(1040px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #8f82c8;
+  border-radius: 26px;
+  color: #fff7e5;
+  background: #171631;
+  box-shadow: 0 24px 90px #05051dbd, inset 0 1px 0 #ffffff26;
 }
-@media(prefers-reduced-motion:reduce){.reward-landscape *{animation:none;transition:none}}
-/* Every image uses the same 1600 × 300 side view and wheel baseline at y=278. */
-.reward-scene{container-type:inline-size}
-.reward-dialog .reward-runner,.reward-dialog .reward-fallback{position:absolute;width:90%;height:auto;aspect-ratio:1600/300;object-fit:contain;left:5%;top:auto;bottom:calc(65px - 1.2375cqw);z-index:2;font-size:0;visibility:hidden;filter:drop-shadow(0 5px 3px #19353d25);transform:none}
-.reward-fallback-train{display:block;width:100%;height:auto}
-.reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]){visibility:visible;animation:reward-side-pass 5.2s linear both}
-.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){visibility:visible;width:98%;left:1%;bottom:calc(65px - 1.3475cqw);animation:reward-side-arrive .35s ease-out both}
-[data-route="night"] .reward-runner,[data-route="night"] .reward-fallback{filter:brightness(.86) saturate(.88) drop-shadow(0 4px 3px #0a1c3460)}
-@keyframes reward-side-pass{0%{transform:translateX(-125%)}28%{transform:translateX(-22%)}65%{transform:translateX(15%)}100%{transform:translateX(125%)}}
-@keyframes reward-side-arrive{from{opacity:0}to{opacity:1}}
-@media(max-width:580px){
- .reward-dialog .reward-runner,.reward-dialog .reward-fallback{width:135%;left:-17.5%;bottom:calc(45px - 1.85625cqw)}
- .reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){width:98%;left:1%;bottom:calc(45px - 1.3475cqw)}
+.reward-dialog::backdrop { background: #080a21cd; }
+.reward-dialog[data-route="station"] { --reward-sky: #9b416c; --reward-neon: #ffd595; }
+.reward-dialog[data-route="night"] { --reward-sky: #204b83; --reward-neon: #a4adff; }
+.reward-dialog [hidden] { display: none !important; }
+
+.reward-heading {
+  padding: 14px 16px 12px;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 0, #44336f, transparent 72%), #191630;
 }
-@media(prefers-reduced-motion:reduce){
- .reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]),.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){animation:none;width:98%;left:1%;bottom:calc(65px - 1.3475cqw);visibility:visible;transform:none}
+.reward-eyebrow {
+  display: inline-block;
+  color: #ffe4a9;
+  letter-spacing: .16em;
+  font-size: .72rem;
+  font-weight: 900;
 }
-@media(max-width:580px) and (prefers-reduced-motion:reduce){
- .reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]),.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){bottom:calc(45px - 1.3475cqw)}
+.reward-heading h2 {
+  font-size: clamp(1.15rem, 4vw, 2rem);
+  line-height: 1.22;
+  margin-top: 4px;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
-/* Raster sprites are cropped to their wheel edge rather than the fallback SVG margin. */
-.reward-dialog[data-route] .reward-runner.reward-model{aspect-ratio:var(--model-ratio);background-repeat:no-repeat;bottom:65px}
-@media(max-width:580px){.reward-dialog[data-route] .reward-runner.reward-model{bottom:45px}}
-/* Keep the moon inside the centered crop on phones. */
-@media(max-width:580px){.reward-moon{transform:translateX(-170px)}}
-/* Short viewports show the celebration, whole train, and controls together. */
-@media(max-height:500px){
- .reward-dialog{max-height:calc(100dvh - 20px)}
- .reward-sky{padding-top:8px}
- .reward-eyebrow{font-size:9px;letter-spacing:.04em}
- .reward-sky h2{font-size:clamp(15px,2.8vw,18px);line-height:1.3;margin:5px 12px 4px}
- .reward-route{font-size:10px;padding:3px 12px;margin-bottom:0}
- .reward-status{font-size:10px;min-height:17px;line-height:1.4;margin:4px 12px}
- .reward-scene{--scene-height:clamp(100px,calc(100dvh - 205px),170px);--rail-ground:max(5.416667cqw,calc(var(--scene-height)*.17808219));height:var(--scene-height);margin-top:3px}
- .reward-controls{padding:10px 12px;gap:8px}
- .reward-controls button{font-size:12px;min-height:42px;padding:9px 13px}
- .reward-dialog[data-route]:is(.running,.arrived) .reward-runner.reward-model{bottom:var(--rail-ground)}
- .reward-dialog .reward-runner,.reward-dialog .reward-fallback,.reward-dialog.running .reward-runner,.reward-dialog[data-route].running .reward-runner,.reward-dialog.running .reward-fallback:not([hidden]),.reward-dialog[data-route].running .reward-fallback:not([hidden]),.reward-dialog.arrived .reward-runner,.reward-dialog.arrived .reward-fallback:not([hidden]){width:98%;left:1%;bottom:calc(var(--rail-ground) - 1.3475cqw)}
- .reward-rainbow-arc{transform:translateY(65px) scale(.65);transform-origin:600px 171px}
- .reward-moon{transform:translateY(55px)}
- .reward-day-sun{transform:translateY(35px)}
+.reward-scene {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  container-type: size;
+  height: clamp(170px, 51dvh, 460px);
+  background: #25234e;
+  border-block: 1px solid #ffffff30;
 }
-@media(max-height:500px) and (max-width:580px){.reward-moon{transform:translate(-170px,55px)}}
+.reward-world, .reward-panorama, .reward-depth, .reward-confetti, .reward-speed-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.reward-world { overflow: hidden; }
+.reward-panorama { transform-origin: 57% calc(100% - max(10cqw, 28.57cqh)); }
+.reward-stars { animation: reward-starlight 3s ease-in-out infinite alternate; }
+.reward-route-rainbow, .reward-route-station, .reward-route-night { display: none; }
+[data-route="rainbow"] .reward-route-rainbow,
+[data-route="station"] .reward-route-station,
+[data-route="night"] .reward-route-night { display: inline; }
+.reward-depth {
+  perspective: 550px;
+  perspective-origin: 20% 58%;
+  opacity: 0;
+}
+.reward-flight-track {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  height: max(10cqw, 28.57cqh);
+  opacity: 0;
+  filter: drop-shadow(0 0 5px var(--reward-neon));
+}
+.reward-portal {
+  position: absolute;
+  top: 11%;
+  left: -12%;
+  width: 66%;
+  height: 65%;
+  transform-style: preserve-3d;
+  transform: rotateY(22deg);
+}
+.reward-portal i {
+  display: block;
+  position: absolute;
+  inset: 6% 5%;
+  border: 2px solid var(--reward-neon);
+  border-bottom-color: #ffffff26;
+  border-radius: 50% 50% 13% 13%;
+  box-shadow: 0 0 16px var(--reward-neon), inset 0 0 10px var(--reward-neon);
+  transform: translateZ(calc(-140px * var(--ring)));
+  opacity: .65;
+}
+.reward-speed-lines {
+  opacity: 0;
+  background: repeating-conic-gradient(from 15deg at 14% 56%, transparent 0deg 11deg, #ffead7a3 11deg 11.8deg, transparent 11.8deg 20deg);
+  mask-image: radial-gradient(ellipse at 14% 56%, transparent 24%, #000 85%);
+}
+.reward-signal {
+  position: absolute;
+  z-index: 1;
+  left: 5%;
+  bottom: 32%;
+  display: grid;
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid #e6c8a180;
+  border-radius: 9px;
+  background: #1c203d;
+  box-shadow: 0 10px 12px #14112c8c;
+}
+.reward-signal i { width: 10px; height: 10px; border-radius: 50%; background: #4e4a67; }
+.reward-signal i:first-child { background: #ff7b81; box-shadow: 0 0 12px #ff7b81; }
 
-/* The train is visible before departure; the large scene target works even in silence. */
-.reward-dialog:not(.running):not(.arrived) .reward-runner:not([hidden]),
-.reward-dialog:not(.running):not(.arrived) .reward-fallback:not([hidden]){visibility:visible;width:98%;left:1%;bottom:calc(65px - 1.3475cqw)}
-.reward-dialog:not(.running):not(.arrived) .reward-runner.reward-model{bottom:65px}
-.reward-touch{position:absolute;inset:0;z-index:3;width:100%;height:100%;border:0;background:transparent;cursor:pointer}
-.reward-touch[hidden],.reward-controls button[hidden]{display:none}
-.reward-touch:focus-visible{outline:4px solid #1590a0;outline-offset:-5px}
-.reward-controls button{min-height:56px;font-size:clamp(16px,2vw,20px)}
-@media(max-width:580px){
- .reward-dialog:not(.running):not(.arrived) .reward-runner:not([hidden]),.reward-dialog:not(.running):not(.arrived) .reward-fallback:not([hidden]){bottom:calc(45px - 1.3475cqw)}
- .reward-dialog:not(.running):not(.arrived) .reward-runner.reward-model{bottom:45px}
- .reward-controls button{font-size:16px;min-height:52px}
+.reward-train-shot {
+  position: absolute;
+  z-index: 2;
+  width: min(85%, 870px);
+  /* The bridge deck sits at y=300 in the 1200×420 panorama. */
+  bottom: 28.57%;
+  bottom: max(10cqw, 28.57cqh);
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: center bottom;
 }
-@media(max-height:500px){
- .reward-dialog:not(.running):not(.arrived) .reward-runner:not([hidden]),.reward-dialog:not(.running):not(.arrived) .reward-fallback:not([hidden]){bottom:calc(var(--rail-ground) - 1.3475cqw)}
- .reward-dialog:not(.running):not(.arrived) .reward-runner.reward-model{bottom:var(--rail-ground)}
+.reward-train-shot::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: auto 2% -6px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #080c20dd, transparent 72%);
 }
-@media(max-height:500px){
- .reward-scene{--scene-height:clamp(75px,calc(100dvh - 260px),115px)}
- .reward-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 12px}
- .reward-controls button{min-width:0;min-height:48px;font-size:14px;line-height:1.2;padding:8px}
- .reward-controls [data-reward="start"],.reward-controls [data-reward="replay"]{order:1}
- .reward-controls [data-reward="continue"]{order:2}
- .reward-controls [data-reward="book"]{order:3;grid-column:1 / -1}
+.reward-runner, .reward-fallback { display: block; width: 100%; height: auto; object-fit: contain; }
+.reward-runner.reward-model { aspect-ratio: var(--model-ratio); background-repeat: no-repeat; }
+.reward-fallback-train { display: block; width: 100%; height: auto; }
+.reward-runner, .reward-fallback-train { filter: drop-shadow(0 5px 4px #060a24b0) drop-shadow(0 -1px 4px #ffe4aa65); }
+.reward-boarding { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.reward-boarding span {
+  position: absolute;
+  bottom: 11%;
+  left: calc(50% + var(--ticket-offset) * min(14cqw, 74px));
+  display: grid;
+  place-items: center;
+  width: clamp(34px, 9cqw, 52px);
+  aspect-ratio: 1;
+  border: 2px solid #fff9d7;
+  border-radius: 12px;
+  background: #fff1b1;
+  color: #482d5d;
+  box-shadow: 0 0 18px #ffcf7c;
+  font-size: clamp(1.15rem, 5cqw, 1.7rem);
+  font-weight: 900;
+  opacity: 0;
+}
+.reward-status {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  z-index: 4;
+  width: max-content;
+  max-width: 92%;
+  transform: translateX(-50%);
+  padding: 4px 14px 5px;
+  border: 1px solid #ebd2ff55;
+  border-radius: 100px;
+  background: #17162fe8;
+  color: #fff0cc;
+  text-align: center;
+  font-size: clamp(.78rem, 2.5vw, 1rem);
+  font-weight: 900;
+  pointer-events: none;
+}
+.reward-touch { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; border: 0; background: transparent; }
+.reward-touch:focus-visible { outline: 3px solid var(--reward-neon); outline-offset: -4px; }
+.reward-horn {
+  position: absolute;
+  z-index: 4;
+  top: 14%;
+  right: 8%;
+  transform: rotate(9deg);
+  color: var(--reward-gold);
+  font-size: clamp(1.45rem, 6vw, 3.2rem);
+  font-weight: 900;
+  text-shadow: 0 3px #392658, 0 0 22px #f5bf78;
+  pointer-events: none;
+  opacity: 0;
+}
+.reward-burst {
+  position: absolute;
+  top: var(--burst-y);
+  left: var(--burst-x);
+  translate: -50% -50%;
+  width: clamp(80px, 24%, 215px);
+  opacity: 0;
+  stroke: var(--reward-gold);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.reward-burst:nth-child(even) { stroke: var(--reward-neon); }
+.reward-confetti { z-index: 3; }
+.reward-confetti i {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 7px;
+  height: 12px;
+  background: var(--paper);
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.reward-review { padding: 8px 14px 10px; border-bottom: 1px solid #ffffff1f; background: #201d3c; }
+.reward-review-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: .88rem;
+  color: #fff0c7;
+}
+.reward-review-label button {
+  min-height: 44px;
+  padding: 3px 10px;
+  border: 1px solid #e7ddff47;
+  border-radius: 100px;
+  color: #fff7e5;
+  background: #3a315d;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.reward-tickets { display: flex; justify-content: center; gap: clamp(5px, 1.5vw, 12px); margin-top: 6px; }
+.reward-ticket {
+  position: relative;
+  width: clamp(46px, 14vw, 66px);
+  min-height: 48px;
+  padding: 2px 0 4px;
+  border: 2px solid #dfad70;
+  border-radius: 12px;
+  background: linear-gradient(#fff5cd, #ffd595);
+  color: #37214f;
+  box-shadow: 0 3px 0 #925f56;
+  font-weight: 900;
+  font-size: clamp(1.35rem, 5.5vw, 2rem);
+  line-height: 1.15;
+}
+.reward-ticket::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  inset-inline: 8px;
+  border-bottom: 1px dashed #684b684d;
+}
+.reward-ticket.collected { background: #adf3dd; border-color: #65b6af; box-shadow: 0 3px 0 #427f89; }
+.reward-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 12px 14px 14px; }
+.reward-controls button {
+  min-height: 48px;
+  padding: 7px 17px;
+  border-radius: 12px;
+  font-size: .9rem;
+  font-weight: 900;
+}
+.reward-controls .reward-launch {
+  padding-inline: clamp(14px, 5vw, 34px);
+  border: 1px solid #fff3c0;
+  color: #311c49;
+  background: linear-gradient(145deg, #fff0ab, #ffb863);
+  box-shadow: 0 3px 0 #a66b4b, 0 0 20px #ffc97a42;
+  font-size: clamp(1rem, 4vw, 1.24rem);
+}
+.reward-secondary { border: 1px solid #d8c5fa57; color: #fff3d6; background: #332950; }
+.reward-dialog button:focus-visible { outline-color: var(--reward-neon); outline-offset: 2px; }
+
+.running .reward-panorama { animation: reward-camera 5.2s cubic-bezier(.25,.52,.28,1) both; }
+.running .reward-depth { animation: reward-tunnel 3.8s ease both; }
+.running .reward-portal i { animation: reward-arch 2.8s ease-in both; animation-delay: calc(.54s + var(--ring) * .11s); }
+.running .reward-flight-track { animation: reward-tunnel 3.8s ease both; }
+.running .reward-speed-lines { animation: reward-speed 5.2s ease both; }
+.running .reward-train-shot { animation: reward-flyby 5.2s ease-in-out both; will-change: transform; }
+.running .reward-ticket { animation: reward-ticket-launch .48s ease-out both; animation-delay: calc(var(--ticket-index) * .13s); }
+.running .reward-boarding span { animation: reward-board .78s ease-out both; animation-delay: calc(var(--ticket-index) * .12s); }
+.running .reward-signal i:first-child { background: #4e4a67; box-shadow: none; }
+.running .reward-signal i:last-child, .arrived .reward-signal i:last-child { background: #77ffb4; box-shadow: 0 0 14px #77ffb4; }
+.arrived .reward-signal i:first-child { background: #4e4a67; box-shadow: none; }
+.arrived .reward-train-shot { animation: reward-wide-shot .78s ease-in-out both; }
+.arrived .reward-panorama { animation: reward-wide-view .78s ease-in-out both; }
+.arrived .reward-burst { animation: reward-firework 1.6s ease-out both; animation-delay: var(--burst-delay); }
+.arrived .reward-confetti i { animation: reward-paper 1.8s ease-out both; animation-delay: var(--delay); }
+.honking .reward-horn { animation: reward-honk .56s ease-out both; }
+
+@keyframes reward-flyby {
+  /* Keep the right-facing nose in frame while the camera approaches and slows. */
+  0% { transform: translateX(-50%) perspective(1100px) rotateY(0deg) scale(1); }
+  23% { transform: translateX(-61%) perspective(1100px) rotateY(-16deg) scale(.77); }
+  48% { transform: translateX(-53%) perspective(1100px) rotateY(-8deg) scale(.98); }
+  62% { transform: translateX(-53%) perspective(1100px) rotateY(-4deg) scale(1.01); }
+  79% { transform: translateX(-77%) perspective(1100px) rotateY(6deg) scale(1.52); }
+  100% { transform: translateX(-75%) perspective(1100px) rotateY(6deg) scale(1.52); }
+}
+@keyframes reward-camera {
+  0% { transform: scale(1); }
+  29% { transform: scale(1.13) translateX(4%); }
+  79%, 100% { transform: scale(1.36) translateX(-8%); }
+}
+@keyframes reward-wide-shot {
+  from { transform: translateX(-75%) perspective(1100px) rotateY(6deg) scale(1.52); }
+  to { transform: translateX(-50%) perspective(1100px) rotateY(0deg) scale(1); }
+}
+@keyframes reward-wide-view { from { transform: scale(1.36) translateX(-8%); } to { transform: scale(1); } }
+@keyframes reward-tunnel { 0%, 15%, 100% { opacity: 0; } 48%, 71% { opacity: .85; } }
+@keyframes reward-arch {
+  from { transform: translateZ(calc(-140px * var(--ring) - 290px)); }
+  to { transform: translateZ(calc(390px - 60px * var(--ring))); }
+}
+@keyframes reward-speed { 0%, 43%, 100% { opacity: 0; } 71%, 89% { opacity: .76; } }
+@keyframes reward-ticket-launch { 55% { transform: translateY(-5px); background: #b7ffde; box-shadow: 0 0 14px #a3ffd7; } }
+@keyframes reward-board {
+  0% { transform: translate(-50%, 12px) scale(.65); opacity: 0; }
+  27% { opacity: 1; }
+  100% { transform: translate(-50%, -27cqh) scale(.48); opacity: 0; }
+}
+@keyframes reward-firework { 0% { opacity: 0; transform: scale(.12); } 26% { opacity: 1; } 100% { opacity: .46; transform: scale(1); } }
+@keyframes reward-paper {
+  0% { opacity: 0; transform: translateY(-24px) rotate(var(--angle)); }
+  20% { opacity: 1; }
+  100% { opacity: .12; transform: translateY(110px) rotate(calc(var(--angle) + 100deg)); }
+}
+@keyframes reward-honk { 0%, 100% { opacity: 0; } 15%, 73% { opacity: 1; } }
+@keyframes reward-starlight { from { opacity: .52; } to { opacity: 1; } }
+
+@media (max-width: 500px) {
+  .reward-dialog { width: calc(100vw - 16px); border-radius: 20px; }
+  .reward-scene { height: clamp(180px, 42dvh, 340px); }
+  .reward-train-shot { width: 93%; }
+  .reward-controls button { padding-inline: 10px; }
+  .arrived .reward-controls { display: grid; grid-template-columns: 1.15fr 1fr .9fr; padding-inline: 8px; gap: 5px; }
+  .arrived .reward-controls button { padding-inline: 3px; font-size: clamp(.76rem, 3.6vw, .95rem); }
+}
+@media (max-height: 490px) {
+  .reward-dialog { max-height: calc(100dvh - 12px); }
+  .reward-heading { padding: 4px 12px 5px; }
+  .reward-heading h2 { font-size: 1rem; margin-top: 1px; }
+  .reward-scene { height: clamp(76px, calc(100dvh - 240px), 190px); }
+  .reward-train-shot { width: min(86%, 560px, 250cqh); }
+  .reward-review { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 10px; padding: 3px 8px 6px; }
+  .reward-review-label { gap: 5px; }
+  .reward-tickets { margin-top: 0; }
+  .reward-ticket { width: 43px; }
+  .reward-controls { padding: 6px 7px; gap: 5px; }
+  .reward-controls button { font-size: .8rem; padding-inline: 8px; }
+  .reward-controls .reward-launch { font-size: .92rem; padding-inline: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reward-dialog * { animation: none !important; }
+  .reward-dialog:is(.running,.arrived) .reward-burst { opacity: .75; }
+  .reward-dialog.arrived .reward-confetti i, .reward-dialog.honking .reward-horn { opacity: 1; }
 }

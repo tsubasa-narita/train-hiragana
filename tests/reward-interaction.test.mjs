@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRAINS } from '../src/data.js';
-import { REWARD_TRAINS, REWARD_BOOK_IDS, rewardBookId, showTrainReward } from '../src/reward.js';
+import { REWARD_TRAINS, REWARD_BOOK_IDS, rewardBookId, rewardLetters, showTrainReward } from '../src/reward.js';
 
 test('reward identities resolve only explicit valid book entries', () => {
   for (const [reward, book] of Object.entries(REWARD_BOOK_IDS)) {
@@ -14,14 +14,22 @@ test('reward identities resolve only explicit valid book entries', () => {
   assert.equal(rewardBookId({ id: 'toString' }, TRAINS), null);
 });
 
+test('the reward reviews the actual target letters in order, including repeated letters', () => {
+  const card = { name: 'こまち', targets: [1], hole: 2, reviewLetter: 'を' };
+  assert.deepEqual(rewardLetters('find', [card, { name: 'ひのとり', targets: [2] }, card]), ['ま', 'と', 'ま']);
+  assert.deepEqual(rewardLetters('fill', [card]), ['ち']);
+  assert.deepEqual(rewardLetters('trace', [card, { name: 'いぬ', focusLetter: 'ん' }]), ['を', 'ん']);
+  assert.deepEqual(rewardLetters('connect', [card, { name: 'はやぶさ' }, { name: 'かがやき' }]), ['ち', 'さ', 'き']);
+});
+
 test('reward waits for departure, responds silently, arrives, replays and skips', async t => {
   const elements = new Map();
-  const element = () => ({ hidden: false, textContent: '', before(){}, insertAdjacentHTML(){}, offsetWidth: 1 });
-  for (const key of ['.reward-scene','.reward-runner','.reward-status','.reward-route','.reward-fallback', ...['start','replay','book','touch','continue'].map(x=>`[data-reward="${x}"]`)]) elements.set(key, element());
+  const element = () => ({ hidden: false, textContent: '', focus() {} });
+  for (const key of ['.reward-runner','.reward-status','.reward-fallback', ...['start','replay','book','touch','horn','continue'].map(x=>`[data-reward="${x}"]`)]) elements.set(key, element());
   const classes = new Set();
   const dialog = {
     dataset: {}, classList: { add: x=>classes.add(x), remove: (...xs)=>xs.forEach(x=>classes.delete(x)), contains:x=>classes.has(x) },
-    setAttribute(){}, querySelector:key=>elements.get(key), addEventListener(name,fn){this[name]=fn;},
+    setAttribute(){}, querySelector:key=>elements.get(key), querySelectorAll:()=>[], addEventListener(name,fn){this[name]=fn;},
     showModal(){}, close(){}, remove(){this.removed=true;},
   };
   globalThis.document = {createElement: name => name === 'dialog' ? dialog : element(), body:{append(){}}};
@@ -35,7 +43,8 @@ test('reward waits for departure, responds silently, arrives, replays and skips'
   assert.equal(classes.has('running'),false);
   elements.get('[data-reward="start"]').onclick();
   assert.ok(classes.has('running'));
-  elements.get('[data-reward="touch"]').onclick();
+  assert.equal(elements.get('[data-reward="horn"]').hidden,false);
+  elements.get('[data-reward="horn"]').onclick();
   assert.match(elements.get('.reward-status').textContent,/ぽーっ/);
   t.mock.timers.tick(1200);
   assert.ok(classes.has('arrived'));
