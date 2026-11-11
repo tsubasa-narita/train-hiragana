@@ -1,365 +1,56 @@
-.reward-dialog {
-  --reward-sky: #6649a4;
-  --reward-neon: #79f4ef;
-  --reward-gold: #ffdb91;
-  width: min(1040px, calc(100vw - 24px));
-  max-width: none;
-  max-height: calc(100dvh - 24px);
-  padding: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  border: 1px solid #8f82c8;
-  border-radius: 26px;
-  color: #fff7e5;
-  background: #171631;
-  box-shadow: 0 24px 90px #05051dbd, inset 0 1px 0 #ffffff26;
-}
-.reward-dialog::backdrop { background: #080a21cd; }
-.reward-dialog[data-route="station"] { --reward-sky: #9b416c; --reward-neon: #ffd595; }
-.reward-dialog[data-route="night"] { --reward-sky: #204b83; --reward-neon: #a4adff; }
+/* Seven-second railway cinema. The viewport belongs to an actual WebGL scene. */
+.reward-dialog { box-sizing: border-box; width: min(1280px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 20px); margin: auto; padding: 0; border: 1px solid #65748a; border-radius: 24px; color: #f5f5ef; background: #101c2c; box-shadow: 0 28px 100px #030a15a6; overflow: auto; }
+.reward-dialog::backdrop { background: #030b18d9; backdrop-filter: blur(8px); }
+.reward-dialog[open] { display: flex; flex-direction: column; }
+.reward-heading, .reward-controls, .reward-status { flex: 0 0 auto; }
 .reward-dialog [hidden] { display: none !important; }
-
-.reward-heading {
-  padding: 14px 16px 12px;
-  text-align: center;
-  background: radial-gradient(ellipse at 50% 0, #44336f, transparent 72%), #191630;
+.reward-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-bottom: 1px solid #ffffff14; background: linear-gradient(105deg, #1c2c40, #101a29); }
+.reward-heading h2 { color: #f7fbff; margin: 3px 0; font-size: clamp(22px, 3vw, 34px); line-height: 1.35; }
+.reward-heading > div { min-width: 0; }
+.reward-heading h2 span { display: inline-block; }
+.reward-eyebrow { color: #b6c9d6; font-size: 12px; letter-spacing: .12em; }
+.reward-model-name { color: #b4c4cf; font-size: 12px; }
+.reward-mute { flex: 0 0 auto; min-height: 48px; padding: 10px 14px; color: #d9e8ee; background: #ffffff0a; border: 1px solid #6b7c8f; border-radius: 12px; font-size: 13px; }
+.reward-scene { position: relative; flex: 1 1 auto; height: min(60dvh, 650px); min-height: 220px; isolation: isolate; background: linear-gradient(#5f91b5, #dfd2b6 65%, #79936b); overflow: hidden; }
+.reward-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+.reward-loading { position: absolute; inset: 0; display: grid; gap: 14px; place-content: center; justify-items: center; color: #dce9ee; background: #172739; font-size: 16px; }
+.reward-loading-ring { width: 32px; height: 32px; border: 3px solid #4a6173; border-top-color: #debd77; border-radius: 50%; animation: cinema-loading 1s linear infinite; }
+@keyframes cinema-loading { to { transform: rotate(360deg); } }
+.reward-film-edge { pointer-events: none; position: absolute; inset: 0; box-shadow: inset 0 0 70px #06132928; }
+.reward-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #ffffff33; }
+.reward-progress i { display: block; height: 100%; background: #f4d391; transform-origin: left; transform: scaleX(0); }
+.reward-status { text-align: center; margin: 0; padding: 10px 12px 0; color: #bdced9; font-size: 13px; min-height: 30px; }
+.reward-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 12px 20px 20px; }
+.reward-controls button { min-height: 52px; min-width: 122px; padding: 12px 18px; border-radius: 13px; font: inherit; font-size: 15px; font-weight: 700; }
+.reward-launch { background: #f2ce87; color: #182b39; border: 1px solid #ffdf9b; box-shadow: 0 3px 0 #b38f4f; }
+.reward-secondary { background: #24364b; border: 1px solid #65798e; color: #e3edf2; }
+.reward-dialog button:focus-visible { outline: 3px solid #fff1be; outline-offset: 3px; }
+.reward-fallback { position: absolute; inset: 0; background: #182b3b; display: grid; grid-template-rows: 1fr auto; }
+.reward-fallback img { min-height: 0; width: 100%; height: 100%; object-fit: contain; }
+.reward-fallback small { text-align: center; color: #c1d2dc; font-size: 11px; padding: 5px; }
+@media (max-width: 600px) {
+ .reward-dialog { border-radius: 20px; width: calc(100vw - 16px); }
+ .reward-heading { padding: 13px 16px; }
+ .reward-heading h2 { font-size: 21px; }
+ .reward-heading h2.reward-long-title { font-size: 18px; }
+ .reward-eyebrow { font-size: 10px; }
+ .reward-mute { font-size: 11px; padding-inline: 10px; }
+ .reward-model-name { font-size: 10px; }
+ .reward-scene { height: min(54dvh, 500px); }
+ .reward-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 12px 16px; }
+ .reward-controls button { min-width: 0; font-size: 13px; padding: 10px 8px; }
+ .reward-dialog[data-phase='loading'] .reward-controls, .reward-dialog[data-phase='running'] .reward-controls { display: flex; }
 }
-.reward-eyebrow {
-  display: inline-block;
-  color: #ffe4a9;
-  letter-spacing: .16em;
-  font-size: .72rem;
-  font-weight: 900;
+@media (max-height: 500px) {
+ .reward-heading { padding: 7px 16px; }
+ .reward-heading h2 { font-size: 20px; }
+ .reward-heading > div { display: flex; gap: 12px; align-items: center; }
+ .reward-eyebrow { display: none; }
+ .reward-mute { min-height: 44px; padding-block: 6px; }
+ .reward-scene { height: calc(100dvh - 157px); min-height: 130px; }
+ .reward-controls { display: flex; gap: 7px; padding: 6px 10px 10px; }
+ .reward-controls button { min-height: 48px; min-width: 0; padding: 8px 12px; font-size: 12px; }
+ .reward-status { padding-top: 5px; min-height: 24px; font-size: 12px; }
 }
-.reward-heading h2 {
-  font-size: clamp(1.15rem, 4vw, 2rem);
-  line-height: 1.22;
-  margin-top: 4px;
-  text-wrap: balance;
-  overflow-wrap: anywhere;
-}
-
-.reward-scene {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  container-type: size;
-  height: clamp(170px, 51dvh, 460px);
-  background: #25234e;
-  border-block: 1px solid #ffffff30;
-}
-.reward-world, .reward-panorama, .reward-depth, .reward-confetti, .reward-speed-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-.reward-world { overflow: hidden; }
-.reward-panorama { transform-origin: 57% calc(100% - max(10cqw, 28.57cqh)); }
-.reward-stars { animation: reward-starlight 3s ease-in-out infinite alternate; }
-.reward-route-rainbow, .reward-route-station, .reward-route-night { display: none; }
-[data-route="rainbow"] .reward-route-rainbow,
-[data-route="station"] .reward-route-station,
-[data-route="night"] .reward-route-night { display: inline; }
-.reward-depth {
-  perspective: 550px;
-  perspective-origin: 20% 58%;
-  opacity: 0;
-}
-.reward-flight-track {
-  position: absolute;
-  inset: auto 0 0;
-  width: 100%;
-  height: max(10cqw, 28.57cqh);
-  opacity: 0;
-  filter: drop-shadow(0 0 5px var(--reward-neon));
-}
-.reward-portal {
-  position: absolute;
-  top: 11%;
-  left: -12%;
-  width: 66%;
-  height: 65%;
-  transform-style: preserve-3d;
-  transform: rotateY(22deg);
-}
-.reward-portal i {
-  display: block;
-  position: absolute;
-  inset: 6% 5%;
-  border: 2px solid var(--reward-neon);
-  border-bottom-color: #ffffff26;
-  border-radius: 50% 50% 13% 13%;
-  box-shadow: 0 0 16px var(--reward-neon), inset 0 0 10px var(--reward-neon);
-  transform: translateZ(calc(-140px * var(--ring)));
-  opacity: .65;
-}
-.reward-speed-lines {
-  opacity: 0;
-  background: repeating-conic-gradient(from 15deg at 14% 56%, transparent 0deg 11deg, #ffead7a3 11deg 11.8deg, transparent 11.8deg 20deg);
-  mask-image: radial-gradient(ellipse at 14% 56%, transparent 24%, #000 85%);
-}
-.reward-signal {
-  position: absolute;
-  z-index: 1;
-  left: 5%;
-  bottom: 32%;
-  display: grid;
-  gap: 5px;
-  padding: 6px;
-  border: 1px solid #e6c8a180;
-  border-radius: 9px;
-  background: #1c203d;
-  box-shadow: 0 10px 12px #14112c8c;
-}
-.reward-signal i { width: 10px; height: 10px; border-radius: 50%; background: #4e4a67; }
-.reward-signal i:first-child { background: #ff7b81; box-shadow: 0 0 12px #ff7b81; }
-
-.reward-train-shot {
-  position: absolute;
-  z-index: 2;
-  width: min(85%, 870px);
-  /* The bridge deck sits at y=300 in the 1200×420 panorama. */
-  bottom: 28.57%;
-  bottom: max(10cqw, 28.57cqh);
-  left: 50%;
-  transform: translateX(-50%);
-  transform-origin: center bottom;
-}
-.reward-train-shot::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: auto 2% -6px;
-  height: 12px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, #080c20dd, transparent 72%);
-}
-.reward-runner, .reward-fallback { display: block; width: 100%; height: auto; object-fit: contain; }
-.reward-runner.reward-model { aspect-ratio: var(--model-ratio); background-repeat: no-repeat; }
-.reward-fallback-train { display: block; width: 100%; height: auto; }
-.reward-runner, .reward-fallback-train { filter: drop-shadow(0 5px 4px #060a24b0) drop-shadow(0 -1px 4px #ffe4aa65); }
-.reward-boarding { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-.reward-boarding span {
-  position: absolute;
-  bottom: 11%;
-  left: calc(50% + var(--ticket-offset) * min(14cqw, 74px));
-  display: grid;
-  place-items: center;
-  width: clamp(34px, 9cqw, 52px);
-  aspect-ratio: 1;
-  border: 2px solid #fff9d7;
-  border-radius: 12px;
-  background: #fff1b1;
-  color: #482d5d;
-  box-shadow: 0 0 18px #ffcf7c;
-  font-size: clamp(1.15rem, 5cqw, 1.7rem);
-  font-weight: 900;
-  opacity: 0;
-}
-.reward-status {
-  position: absolute;
-  bottom: 6%;
-  left: 50%;
-  z-index: 4;
-  width: max-content;
-  max-width: 92%;
-  transform: translateX(-50%);
-  padding: 4px 14px 5px;
-  border: 1px solid #ebd2ff55;
-  border-radius: 100px;
-  background: #17162fe8;
-  color: #fff0cc;
-  text-align: center;
-  font-size: clamp(.78rem, 2.5vw, 1rem);
-  font-weight: 900;
-  pointer-events: none;
-}
-.reward-touch { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; border: 0; background: transparent; }
-.reward-touch:focus-visible { outline: 3px solid var(--reward-neon); outline-offset: -4px; }
-.reward-horn {
-  position: absolute;
-  z-index: 4;
-  top: 14%;
-  right: 8%;
-  transform: rotate(9deg);
-  color: var(--reward-gold);
-  font-size: clamp(1.45rem, 6vw, 3.2rem);
-  font-weight: 900;
-  text-shadow: 0 3px #392658, 0 0 22px #f5bf78;
-  pointer-events: none;
-  opacity: 0;
-}
-.reward-burst {
-  position: absolute;
-  top: var(--burst-y);
-  left: var(--burst-x);
-  translate: -50% -50%;
-  width: clamp(80px, 24%, 215px);
-  opacity: 0;
-  stroke: var(--reward-gold);
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-.reward-burst:nth-child(even) { stroke: var(--reward-neon); }
-.reward-confetti { z-index: 3; }
-.reward-confetti i {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: 7px;
-  height: 12px;
-  background: var(--paper);
-  border-radius: 2px;
-  opacity: 0;
-}
-
-.reward-review { padding: 8px 14px 10px; border-bottom: 1px solid #ffffff1f; background: #201d3c; }
-.reward-review-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: .88rem;
-  color: #fff0c7;
-}
-.reward-review-label button {
-  min-height: 44px;
-  padding: 3px 10px;
-  border: 1px solid #e7ddff47;
-  border-radius: 100px;
-  color: #fff7e5;
-  background: #3a315d;
-  font-size: .78rem;
-  font-weight: 700;
-}
-.reward-tickets { display: flex; justify-content: center; gap: clamp(5px, 1.5vw, 12px); margin-top: 6px; }
-.reward-ticket {
-  position: relative;
-  width: clamp(46px, 14vw, 66px);
-  min-height: 48px;
-  padding: 2px 0 4px;
-  border: 2px solid #dfad70;
-  border-radius: 12px;
-  background: linear-gradient(#fff5cd, #ffd595);
-  color: #37214f;
-  box-shadow: 0 3px 0 #925f56;
-  font-weight: 900;
-  font-size: clamp(1.35rem, 5.5vw, 2rem);
-  line-height: 1.15;
-}
-.reward-ticket::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  inset-inline: 8px;
-  border-bottom: 1px dashed #684b684d;
-}
-.reward-ticket.collected { background: #adf3dd; border-color: #65b6af; box-shadow: 0 3px 0 #427f89; }
-.reward-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 12px 14px 14px; }
-.reward-controls button {
-  min-height: 48px;
-  padding: 7px 17px;
-  border-radius: 12px;
-  font-size: .9rem;
-  font-weight: 900;
-}
-.reward-controls .reward-launch {
-  padding-inline: clamp(14px, 5vw, 34px);
-  border: 1px solid #fff3c0;
-  color: #311c49;
-  background: linear-gradient(145deg, #fff0ab, #ffb863);
-  box-shadow: 0 3px 0 #a66b4b, 0 0 20px #ffc97a42;
-  font-size: clamp(1rem, 4vw, 1.24rem);
-}
-.reward-secondary { border: 1px solid #d8c5fa57; color: #fff3d6; background: #332950; }
-.reward-dialog button:focus-visible { outline-color: var(--reward-neon); outline-offset: 2px; }
-
-.running .reward-panorama { animation: reward-camera 5.2s cubic-bezier(.25,.52,.28,1) both; }
-.running .reward-depth { animation: reward-tunnel 3.8s ease both; }
-.running .reward-portal i { animation: reward-arch 2.8s ease-in both; animation-delay: calc(.54s + var(--ring) * .11s); }
-.running .reward-flight-track { animation: reward-tunnel 3.8s ease both; }
-.running .reward-speed-lines { animation: reward-speed 5.2s ease both; }
-.running .reward-train-shot { animation: reward-flyby 5.2s ease-in-out both; will-change: transform; }
-.running .reward-ticket { animation: reward-ticket-launch .48s ease-out both; animation-delay: calc(var(--ticket-index) * .13s); }
-.running .reward-boarding span { animation: reward-board .78s ease-out both; animation-delay: calc(var(--ticket-index) * .12s); }
-.running .reward-signal i:first-child { background: #4e4a67; box-shadow: none; }
-.running .reward-signal i:last-child, .arrived .reward-signal i:last-child { background: #77ffb4; box-shadow: 0 0 14px #77ffb4; }
-.arrived .reward-signal i:first-child { background: #4e4a67; box-shadow: none; }
-.arrived .reward-train-shot { animation: reward-wide-shot .78s ease-in-out both; }
-.arrived .reward-panorama { animation: reward-wide-view .78s ease-in-out both; }
-.arrived .reward-burst { animation: reward-firework 1.6s ease-out both; animation-delay: var(--burst-delay); }
-.arrived .reward-confetti i { animation: reward-paper 1.8s ease-out both; animation-delay: var(--delay); }
-.honking .reward-horn { animation: reward-honk .56s ease-out both; }
-
-@keyframes reward-flyby {
-  /* Keep the right-facing nose in frame while the camera approaches and slows. */
-  0% { transform: translateX(-50%) perspective(1100px) rotateY(0deg) scale(1); }
-  23% { transform: translateX(-61%) perspective(1100px) rotateY(-16deg) scale(.77); }
-  48% { transform: translateX(-53%) perspective(1100px) rotateY(-8deg) scale(.98); }
-  62% { transform: translateX(-53%) perspective(1100px) rotateY(-4deg) scale(1.01); }
-  79% { transform: translateX(-77%) perspective(1100px) rotateY(6deg) scale(1.52); }
-  100% { transform: translateX(-75%) perspective(1100px) rotateY(6deg) scale(1.52); }
-}
-@keyframes reward-camera {
-  0% { transform: scale(1); }
-  29% { transform: scale(1.13) translateX(4%); }
-  79%, 100% { transform: scale(1.36) translateX(-8%); }
-}
-@keyframes reward-wide-shot {
-  from { transform: translateX(-75%) perspective(1100px) rotateY(6deg) scale(1.52); }
-  to { transform: translateX(-50%) perspective(1100px) rotateY(0deg) scale(1); }
-}
-@keyframes reward-wide-view { from { transform: scale(1.36) translateX(-8%); } to { transform: scale(1); } }
-@keyframes reward-tunnel { 0%, 15%, 100% { opacity: 0; } 48%, 71% { opacity: .85; } }
-@keyframes reward-arch {
-  from { transform: translateZ(calc(-140px * var(--ring) - 290px)); }
-  to { transform: translateZ(calc(390px - 60px * var(--ring))); }
-}
-@keyframes reward-speed { 0%, 43%, 100% { opacity: 0; } 71%, 89% { opacity: .76; } }
-@keyframes reward-ticket-launch { 55% { transform: translateY(-5px); background: #b7ffde; box-shadow: 0 0 14px #a3ffd7; } }
-@keyframes reward-board {
-  0% { transform: translate(-50%, 12px) scale(.65); opacity: 0; }
-  27% { opacity: 1; }
-  100% { transform: translate(-50%, -27cqh) scale(.48); opacity: 0; }
-}
-@keyframes reward-firework { 0% { opacity: 0; transform: scale(.12); } 26% { opacity: 1; } 100% { opacity: .46; transform: scale(1); } }
-@keyframes reward-paper {
-  0% { opacity: 0; transform: translateY(-24px) rotate(var(--angle)); }
-  20% { opacity: 1; }
-  100% { opacity: .12; transform: translateY(110px) rotate(calc(var(--angle) + 100deg)); }
-}
-@keyframes reward-honk { 0%, 100% { opacity: 0; } 15%, 73% { opacity: 1; } }
-@keyframes reward-starlight { from { opacity: .52; } to { opacity: 1; } }
-
-@media (max-width: 500px) {
-  .reward-dialog { width: calc(100vw - 16px); border-radius: 20px; }
-  .reward-scene { height: clamp(180px, 42dvh, 340px); }
-  .reward-train-shot { width: 93%; }
-  .reward-controls button { padding-inline: 10px; }
-  .arrived .reward-controls { display: grid; grid-template-columns: 1.15fr 1fr .9fr; padding-inline: 8px; gap: 5px; }
-  .arrived .reward-controls button { padding-inline: 3px; font-size: clamp(.76rem, 3.6vw, .95rem); }
-}
-@media (max-height: 490px) {
-  .reward-dialog { max-height: calc(100dvh - 12px); }
-  .reward-heading { padding: 4px 12px 5px; }
-  .reward-heading h2 { font-size: 1rem; margin-top: 1px; }
-  .reward-scene { height: clamp(76px, calc(100dvh - 240px), 190px); }
-  .reward-train-shot { width: min(86%, 560px, 250cqh); }
-  .reward-review { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 10px; padding: 3px 8px 6px; }
-  .reward-review-label { gap: 5px; }
-  .reward-tickets { margin-top: 0; }
-  .reward-ticket { width: 43px; }
-  .reward-controls { padding: 6px 7px; gap: 5px; }
-  .reward-controls button { font-size: .8rem; padding-inline: 8px; }
-  .reward-controls .reward-launch { font-size: .92rem; padding-inline: 12px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .reward-dialog * { animation: none !important; }
-  .reward-dialog:is(.running,.arrived) .reward-burst { opacity: .75; }
-  .reward-dialog.arrived .reward-confetti i, .reward-dialog.honking .reward-horn { opacity: 1; }
-}
-.reward-word-review .reward-tickets { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.reward-word-review .reward-ticket { width: auto; min-width: 75px; padding-inline: 12px; font-size: clamp(18px, 3vw, 25px); }
-.reward-word-review .reward-boarding span { font-size: 20px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .reward-loading-ring { animation: none; } }
+@media (max-height: 500px) and (max-width: 500px) { .reward-heading > div { display: block; min-width: 0; } .reward-model-name { display: none; } .reward-heading h2 { font-size: 17px; } }

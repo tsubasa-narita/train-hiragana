@@ -1,0 +1,2 @@
+# Keep the upstream Three.js distribution unchanged, including its whitespace.
+vendor/three/** -text -whitespace

@@ -3,23 +3,18 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJourneyOffset, kanaRow, targetIndices, makeChoices, makeJourney, pickQuizCard, readProgress } from '../src/data.js';
-import { REWARD_TRAINS, chooseReward, REWARD_ROUTES, chooseRewardRoute } from '../src/reward.js';
+import { REWARD_TRAINS, chooseReward, REWARD_DURATION } from '../src/reward.js';
+import { quizImageFile } from '../src/quiz-images.js';
 const baseKana = character => character.normalize('NFD')[0];
 test('reward images exist and random rewards never immediately repeat', () => {
-  assert.equal(REWARD_TRAINS.length, 36);
-  for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/rewards/${t.image}`), t.image);
+  assert.deepEqual(REWARD_TRAINS.map(t=>t.id), ['yokosuka','shonan-shinjuku','saikyo','toyoko']);
+  for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/trains/${quizImageFile(t.image)}`), t.image);
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
 });
-test('reward routes offer three distinct journeys without immediate repeats', () => {
-  assert.equal(REWARD_ROUTES.length, 3);
-  let previous;
-  const seen = new Set();
-  for (let i = 0; i < 100; i++) {
-    const route = chooseRewardRoute();
-    assert.notEqual(route.id, previous); seen.add(route.id); previous = route.id;
-  }
-  assert.equal(seen.size, 3);
+test('the cinema lasts seven seconds and another train excludes the one being watched', () => {
+  assert.equal(REWARD_DURATION, 7000);
+  for (const train of REWARD_TRAINS) for(let i=0;i<10;i++) assert.notEqual(chooseReward(train.id).id,train.id);
 });
 test('every basic kana has at least two images and avoids the last shown image', () => {
   const recent = {};

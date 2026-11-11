@@ -83,13 +83,10 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4180/';
       }
     }
     await page.locator('dialog.reward-dialog').waitFor();
-    assert.deepEqual(await page.locator('.reward-ticket').allTextContents(),reviewed);
+    assert.equal(await page.locator('.reward-review, .reward-ticket').count(),0,'reward is a separate train cinema');
     const trips = await page.evaluate(() => JSON.parse(localStorage.getItem('train-hiragana-v1')).trips);
     assert.equal(trips,1);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth<=innerWidth));
-    for (const ticket of await page.locator('.reward-ticket').all()) {
-      const box = await ticket.boundingBox(); assert.ok(box.height>=44 && box.width>=44);
-    }
     await page.screenshot({path:`test-results/word/reward-${choiceCount}-${width}.png`,fullPage:true});
     await page.goBack();
     assert.equal(await page.locator('dialog.reward-dialog').count(),0);

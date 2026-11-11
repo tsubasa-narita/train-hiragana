@@ -5,7 +5,7 @@ import { QUIZ_CARDS, KANA_ROWS, BASIC_KANA } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
 import { VOICE_FILES } from '../src/voice-manifest.js';
 import { ANNOUNCEMENT_FILES } from '../src/announcement-manifest.js';
-import { questionText, hintText, praiseText, rewardText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
+import { questionText, hintText, praiseText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
 import { playVoice, playVoiceSequence, stopVoice } from '../src/voice.js';
 import { trainFacts } from '../src/train-facts.js';
 
@@ -16,7 +16,7 @@ test('all reachable narration has a generated audio file', () => {
     for (const c of BASIC_KANA) if (train.name.startsWith(c) || ('をん'.includes(c) && train.name.includes(c))) expected.push(tracePromptText(train, c));
     for (const c of train.name) expected.push(questionText(train, c), hintText(c));
   }
-  for (const train of REWARD_TRAINS) expected.push(rewardText(train));
+  for (const train of REWARD_TRAINS) expected.push(train.name);
   expected.push(...KANA_ROWS.join('').replaceAll(' ', '').replace('ー', ''));
   for (const text of expected) {
     const file = ANNOUNCEMENT_FILES[text] || VOICE_FILES[text];

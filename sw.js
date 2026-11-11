@@ -1,5 +1,5 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v28';
+const CACHE = PREFIX + 'v29';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-facts.js', 'src/train-facts-a.js', 'src/train-facts-b.js', 'src/train-facts-c.js', 'src/train-facts-d.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
@@ -19,6 +19,8 @@ const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-fac
   'src/announcement-manifest.js',
   'assets/connect/komachi-carriages.png',
   'src/reward.js', 'src/reward-trains.js', 'src/reward-models.js', 'src/reward-model-assets.js', 'src/reward-scene.js', 'src/reward.css', 'src/voice.js', 'src/voice-lines.js', 'src/voice-manifest.js', 'src/pwa.js',
+  'src/reward-cinema.js', 'src/reward3d.js', 'src/reward3d-world.js', 'src/reward3d-trains.js', 'src/reward3d-catalog.js',
+  'vendor/three/three.module.js', 'vendor/three/three.core.js', 'vendor/three/LICENSE',
   'assets/icon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(path => new Request(new URL(path, base), { cache: 'reload' })))));
