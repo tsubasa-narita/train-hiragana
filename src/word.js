@@ -2,14 +2,29 @@ import { quizImageFile } from './quiz-images.js';
 import { wordAnswer, wordTrains } from './word-engine.js';
 
 export function wordHomeCard() {
-  return `<button class="mode-card word-card" data-action="start-word"><div class="mode-label">もじから ことばへ <span>NEW</span></div><div class="mode-visual word-preview"><span>こまち</span><span>さくら</span></div><h3>ことばを よもう <span>↗</span></h3><p>この でんしゃの なまえは、どっちかな？</p><div class="card-footer"><span>2もじから、すこしずつ</span><b>あそぶ →</b></div></button>`;
+  return `<button class="mode-card word-card" data-action="start-word"><div class="mode-label">おとと ことばを つなごう <span>NEW</span></div><div class="mode-visual word-preview"><span>♪</span><span>こまち</span></div><h3>ことばを よもう <span>↗</span></h3><p>きこえた なまえの きっぷは、どれかな？</p><div class="card-footer"><span>3つ・4つから えらぼう</span><b>あそぶ →</b></div></button>`;
 }
 export function wordMarkup(state, preferences, sound, failed = false) {
-  const top = `<div class="word-top"><button class="quiet" data-action="home">← ホーム</button>${state && !state.finished ? '<button class="quiet" data-word="pick">ながさを かえる</button>' : '<span>ことばを よもう</span>'}</div>`;
+  const top = `<div class="word-top"><button class="quiet" data-action="home">← ホーム</button>${state && !state.finished ? '<button class="quiet" data-word="pick">えらびなおす</button>' : '<span>ことばを よもう</span>'}</div>`;
   const warning = failed ? '<p role="status">きろくを ほぞんできませんが、このまま あそべます。</p>' : '';
-  if (!state || state.finished) return `<main class="word-play">${top}<section class="word-picker"><div class="eyebrow">もじから、ことばの たびへ</div><h1><span>なまえを </span><span>よんでみよう</span></h1><p>でんしゃの えを みて、なまえの きっぷを えらぼう。<br>こまったら、ひともじずつ きけるよ。</p><div class="word-levels" role="group" aria-label="なまえの ながさ">${[[2,'とき','ひだ','まずは ここから'],[3,'こまち','さくら','なれてきたら'],[4,'はやぶさ','かがやき','もうすこし ながく']].map(([length,a,b,note]) => `<button data-word="length" data-length="${length}" aria-pressed="${preferences.length === length}"><small>${note}</small><b>${length}もじ</b><span class="word-examples"><span>${a}</span><span>${b}</span></span><em>${wordTrains(length).length}しゅるい</em></button>`).join('')}</div><button class="primary word-start" data-word="start">${preferences.length}もじで しゅっぱつ →</button><p class="gentle-note">5つ できたら、ごほうびの でんしゃ！</p><details class="word-parent-note"><summary>おうちのかたへ</summary><p>最初は読み上げず、自分で読む時間を作ります。お手伝いで名前が表示され、文字の音を順に聞けます。2文字は「とき」「ひだ」「あそ」「ゆふ」「のと」「はな」の${wordTrains(2).length}種類です。引退した列車も出題します。長さは自動では変わりません。このモードでは行の設定を使わず、名前の長さで出題します。小さい文字を含む名前は出題しません。</p></details>${warning}</section></main>`;
+  if (!state || state.finished) return `<main class="word-play">${top}<section class="word-picker"><div class="eyebrow">もじから、ことばの たびへ</div><h1><span>なまえを </span><span>よんでみよう</span></h1><p>なまえを きいて、きっぷを えらぼう。<br>こまったら、ひともじずつ きけるよ。</p><div class="word-levels" role="group" aria-label="なまえの ながさ">${[[2,'とき','ひだ','まずは ここから'],[3,'こまち','さくら','なれてきたら'],[4,'はやぶさ','かがやき','もうすこし ながく']].map(([length,a,b,note]) => `<button data-word="length" data-length="${length}" aria-pressed="${preferences.length === length}"><small>${note}</small><b>${length}もじ</b><span class="word-examples"><span>${a}</span><span>${b}</span></span><em>${wordTrains(length).length}しゅるい</em></button>`).join('')}</div><fieldset class="word-choice-picker"><legend>きっぷは いくつ？</legend>${[3,4].map(count => `<button data-word="choices" data-count="${count}" aria-pressed="${preferences.choices === count}">${count}つから えらぶ</button>`).join('')}</fieldset><button class="primary word-start" data-word="start">${preferences.length}もじで しゅっぱつ →</button><p class="gentle-note">5つ できたら、ごほうびの でんしゃ！</p><details class="word-parent-note"><summary>おうちのかたへ</summary><p>毎回最初に電車名を読み上げ、聞こえた名前を3択・4択の文字から選びます。絵は正解後に登場します。「なまえを もういちど きく」で再生し直せます。お手伝いでは名前と文字の音を確認できます。2文字は「とき」「ひだ」「あそ」「ゆふ」「のと」「はな」の${wordTrains(2).length}種類です。引退した列車も出題します。長さは自動では変わりません。このモードでは行の設定を使わず、名前の長さで出題します。小さい文字を含む名前は出題しません。</p></details>${warning}</section></main>`;
   const card = state.cards[state.station], done = ['celebrate', 'ready'].includes(state.phase);
-  return `<main class="word-play">${top}<section class="word-workshop"><div class="word-progress" aria-label="5もんちゅう ${state.station + Number(done)}もん できたよ">${[0,1,2,3,4].map(i => `<span class="${i < state.station || i === state.station && done ? 'done' : ''}">${i < state.station || i === state.station && done ? '✓' : i + 1}</span>`).join('')}<small>${state.length}もじの たび</small></div><div class="word-picture"><img src="./assets/trains/${quizImageFile(card.image)}" alt="なまえを あてる でんしゃの イラスト"></div><h1 class="word-question">${done ? 'よめたね！' : 'この でんしゃの なまえは？'}</h1><p class="word-instruction" role="status">${done ? 'ひともじずつ、つなげて よもう ♪' : state.wrong ? 'もういちど、ゆっくり よんでみよう。' : 'なまえの きっぷを タッチ'}</p><div class="word-options" aria-label="なまえの きっぷ">${card.options.map(name => `<button data-word="answer" data-name="${name}" aria-label="${name}" class="word-ticket ${done && name === card.name ? 'correct' : ''} ${state.wrong === name ? 'retry' : ''}" ${state.phase !== 'answer' ? 'disabled' : ''}>${[...name].map((c,i) => `<span data-word-index="${i}">${c}</span>`).join('')}${done && name === card.name ? '<i aria-hidden="true">✓</i>' : ''}</button>`).join('')}</div>${done ? `<div class="word-complete-actions"><button class="primary" data-word="next" ${state.phase !== 'ready' ? 'disabled' : ''}>${state.station === 4 ? '★ ごほうびの でんしゃ！' : 'つぎの でんしゃ →'}</button><button class="quiet" data-word="pause" aria-pressed="${!preferences.auto}">${preferences.auto ? 'Ⅱ じどうで すすむのを とめる' : '▶ じどうで すすむ'}</button></div>` : `<div class="word-tools">${sound ? `<button class="secondary" data-word="help" ${state.phase === 'hint' ? 'disabled' : ''}>♪ ひともじずつ きく</button>` : '<button class="secondary" data-word="sound">♪ おとを だして きく</button>'}</div>${state.helped ? `<aside class="word-hint"><p>おてつだい：この なまえを よんでみよう</p><div aria-label="おてつだいの なまえ">${[...card.name].map((c,i) => `<button data-word="letter" data-index="${i}" aria-label="${c}を きく" ${!sound ? 'disabled' : ''}>${c}</button>`).join('')}</div>${state.phase === 'hint' ? '<button class="quiet" data-word="skip">じぶんで えらぶ →</button>' : ''}</aside>` : ''}`}${warning}</section></main>`;
+  const intro = state.phase === 'intro';
+  const instruction = done ? 'ひともじずつ、つなげて よもう ♪'
+    : !sound ? 'おとを だして、なまえを きこう。'
+    : intro ? 'なまえを きいてね ♪'
+    : state.audioFailed ? 'もういちど きくか、おてつだいを おしてね。'
+    : state.wrong ? 'なまえを もういちど きいてみよう。' : 'きこえた なまえの きっぷを タッチ';
+  return `<main class="word-play">${top}<section class="word-workshop">
+    <div class="word-progress" aria-label="5もんちゅう ${state.station + Number(done)}もん できたよ">${[0,1,2,3,4].map(i => `<span class="${i < state.station || i === state.station && done ? 'done' : ''}">${i < state.station || i === state.station && done ? '✓' : i + 1}</span>`).join('')}<small>${state.length}もじ・${state.choices}たく</small></div>
+    ${done ? `<div class="word-picture"><img src="./assets/trains/${quizImageFile(card.image)}" alt="${card.name}のイラスト"></div>` : `<button class="word-sound-panel ${intro && sound ? 'listening' : ''}" data-word="${sound ? 'repeat' : 'sound'}"><span aria-hidden="true">♪</span><b>${sound ? 'なまえを もういちど きく' : 'おとを だして きく'}</b><small>えは こたえてからの おたのしみ</small></button>`}
+    <h1 class="word-question">${done ? 'よめたね！' : 'きこえた なまえは どれ？'}</h1>
+    <p class="word-instruction" role="status">${instruction}</p>
+    <div class="word-options" data-count="${card.options.length}" aria-label="なまえの きっぷ">${card.options.map(name => `<button data-word="answer" data-name="${name}" aria-label="${name}" class="word-ticket ${done && name === card.name ? 'correct' : ''} ${state.wrong === name ? 'retry' : ''}" ${state.phase !== 'answer' || !sound ? 'disabled' : ''}>${[...name].map((c,i) => `<span data-word-index="${i}">${c}</span>`).join('')}${done && name === card.name ? '<i aria-hidden="true">✓</i>' : ''}</button>`).join('')}</div>
+    ${done ? `<div class="word-complete-actions"><button class="primary" data-word="next" ${state.phase !== 'ready' ? 'disabled' : ''}>${state.station === 4 ? '★ ごほうびの でんしゃ！' : 'つぎの でんしゃ →'}</button><button class="quiet" data-word="pause" aria-pressed="${!preferences.auto}">${preferences.auto ? 'Ⅱ じどうで すすむのを とめる' : '▶ じどうで すすむ'}</button></div>`
+      : `<div class="word-tools">${sound ? `<button class="secondary" data-word="help" ${state.phase !== 'answer' ? 'disabled' : ''}>♪ ひともじずつ きく</button>` : ''}</div>
+      ${state.helped ? `<aside class="word-hint"><p>おてつだい：この なまえを よんでみよう</p><div aria-label="おてつだいの なまえ">${[...card.name].map((c,i) => `<button data-word="letter" data-index="${i}" aria-label="${c}を きく" ${!sound ? 'disabled' : ''}>${c}</button>`).join('')}</div>${state.phase === 'hint' ? '<button class="quiet" data-word="skip">じぶんで えらぶ →</button>' : ''}</aside>` : ''}`}
+    ${warning}</section></main>`;
 }
 
 export function mountWord(root, state, callbacks) {
@@ -20,9 +35,10 @@ export function mountWord(root, state, callbacks) {
   async function cue(text, minimum = 0) {
     const started = Date.now();
     watchdog = setTimeout(() => { if (current()) callbacks.stop(); }, 4500);
-    if (callbacks.sound) await callbacks.speak(text).catch(() => false);
+    const heard = callbacks.sound ? await callbacks.speak(text).catch(() => false) : false;
     clearTimeout(watchdog);
     if (current()) await wait(Math.max(0, minimum - (Date.now() - started)));
+    return heard;
   }
   async function narrate() {
     const run = ++version;
@@ -42,6 +58,12 @@ export function mountWord(root, state, callbacks) {
     state.phase = state.phase === 'celebrate' ? 'ready' : 'answer';
     callbacks.change();
   }
+  if (card && state.phase === 'intro' && callbacks.sound) {
+    void cue(card.name).then(heard => {
+      if (!current()) return;
+      state.audioFailed = !heard; state.phase = 'answer'; callbacks.change();
+    });
+  }
   if (card && state.phase === 'hint') root.querySelector?.('.word-hint')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   if (card && ['celebrate', 'hint'].includes(state.phase)) void narrate();
   function scheduleNext() {
@@ -56,6 +78,7 @@ export function mountWord(root, state, callbacks) {
     const action = button.dataset.word;
     if (action === 'start') return callbacks.start();
     if (action === 'pick') return callbacks.pick();
+    if (action === 'choices') return callbacks.choices(Number(button.dataset.count));
     if (action === 'length') return callbacks.length(Number(button.dataset.length));
     if (!card) return;
     if (action === 'pause') {
@@ -67,6 +90,9 @@ export function mountWord(root, state, callbacks) {
       return;
     }
     if (action === 'sound') return callbacks.enableSound();
+    if (action === 'repeat' && callbacks.sound && !['celebrate', 'ready'].includes(state.phase)) {
+      callbacks.stop(); state.phase = 'intro'; callbacks.change(); return;
+    }
     if (action === 'next' && state.phase === 'ready') return callbacks.next();
     if (action === 'skip' && state.phase === 'hint') { callbacks.stop(); state.phase = 'answer'; return callbacks.change(); }
     if (action === 'letter' && callbacks.sound) {

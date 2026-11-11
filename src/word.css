@@ -16,6 +16,16 @@
 .word-levels em { font-size: 12px; font-style: normal; color: #81708f; }
 .word-levels .word-examples { display: grid; gap: 3px; }
 .word-examples > span { white-space: nowrap; }
+.word-choice-picker { border: 0; padding: 0; margin: 22px auto; display: flex; justify-content: center; gap: 12px; }
+.word-choice-picker legend { font-size: 16px; margin-bottom: 12px; }
+.word-choice-picker button { min-height: 54px; padding: 10px 16px; border: 2px solid #d9d3e0; border-radius: 14px; color: #655080; background: white; }
+.word-choice-picker button[aria-pressed="true"] { background: #f2eafa; border-color: #7d639b; }
+.word-sound-panel { width: 100%; min-height: 150px; border: 1px solid #ddd3eb; border-radius: 24px; padding: 18px; background: #f1edf8; color: #665280; display: grid; place-content: center; gap: 6px; }
+.word-sound-panel > span { font-size: 46px; line-height: 1.1; }
+.word-sound-panel b { font-size: 18px; }
+.word-sound-panel small { font-size: 12px; }
+.word-sound-panel.listening > span { animation: word-listening 1s ease-in-out infinite alternate; }
+@keyframes word-listening { to { transform: scale(1.15); color: #a77934; } }
 .word-start { min-width: 260px; }
 .word-parent-note { max-width: 620px; margin: 28px auto 0; text-align: left; font-size: 14px; line-height: 1.8; }
 .word-parent-note summary { cursor: pointer; padding: 12px; }
@@ -28,14 +38,15 @@
 .word-question { font-size: clamp(21px, 4vw, 30px); margin: 20px 0 6px; }
 .word-instruction { min-height: 24px; margin: 0 0 20px; color: #68796b; font-size: 16px; }
 .word-options { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; max-width: 660px; margin: auto; }
+.word-options[data-count="3"] > :last-child { grid-column: 1 / -1; justify-self: center; width: calc(50% - 11px); }
 .word-ticket { position: relative; display: flex; justify-content: center; align-items: center; gap: .08em; min-width: 0; min-height: 110px; background: #fff; border: 2px solid #b1c4ac; border-radius: 22px; padding: 14px 8px; box-shadow: 0 7px 0 #d4dfcb; color: #3e6651; font-size: clamp(32px, 6vw, 52px); }
-.word-ticket > span { border-radius: 8px; padding: 0 .04em; transition: background .18s, color .18s, transform .18s; }
+.word-ticket > span { border-radius: 8px; transition: background .18s, color .18s, transform .18s; }
 .word-ticket.correct { border-color: #4b8365; background: #eaf3dc; opacity: 1; }
 .word-ticket:disabled:not(.correct) { opacity: .38; }
 .word-ticket.retry { border-style: dashed; box-shadow: 0 4px 0 #e4e7df; }
 .word-ticket i { position: absolute; right: 8px; top: -14px; border-radius: 50%; background: #4b8365; color: white; font-size: 20px; font-style: normal; width: 30px; height: 30px; line-height: 30px; }
 .word-ticket .sounding, .word-hint .sounding { color: #755112; background: #ffe8a4; transform: translateY(-3px); }
-.word-tools { margin: 26px 0 0; }
+.word-tools { margin: 26px 0 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
 .word-tools .secondary { min-height: 54px; }
 .word-hint { max-width: 560px; margin: 20px auto 0; padding: 16px; background: #f6f0df; border: 1px dashed #c4af73; border-radius: 18px; }
 .word-hint p { font-size: 14px; margin: 0 0 10px; }
@@ -57,10 +68,13 @@
   .word-progress { gap: 6px; }
   .word-progress > span { width: 30px; height: 30px; }
   .word-picture { height: 210px; border-radius: 16px; }
+  .word-sound-panel { min-height: 130px; padding: 14px; }
+  .word-sound-panel b { font-size: 16px; }
   .word-options { gap: 12px; }
-  .word-ticket { min-height: 88px; font-size: clamp(28px, 7.7vw, 40px); border-radius: 16px; }
+  .word-options[data-count="3"] > :last-child { width: calc(50% - 6px); }
+  .word-ticket { min-height: 88px; padding-inline: 4px; font-size: clamp(24px, 7.2vw, 40px); border-radius: 16px; }
   .word-question { font-size: 21px; }
   .word-instruction { font-size: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .word-ticket > span { transition: none; } .word-ticket .sounding, .word-hint .sounding { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .word-ticket > span { transition: none; } .word-ticket .sounding, .word-hint .sounding { transform: none; } .word-sound-panel.listening > span { animation: none; } }
 @media (max-width: 380px) { .word-levels small { display: none; } .word-levels em { font-size: 11px; white-space: nowrap; } }

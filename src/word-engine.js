@@ -4,23 +4,23 @@ import { TRAINS, QUIZ_CARDS, shuffle } from './data.js';
 export function wordTrains(length, trains = TRAINS) {
   return trains.filter(train => [...train.name].length === length && /^[ぁ-ゖー]+$/.test(train.name) && !/[ぁぃぅぇぉっゃゅょゎ]/.test(train.name));
 }
-// A photograph cannot identify the service when both names use the same livery.
-// Never ask a child to distinguish those services from the picture alone.
-const sharedAppearance = [
-  ['あそ', 'ゆふ'], ['あずさ', 'かいじ'], ['ひたち', 'ときわ'],
-  ['さくら', 'みずほ'], ['のぞみ', 'こだま', 'ひかり'],
-  ['とき', 'つるぎ', 'かがやき', 'たにがわ'], ['わかしお', 'さざなみ'],
-];
-export function distinguishableWords(a, b) {
-  return a.name !== b.name && !sharedAppearance.some(group => group.includes(a.name) && group.includes(b.name));
+export function wordOptions(train, length, count = 3, random = Math.random) {
+  count = count === 4 ? 4 : 3;
+  const alternatives = wordTrains(length).filter(item => item.name !== train.name);
+  // Put similar beginnings first so the entire spoken name matters.
+  const sameInitial = shuffle(alternatives.filter(item => item.name[0] === train.name[0]), random);
+  const others = shuffle(alternatives.filter(item => item.name[0] !== train.name[0]), random);
+  const names = [...new Set([train.name, ...sameInitial.map(t => t.name), ...others.map(t => t.name)])];
+  return shuffle(names.slice(0, count), random);
 }
 export function readWordPreferences(storage) {
   let value;
   try { value = JSON.parse(storage?.getItem('train-word-v1')) || {}; } catch { value = {}; }
-  return { length: [2, 3, 4].includes(value.length) ? value.length : 2, auto: value.auto !== false };
+  return { length: [2, 3, 4].includes(value.length) ? value.length : 2, choices: value.choices === 4 ? 4 : 3, auto: value.auto !== false };
 }
-export function newWordJourney({ length = 2, stamps = [], recent = [], random = Math.random } = {}) {
+export function newWordJourney({ length = 2, choices = 3, stamps = [], recent = [], random = Math.random } = {}) {
   length = [2, 3, 4].includes(length) ? length : 2;
+  choices = choices === 4 ? 4 : 3;
   const pool = wordTrains(length);
   const cards = [];
   for (let i = 0; i < 5; i++) {
@@ -31,13 +31,19 @@ export function newWordJourney({ length = 2, stamps = [], recent = [], random = 
     const base = candidates[0];
     const variants = QUIZ_CARDS.filter(card => card.id === base.id && !card.kind);
     const train = shuffle(variants.length ? variants : [base], random)[0];
-    const alternatives = pool.filter(item => distinguishableWords(train, item));
-    // Where possible, reading only the initial must not decide the answer.
-    const sameInitial = alternatives.filter(item => item.name[0] === train.name[0]);
-    const other = shuffle(sameInitial.length ? sameInitial : alternatives, random)[0];
-    cards.push({ ...train, options: shuffle([train.name, other.name], random) });
+    cards.push({ ...train, options: wordOptions(train, length, choices, random) });
   }
-  return { cards, length, station: 0, phase: 'answer', credited: false, helped: false, wrong: '' };
+  return { version: 2, cards, length, choices, station: 0, phase: 'intro', credited: false, helped: false, wrong: '' };
+}
+export function restoreWordJourney(state, choices = 3) {
+  if (!state || state.version === 2) return state;
+  state.choices = choices === 4 ? 4 : 3;
+  for (const card of state.cards) card.options = wordOptions(card, state.length, state.choices);
+  if (['intro', 'answer', 'hint'].includes(state.phase)) {
+    state.phase = 'intro'; state.helped = false; state.wrong = '';
+  }
+  state.version = 2;
+  return state;
 }
 export function wordAnswer(state, name) {
   if (state.phase !== 'answer') return false;
@@ -49,6 +55,6 @@ export function wordAnswer(state, name) {
 }
 export function advanceWord(state) {
   if (state.phase !== 'ready' || state.station >= state.cards.length - 1) return false;
-  state.station++; state.phase = 'answer'; state.credited = false; state.helped = false; state.wrong = '';
+  state.station++; state.phase = 'intro'; state.credited = false; state.helped = false; state.wrong = ''; state.audioFailed = false;
   return true;
 }
