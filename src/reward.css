@@ -1,4 +1,4 @@
-/* Seven-second railway cinema. The viewport belongs to an actual WebGL scene. */
+/* Ten-second railway cinema. The viewport belongs to an actual WebGL scene. */
 .reward-dialog { box-sizing: border-box; width: min(1280px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 20px); margin: auto; padding: 0; border: 1px solid #65748a; border-radius: 24px; color: #f5f5ef; background: #101c2c; box-shadow: 0 28px 100px #030a15a6; overflow: auto; }
 .reward-dialog::backdrop { background: #030b18d9; backdrop-filter: blur(8px); }
 .reward-dialog[open] { display: flex; flex-direction: column; }
@@ -58,3 +58,23 @@
 .reward-cinema .reward-progress i { background: var(--scene-color, var(--train-color)); }
 .reward-cinema .reward-model-name { color: var(--scene-color, var(--train-color)); }
 @media (max-height: 500px) and (max-width: 500px) { .reward-heading > div { display: block; min-width: 0; } .reward-model-name { display: none; } .reward-heading h2 { font-size: 17px; } }
+
+/* Keep the moving train prominent while preserving the always-available exit. */
+@media (min-height: 501px) {
+ .reward-dialog.running .reward-heading { padding: 8px 18px; }
+ .reward-dialog.running .reward-heading > div { display:flex; align-items:baseline; gap:12px; }
+ .reward-dialog.running .reward-heading h2 { font-size:25px; margin:0; }
+ .reward-dialog.running .reward-eyebrow { display:none; }
+ .reward-dialog.running .reward-scene { height:min(68dvh,740px); }
+ .reward-dialog.running .reward-controls { padding:7px 16px 10px; }
+ .reward-dialog.running .reward-status { font-size:15px; font-weight:700; color:#e4ebed; }
+}
+@media (max-width:600px) and (min-height:501px) {
+ .reward-dialog.running .reward-heading { padding:7px 12px; }
+ .reward-dialog.running .reward-heading h2 { font-size:20px; }
+ .reward-dialog.running .reward-heading h2.reward-long-title { font-size:16px; }
+ .reward-dialog.running .reward-model-name { display:none; }
+ .reward-dialog.running .reward-scene { height:min(65dvh,600px); }
+}
+.reward-dialog[data-chapter='finale'] .reward-status { color:#ffe4a6; }
+.reward-dialog.arrived [data-reward='book'] { border-color:#cbb370; background:linear-gradient(130deg,#445b6b,#304053); color:#fff2cb; }

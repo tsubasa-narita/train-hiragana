@@ -7,7 +7,7 @@ import {
 } from '../src/reward.js';
 
 test('seven cinematic rewards resolve only explicit valid book entries', () => {
-  assert.equal(REWARD_DURATION, 7000);
+  assert.equal(REWARD_DURATION, 10000);
   assert.deepEqual(REWARD_TRAINS.map(train => train.id).sort(), ['yokosuka', 'shonan-shinjuku', 'saikyo', 'toyoko', 'yamanote', 'komachi', 'hayabusa'].sort());
   assert.equal(Object.keys(REWARD_BOOK_IDS).length, 7);
   for (const [reward, book] of Object.entries(REWARD_BOOK_IDS)) {
@@ -217,13 +217,13 @@ test('3D engine owns completion and marks a reward played exactly once', async t
   h.click('continue'); assert.equal(done, 1);
 });
 
-test('completed history restores the same scene at seven seconds without playing or announcing it',async t=>{
+test('completed history restores the same scene at ten seconds without playing or announcing it',async t=>{
   const h=harness(t),played=[],spoken=[];
   const current=h.open({train:{id:'yokosuka',sceneId:'night',played:true},sound:true,speak:value=>spoken.push(value),onPlayed:r=>played.push({...r})});await settled();
   assert.deepEqual([current.id,current.sceneId,current.played],['yokosuka','night',true]);
   const engine=h.engines[0];
   assert.equal(engine.train.sceneId,'night');assert.equal(engine.plays,0);
-  assert.deepEqual(engine.seeks,[7000]);assert.equal(engine.elapsed,7000);
+  assert.deepEqual(engine.seeks,[10000]);assert.equal(engine.elapsed,10000);
   assert.equal(h.dialog().dataset.scenario,'night');assert.equal(h.dialog().dataset.phase,'arrived');
   assertArrivalControls(h,true);
   h.visibility(true);h.visibility(false);t.mock.timers.tick(30000);
@@ -238,7 +238,7 @@ test('returning to completed reward history never autoplays it again',async t=>{
   for(let visit=0;visit<2;visit++){
     h.open({train:saved,onPlayed:()=>played++});await settled();
     const engine=h.engines.at(-1);
-    assert.equal(engine.plays,0);assert.equal(engine.elapsed,7000);assertArrivalControls(h,true);
+    assert.equal(engine.plays,0);assert.equal(engine.elapsed,10000);assertArrivalControls(h,true);
     assert.deepEqual([engine.train.id,engine.train.sceneId],['saikyo','skybridge']);
     h.click('continue');engine.options.onComplete();
   }
@@ -270,11 +270,11 @@ test('closing during Blender asset preparation cannot create a late renderer',as
   assert.equal(h.engines.length,0);assert.equal(h.dialog(),null);
 });
 
-test('hidden fallback also waits for foreground before its seven second timer',async t=>{
+test('hidden fallback also waits for foreground before its ten second timer',async t=>{
   const h=harness(t),loading=deferred();
   h.open({loadScene:()=>loading.promise});h.visibility(true);loading.resolve({createReward3D(){throw Error('no GPU');}});await settled();
   t.mock.timers.tick(30000);assert.equal(h.dialog().dataset.phase,'waiting');
-  h.visibility(false);t.mock.timers.tick(6999);assert.equal(h.dialog().dataset.phase,'running');
+  h.visibility(false);t.mock.timers.tick(9999);assert.equal(h.dialog().dataset.phase,'running');
   t.mock.timers.tick(1);assert.equal(h.dialog().dataset.phase,'arrived');
 });
 
@@ -365,7 +365,7 @@ test('background visibility pauses and resumes only an active clip', async t => 
   assert.equal(engine.resumes, 1, 'an arrived clip must not restart on focus');
 });
 
-test('fallback excludes ten background seconds and resumes only its remaining five seconds', async t => {
+test('fallback excludes ten background seconds and resumes only its remaining eight seconds', async t => {
   const h = harness(t); let done = 0;
   h.open({ loadScene: async () => { throw new Error('no WebGL'); }, onDone: () => done++ });
   await settled();
@@ -380,12 +380,13 @@ test('fallback excludes ten background seconds and resumes only its remaining fi
   assert.equal(h.dialog().dataset.phase, 'running', 'background time must not complete the fallback');
   assertArrivalControls(h, false);
   h.visibility(false);
-  t.mock.timers.tick(4999);
+  t.mock.timers.tick(7999);
   assert.equal(h.dialog().dataset.phase, 'running', 'the last visible millisecond is still required');
   assertArrivalControls(h, false);
+  assert.equal(Date.now() - started, 19999);
   t.mock.timers.tick(1);
-  assert.equal(Date.now() - started, 17000);
-  assert.equal(h.dialog().dataset.phase, 'arrived', 'resume must use five remaining seconds rather than restart seven');
+  assert.equal(Date.now() - started, 20000);
+  assert.equal(h.dialog().dataset.phase, 'arrived', 'resume must use eight remaining seconds rather than restart ten');
   assertArrivalControls(h, true);
   assert.equal(done, 0, 'arrival still waits for an explicit continue');
 });
@@ -416,7 +417,7 @@ test('legacy review options have no review UI or letter speech; unsupported save
 });
 
 for (const failure of ['module rejection', 'renderer creation', 'context loss']) {
-  test(`${failure} shows an honest illustration fallback and arrives at exactly seven seconds`, async t => {
+  test(`${failure} shows an honest illustration fallback and arrives at exactly ten seconds`, async t => {
     const h = harness(t); let done = 0, played = 0;
     const options = failure === 'module rejection' ? { loadScene: async () => { throw new Error('offline'); } }
       : failure === 'renderer creation' ? { loadScene: async () => ({ createReward3D() { throw new Error('no WebGL'); } }) } : {};
@@ -434,7 +435,7 @@ for (const failure of ['module rejection', 'renderer creation', 'context loss'])
     assert.equal(h.dialog().querySelector('canvas').hidden, true);
     assert.equal(h.dialog().querySelector('.reward-loading').hidden, true);
     assertArrivalControls(h, false);
-    t.mock.timers.tick(6999); assert.equal(h.dialog().dataset.phase, 'running');
+    t.mock.timers.tick(9999); assert.equal(h.dialog().dataset.phase, 'running');
     t.mock.timers.tick(1); assert.equal(h.dialog().dataset.phase, 'arrived');
     assertArrivalControls(h, true);
     assert.equal(done, 0);
@@ -455,6 +456,6 @@ test('a stalled module falls back after its load timeout and a late module canno
   assert.equal(h.dialog().dataset.phase, 'running');
   loading.resolve(h.module); await settled();
   assert.equal(h.engines.length, 0);
-  t.mock.timers.tick(6999); assert.equal(h.dialog().dataset.phase, 'running');
+  t.mock.timers.tick(9999); assert.equal(h.dialog().dataset.phase, 'running');
   t.mock.timers.tick(1); assert.equal(h.dialog().dataset.phase, 'arrived');
 });

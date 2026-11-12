@@ -117,7 +117,26 @@ export function createShinkansenModel(cfg){
   const doorGeo=own(new THREE.ShapeGeometry(rounded(.79,1.94,.11),8));
   const doorInner=own(new THREE.ShapeGeometry(rounded(.73,1.88,.095),8));
   const doorGlass=own(new THREE.ShapeGeometry(rounded(.29,.67,.065),6));
-  const cover=own(new THREE.ShapeGeometry(rounded(4.45,.66,.22),10));cover.name='cab-skirt';
+  // Bogie access panels follow the rolled lower body, including the cab's
+  // taper. A flat rectangle at maximum body width looked like a white wing.
+  const covers=new Map();
+  function bogieCover(cab,bx,side){
+    const key=`${cab}/${bx}/${side}`;if(covers.has(key))return covers.get(key);
+    const p=[],uv=[],ix=[],nx=24,ny=10;
+    for(let j=0;j<=ny;j++){
+      const y=.69+.66*j/ny,dy=Math.max(0,Math.abs(y-1.02)-.11);
+      const inset=.22-Math.sqrt(Math.max(0,.22*.22-dy*dy));
+      for(let i=0;i<=nx;i++){
+        const x=bx+smooth(-2.225+inset,2.225-inset,i/nx),s=section(x,cab);
+        const level=THREE.MathUtils.clamp((y-(s.top+s.bottom)/2)/((s.top-s.bottom)/2),-.998,.998);
+        const c=Math.sign(level)*Math.pow(Math.abs(level),1/s.exponent);
+        const z=side*(s.w*Math.pow(Math.max(0,1-c*c),s.exponent/2)+.014);
+        p.push(x,y,z);uv.push(i/nx,j/ny);
+      }
+    }
+    for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const a=j*(nx+1)+i,b=a+nx+1;ix.push(a,a+1,b,a+1,b+1,b);}
+    const g=own(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();g.name='cab-skirt';covers.set(key,g);return g;
+  }
   function sidePlane(g,m,x,y,z){add(g,m,x,y,z,1,1,1,0,z<0?Math.PI:0);}
   const wheelParts=[];
   for(const z of [-cfg.gauge/2,cfg.gauge/2]){
@@ -149,7 +168,7 @@ export function createShinkansenModel(cfg){
     const bogies=cab?cfg.cabBogieCenters:cfg.bogieCenters;
     for(const bx of bogies){
       box(dark,bx,.88,0,3.3,.23,2.0);
-      for(const side of [-1,1]){sidePlane(cover,white,bx,1.02,side*(hw+.018));box(dark,bx,.68,side*.93,3.0,.16,.12);}
+      for(const side of [-1,1]){add(bogieCover(cab,bx,side),white);box(dark,bx,.68,side*.93,3.0,.16,.12);}
       for(const dx of [-1.05,1.05]){
         const pivot=new THREE.Group();pivot.name='wheel-axle';pivot.userData={spinAxis:'z',radius:.43};pivot.position.set(-pitch*i+(rear?-bx:bx)+dx,.58,0);
         const wheel=new THREE.Mesh(axle,steel);wheel.castShadow=wheel.receiveShadow=true;pivot.add(wheel);group.add(pivot);wheels.push(pivot);

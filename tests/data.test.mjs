@@ -12,8 +12,8 @@ test('reward images exist and random rewards never immediately repeat', () => {
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
 });
-test('the cinema lasts seven seconds and successive rewards exclude the previous train', () => {
-  assert.equal(REWARD_DURATION, 7000);
+test('the cinema lasts ten seconds and successive rewards exclude the previous train', () => {
+  assert.equal(REWARD_DURATION, 10000);
   for (const train of REWARD_TRAINS) for(let i=0;i<10;i++) assert.notEqual(chooseReward(train.id).id,train.id);
 });
 test('every basic kana has at least two images and avoids the last shown image', () => {

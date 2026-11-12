@@ -452,7 +452,7 @@ export function createDepotWorld(scene, { config } = {}) {
     statusMaterial.color.set(opening>.96?0x8fcb83:0xe6a742);
     statusMaterial.emissive.copy(statusMaterial.color);
     shaftMaterial.uniforms.time.value=time;
-    shaftMaterial.uniforms.strength.value=.105+.055*opening;
+    shaftMaterial.uniforms.strength.value=.105+.10*opening;
     dustMaterial.uniforms.time.value=time;
     poolMaterial.uniforms.strength.value=.12+.19*opening;
     exitLight.intensity=650+1000*opening;

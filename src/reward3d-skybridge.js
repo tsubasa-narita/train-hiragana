@@ -181,9 +181,10 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   const arch = new THREE.Shape();
   arch.moveTo(-4.75, -.25); arch.lineTo(-4.75, 3.9);
   arch.absarc(0, 3.9, 4.75, Math.PI, 0, true);
-  arch.lineTo(4.75, -.25); arch.lineTo(3.65, -.25); arch.lineTo(3.65, 3.9);
-  arch.absarc(0, 3.9, 3.65, 0, Math.PI, false);
-  arch.lineTo(-3.65, -.25); arch.closePath();
+  // The stone lining sits 5 cm inside the rock bore, avoiding coplanar serrated shadows.
+  arch.lineTo(4.75, -.25); arch.lineTo(3.60, -.25); arch.lineTo(3.60, 3.9);
+  arch.absarc(0, 3.9, 3.60, 0, Math.PI, false);
+  arch.lineTo(-3.60, -.25); arch.closePath();
   const portal = mesh(keep(new THREE.ExtrudeGeometry(arch, { depth: 1.2, bevelEnabled: false, curveSegments: 40 })), trim, 'cream-stone-portal');
   const portalFront = at(-24.8);
   portal.position.set(portalFront.x, 0, portalFront.z); portal.rotation.y = portalFront.ry - Math.PI / 2;
@@ -291,8 +292,8 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   // feathered inner/outer edges, with violet inside and red outside.
   const rainbowGeometry = keep(new THREE.PlaneGeometry(440, 250));
   const rainbowMaterial = keep(new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: {}, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader: `varying vec2 vUv;
+    uniforms: {strength:{value:0}}, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader: `varying vec2 vUv;uniform float strength;
       vec3 spectrum(float t){
         vec3 a=vec3(.55,.27,.94),b=vec3(.19,.51,1.),c=vec3(.20,.84,.69),d=vec3(1.,.90,.34),e=vec3(1.,.39,.36);
         if(t<.25)return mix(a,b,t*4.);if(t<.5)return mix(b,c,(t-.25)*4.);
@@ -300,13 +301,13 @@ export function createSkybridgeWorld(scene, { config } = {}) {
       }
       void main(){vec2 p=vec2((vUv.x-.5)*440.,vUv.y*250.);float r=length(p);
         float t=(r-183.)/15.;float edge=smoothstep(0.,.15,t)*(1.-smoothstep(.83,1.,t));
-        float alpha=edge*.43*smoothstep(0.,22.,p.y);if(alpha<.003)discard;
+        float alpha=edge*strength*smoothstep(0.,22.,p.y);if(alpha<.003)discard;
         gl_FragColor=vec4(spectrum(clamp(t,0.,1.)),alpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }` }));
   const rainbow = mesh(rainbowGeometry, rainbowMaterial, 'distant-bay-rainbow');
-  rainbow.position.set(-125, -212, 265); rainbow.renderOrder = 1;
+  rainbow.position.set(-140,0,180); rainbow.renderOrder = 1;
 
   // One softly shaded texture shared by just 28 billboards. No white sphere
   // pile, no full-screen cloud quad, and every cloud's top is below -18 m.
@@ -387,6 +388,10 @@ export function createSkybridgeWorld(scene, { config } = {}) {
       if (disposed) return;
       const time = Number.isFinite(seconds) ? seconds : 0;
       seaMaterial.uniforms.time.value = time;
+      const reveal=frame.moment?.reveal??1;
+      rainbowMaterial.uniforms.strength.value=.62*reveal;
+      rainbow.position.x=(frame.headX||0)-140;
+      group.userData.rainbowVisible=reveal>.1;
       skyMaterial.uniforms.time.value = time;
       // The parent centres the sky on its camera. Track and portal are static;
       // cloud movement is deterministic so seek/replay gives the same image.

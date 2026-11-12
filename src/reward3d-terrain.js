@@ -94,6 +94,7 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
   const material = keep(new THREE.MeshStandardMaterial({ vertexColors: true, map: rockMap,
     bumpMap: rockMap, bumpScale: .38, roughness: .98 }));
   const mountain = mesh(geometry, material, 'sculpted-closed-tunnel-mountain');
+  mountain.castShadow=true;
   mountain.userData = { closed: true, tunnelFront: front, tunnelRear: front - length, sections, sides, capRings };
 
   // The foliage follows the actual surface normal; steep escarpments stay bare.
