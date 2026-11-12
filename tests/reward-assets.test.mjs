@@ -3,6 +3,17 @@ import assert from 'node:assert/strict';
 import {readFile,stat} from 'node:fs/promises';
 import {REWARD_3D_TRAINS} from '../src/reward3d-catalog.js';
 
+for(const name of ['small_hangar_01','shanghai_bund','railway_bridge_02']){
+  test(`${name}: mobile reflection data remains HDR and below 500 KB`,async()=>{
+    const data=await readFile(new URL(`../assets/reward3d/environment/${name}.hdr`,import.meta.url));
+    const header=data.subarray(0,256).toString('ascii');
+    assert.match(header,/^#\?RADIANCE/);
+    assert.match(header,/FORMAT=32-bit_rle_rgbe/);
+    assert.match(header,/-Y 256 \+X 512/);
+    assert.ok(data.length<500000,'full-sized photography must not silently inflate mobile downloads');
+  });
+}
+
 test('Blender asset catalog covers all seven reward trains',()=>{
   assert.equal(REWARD_3D_TRAINS.length,7);
   assert.equal(new Set(REWARD_3D_TRAINS.map(train=>train.id)).size,7);

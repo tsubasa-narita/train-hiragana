@@ -21,7 +21,7 @@ function oppositeTrain(config){
 export async function prepareReward3D(config){
   const ids=[config.id];
   if(config.sceneId==='night')ids.push(oppositeTrain(config).id);
-  try{await Promise.all([prepareTrainModels(ids),prepareEnvironment(config.sceneId)]);}catch(error){console.warn('Blender asset unavailable; using local geometry.',error.message);}
+  try{await Promise.all([prepareTrainModels(ids),prepareEnvironment(config.sceneId)]);return true;}catch(error){console.warn('Blender asset unavailable; using local geometry.',error.message);return false;}
 }
 
 // Real geometry moves through a fixed world; the camera glides between three

@@ -16,6 +16,18 @@ export async function prepareEnvironment(scenario){
   }).catch(error=>{hdrJobs.delete(scenario);throw error;}));
   return hdrJobs.get(scenario);
 }
+// Decode quantized attributes and bake prototype transforms just once, during
+// loading. Scene clones then need only copy ready-to-use CPU geometry.
+function prepareGeometry(mesh){
+  const g=mesh.geometry.clone();
+  for(const name of ['position','normal','tangent']){
+    const source=g.getAttribute(name);if(!source||source.array instanceof Float32Array)continue;
+    const data=new Float32Array(source.count*source.itemSize);
+    for(let i=0;i<source.count;i++)for(let k=0;k<source.itemSize;k++)data[i*source.itemSize+k]=source.getComponent(i,k);
+    g.setAttribute(name,new THREE.Float32BufferAttribute(data,source.itemSize));
+  }
+  g.applyMatrix4(mesh.matrixWorld);g.computeBoundingBox();g.computeBoundingSphere();return g;
+}
 export async function prepareTrainModels(ids){
   await Promise.all(ids.map(id=>{
     if(libraries.has(id))return;
@@ -24,6 +36,9 @@ export async function prepareTrainModels(ids){
       const job=loader.loadAsync(new URL(`../assets/reward3d/${id}.glb`,import.meta.url).href).then(gltf=>{
         gltf.scene.updateMatrixWorld(true);
         for(const name of ['CAB','STANDARD','PANTOGRAPH','AXLE'])if(!gltf.scene.getObjectByName(name))throw Error(`Missing ${id}/${name} prototype`);
+        const originals=new Set();
+        gltf.scene.traverse(mesh=>{if(mesh.isMesh){originals.add(mesh.geometry);mesh.geometry=prepareGeometry(mesh);}});
+        for(const geometry of originals)geometry.dispose();
         libraries.set(id,gltf.scene);
       }).catch(error=>{pending.delete(id);throw error;});
       pending.set(id,job);
@@ -56,16 +71,7 @@ export function createBlenderTrainModel(config){
   function geometry(mesh){
     if(!geometryCache.has(mesh)){
       const g=mesh.geometry.clone();
-      // Meshopt/KHR quantization can retain normalized integer attributes.
-      // Dequantize before baking the node transform; writing metre positions
-      // into an integer BufferAttribute would otherwise clamp the geometry.
-      for(const name of ['position','normal','tangent']){
-        const source=g.getAttribute(name);if(!source||source.array instanceof Float32Array)continue;
-        const data=new Float32Array(source.count*source.itemSize);
-        for(let i=0;i<source.count;i++)for(let k=0;k<source.itemSize;k++)data[i*source.itemSize+k]=source.getComponent(i,k);
-        g.setAttribute(name,new THREE.Float32BufferAttribute(data,source.itemSize));
-      }
-      g.applyMatrix4(mesh.matrixWorld);g.computeBoundingBox();g.computeBoundingSphere();geometries.add(g);geometryCache.set(mesh,g);
+      geometries.add(g);geometryCache.set(mesh,g);
     }
     return geometryCache.get(mesh);
   }

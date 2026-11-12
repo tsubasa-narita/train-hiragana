@@ -10,7 +10,7 @@ import { newWordJourney, advanceWord, readWordPreferences, restoreWordJourney } 
 import { newFillJourney, advanceFill, readFillPreferences } from './fill-engine.js';
 import { installMarkup, installApp } from './pwa.js';
 import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, kanaRow, normalizeRows, orderedLetters, nextJourneyOffset, targetIndices, makeChoices, makeJourney, readProgress } from './data.js';
-import { REWARD_TRAINS, showTrainReward, stopTrainReward, unlockRewardAudio, rewardBookId } from './reward.js';
+import { REWARD_TRAINS, showTrainReward, stopTrainReward, unlockRewardAudio, rewardBookId, preloadTrainReward } from './reward.js';
 import { playVoice, playVoiceSequence, stopVoice } from './voice.js';
 import { questionText, hintText, praiseText, tracePromptText, VOICE_SAMPLE } from './voice-lines.js';
 
@@ -25,6 +25,7 @@ function saveWord() {
   catch { wordSavingFailed = true; }
 }
 function chooseWord() {
+  preloadTrainReward();
   stopVoice(); cancelAdvance();
   wordState = newWordJourney({ length: wordPreferences.length, choices: wordPreferences.choices, stamps: progress.stamps });
   unlockRewardAudio(progress.sound); render(); window.scrollTo(0, 0);
@@ -52,6 +53,7 @@ function saveFill() {
   catch { fillSavingFailed = true; }
 }
 function chooseFill(preferredId) {
+  preloadTrainReward();
   stopVoice(); cancelAdvance();
   fillState = newFillJourney({ rows: progress.rows, ...fillPreferences, preferredId, stamps: progress.stamps });
   unlockRewardAudio(progress.sound); render(); window.scrollTo(0, 0);
@@ -79,6 +81,7 @@ function nextFill() {
 let connectState = null, disposeConnect;
 let connectGarage = readGarage(storage, TRAINS), connectSavingFailed = false;
 function chooseConnect(id) {
+  preloadTrainReward();
   const train = TRAINS.find(t => t.id === id);
   if (!train) return;
   const completedCards = connectState?.completedCards || [];
@@ -136,6 +139,7 @@ function chooseTrace(rows, letter) {
   speak(tracePromptText(traceState.card, traceState.letter));
 }
 function startTrace() {
+  preloadTrainReward();
   traceState = newTrace(progress.rows, undefined, progress.recentImages, progress.imageDecks, progress.stamps);
   save();
   unlockRewardAudio(progress.sound); navigate('trace'); speak(tracePromptText(traceState.card, traceState.letter));
@@ -223,6 +227,7 @@ function prepare() {
   save();
 }
 function start(type, preferredId) {
+  preloadTrainReward();
   cancelAdvance(); stopTrainReward(); lastReward = null;
   unlockRewardAudio(progress.sound);
   if (preferredId) {
@@ -424,6 +429,7 @@ function restoreHistory(state) {
   render(); window.scrollTo(0, 0);
   if (screen === 'trace' && traceState.rewardPending) scheduleTraceFinish();
   if (screen === 'game' && answered) advanceAfterNarration(speak(mode === 'find' ? currentFactText() : 'できたね！'), advance);
+  if (['game','trace','connect','fill','word'].includes(screen)) preloadTrainReward();
   if (screen === 'finish' && rewardOpen) reward(true, true);
 }
 window.addEventListener('popstate', event => restoreHistory(event.state));
@@ -432,6 +438,7 @@ root.addEventListener('click', e => {
   const button = e.target.closest('button[data-action]');
   if (!button) return;
   const action = button.dataset.action;
+  if (['start-word', 'start-fill', 'start-connect'].includes(action)) preloadTrainReward();
   if (action === 'install') return installApp();
   if (['home', 'collection', 'alphabet', 'settings', 'kana-library'].includes(action)) return navigate(action);
   if (action === 'gallery-kana') { selectedGalleryKana = button.dataset.letter; render(); return; }

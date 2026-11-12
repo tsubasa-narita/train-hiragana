@@ -15,7 +15,7 @@ export function rewardScenario(id){return REWARD_SCENARIOS.find(s=>s.id===id)||R
 
 // Consume every scene/train pair before refilling, including across app launches.
 // Prefer a different scene AND train, without starving the last pairs in the bag.
-export function chooseRewardExperience(previous,random=Math.random){
+function selectRewardExperience(previous,random,preferred,consume){
   let saved=read();
   if(!saved||!Array.isArray(saved.bag)||saved.bag.some(p=>!valid(p))||new Set(saved.bag).size!==saved.bag.length)saved={bag:[],last:null};
   // A restored/history movie can be a pair still in the bag. It has now been
@@ -28,11 +28,17 @@ export function chooseRewardExperience(previous,random=Math.random){
   if(!candidates.length)candidates=bag.filter(p=>decode(p).id!==last?.id);
   if(!candidates.length)candidates=bag.filter(p=>p!==`${last?.sceneId}:${last?.id}`);
   if(!candidates.length)candidates=bag;
-  const selected=candidates[Math.min(candidates.length-1,Math.floor(random()*candidates.length))];
+  const preferredPair=preferred?`${preferred.sceneId}:${preferred.id}`:null;
+  const selected=candidates.includes(preferredPair)?preferredPair:candidates[Math.min(candidates.length-1,Math.floor(random()*candidates.length))];
+  if(!consume)return decode(selected);
   memory={bag:bag.filter(p=>p!==selected),last:selected};
   try{globalThis.localStorage?.setItem(KEY,JSON.stringify(memory));}catch{storageFailed=true;}
   return decode(selected);
 }
+
+// Previewing must not modify progress: the child may leave before the reward.
+export function previewRewardExperience(previous,random=Math.random){return selectRewardExperience(previous,random,null,false);}
+export function chooseRewardExperience(previous,random=Math.random,preferred){return selectRewardExperience(previous,random,preferred,true);}
 
 export function resolveRewardExperience(requested){
   const train=REWARD_3D_TRAINS.find(t=>t.id===requested?.id);

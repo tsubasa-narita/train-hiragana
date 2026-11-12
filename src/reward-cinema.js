@@ -4,7 +4,10 @@ import {unlockRewardAudio,playRewardSound} from './reward-audio.js';
 export {REWARD_DURATION,unlockRewardAudio};
 import { quizImageFile } from './quiz-images.js';
 import { REWARD_3D_TRAINS } from './reward3d-catalog.js';
-import { resolveRewardExperience, rewardScenario } from './reward3d-scenarios.js';
+import {resolveRewardExperience,rewardScenario,previewRewardExperience,chooseRewardExperience} from './reward3d-scenarios.js';
+import {createRewardPreloader} from './reward-preload.js';
+const preloader=createRewardPreloader({preview:()=>previewRewardExperience(),claim:plan=>chooseRewardExperience(undefined,Math.random,plan)});
+export function preloadTrainReward(){return preloader.warm();}
 
 export const REWARD_TRAINS = REWARD_3D_TRAINS;
 export const REWARD_BOOK_IDS = Object.freeze(Object.fromEntries(REWARD_TRAINS.map(train=>[train.id,train.bookId])));
@@ -21,7 +24,7 @@ export function stopTrainReward(){activeClose?.(false);}
 export function showTrainReward({ train:requested, sound=true, speak, onDone, onBook, onPlayed, onSoundChange,
   loadScene=()=>import('./reward3d.js') }={}){
   stopTrainReward();unlockRewardAudio(sound);
-  const current=resolveRewardExperience(requested);
+  const current=REWARD_TRAINS.some(train=>train.id===requested?.id)?resolveRewardExperience(requested):preloader.take();
   current.played=requested?.id===current.id&&requested?.played===true;
   const dialog=document.createElement('dialog');dialog.className='reward-dialog reward-cinema';
   dialog.setAttribute('aria-labelledby','reward-title');
@@ -102,7 +105,7 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
         },
         onComplete:finish,onError:useFallback,
       });
-      if(closed||version!==loadVersion){scene.dispose();scene=null;return;}
+      if(closed||version!==loadVersion){scene?.dispose();scene=null;return;}
       clearTimeout(loadTimer);dialog.dataset.renderer='webgl';loadingScene=false;loading.hidden=true;run();
     }catch{if(!closed&&version===loadVersion)useFallback();}
   }
