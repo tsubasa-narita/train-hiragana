@@ -1,7 +1,7 @@
 const { chromium, devices } = require('playwright');
 const assert = require('node:assert/strict');
 (async () => {
-  const browser = await chromium.launch({headless:true, channel:'msedge'});
+  const browser = await chromium.launch({headless:true, channel:'msedge',args:['--enable-unsafe-swiftshader']});
   try {
     const context = await browser.newContext({...devices['Pixel 7']});
     const page = await context.newPage();
@@ -53,9 +53,21 @@ const assert = require('node:assert/strict');
       await page.locator('[data-action="next"]').click();
     }
     await page.locator('.reward-dialog[open]').waitFor();
+    await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
+    const firstReward=await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;});
+    await page.locator('.reward-canvas').evaluate(c=>{c.rewardScene.seek(6800);c.rewardScene.resume();});
+    await page.locator('.reward-dialog.arrived').waitFor();
+    await page.locator('[data-reward="another"]').click();
+    await page.waitForFunction(first=>{const r=history.state.lastReward;return !!document.querySelector('.reward-canvas')?.rewardScene&&`${r.sceneId}:${r.id}`!==first;},firstReward);
+    const watchedReward=await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;});
     await page.goBack();
     await page.locator('.reward-dialog').waitFor({state:'detached'});
     assert.equal(await page.locator('.finish').count(),1);
+    assert.equal(await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;}),watchedReward);
+    await page.locator('[data-action="replay-reward"]').click();
+    await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
+    assert.equal(await page.locator('.reward-canvas').evaluate(c=>`${c.dataset.scenario}:${c.dataset.train}`),watchedReward);
+    await page.goBack();await page.locator('.reward-dialog').waitFor({state:'detached'});
     await page.goBack(); await page.locator('.home').waitFor();
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('train-hiragana-v1')).trips),1);
     await page.locator('[data-action="settings"]').click();
@@ -75,6 +87,9 @@ const assert = require('node:assert/strict');
     await page.locator('.train-picture img').evaluate(img=>img.decode());
     const seenImage = await page.locator('.train-picture img').getAttribute('src');
     await context.setOffline(true);
+    for(const path of ['src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js']){
+      assert.equal(await page.evaluate(async path=>(await fetch(path)).status,path),200,'all new reward modules are precached for installed Android use');
+    }
     await page.reload(); await page.locator('.game').waitFor();
     await page.locator('.train-picture img').evaluate(img=>img.decode());
     assert.equal(await page.locator('.train-picture img').getAttribute('src'), seenImage);

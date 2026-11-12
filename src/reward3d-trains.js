@@ -80,6 +80,18 @@ function destinationTexture(text) {
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
 
+function yokosukaFaceTexture(){
+  const w=512,h=256,data=new Uint8Array(w*h*4),blue=[36,107,157],cream=[230,211,160];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const t=y/(h-1),cx=(x%6-3)/3,cy=(y%6-3)/3;
+    const dot=cx*cx+cy*cy<Math.pow(Math.abs(t-.5)*1.65,2);
+    const c=t>.5?(dot?blue:cream):(dot?cream:blue);
+    data.set([...c,255],(y*w+x)*4);
+  }
+  const texture=new THREE.DataTexture(data,w,h);texture.colorSpace=THREE.SRGBColorSpace;
+  texture.magFilter=THREE.LinearFilter;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.generateMipmaps=true;texture.anisotropy=4;texture.needsUpdate=true;return texture;
+}
+
 /**
  * Build one complete, independently disposable consist; no global GPU resources.
  * config may be a catalog entry, {id,…overrides}, or an id string.
@@ -105,6 +117,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const white=mat({color:'#e3e6e3',metalness:.22,roughness:.31,clearcoat:.4});
   const faceBlack=mat({color:'#101d23',metalness:.22,roughness:.22,clearcoat:.7});
   const stripes=cfg.stripes.map(color=>mat({color,metalness:.38,roughness:.3,clearcoat:.45}));
+  const yokosukaPanel=cfg.family==='e235'?mat({map:ownT(yokosukaFaceTexture()),metalness:.32,roughness:.3,clearcoat:.5}):null;
   const glass=mat({color:'#b3d7d6',map:ownT(makeGlassTexture()),metalness:.15,roughness:.13,transparent:true,opacity:.92,depthWrite:false,side:THREE.DoubleSide,clearcoat:1,clearcoatRoughness:.09,envMapIntensity:1.2});
   const cabGlass=mat({color:'#27464b',metalness:.28,roughness:.12,clearcoat:1,transparent:true,opacity:.83,depthWrite:false,side:THREE.DoubleSide,envMapIntensity:1.5});
   const reflection=mat({color:'#c4e5e9',metalness:.12,roughness:.19,transparent:true,opacity:.26,depthWrite:false,side:THREE.DoubleSide});
@@ -322,14 +335,10 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   function frontRing(m,y,z,w,h,x=9.985,b=.04) {frontPlane(ring(w,h,.07,b),m,y,z,x);}
   function cab(rear=false) {
     const e235=cfg.family==='e235',tokyu=cfg.family==='5050',suburban=cfg.family==='e233-suburban';
-    add(faceGeo,tokyu?steel:white,9.76,0,0,1,1,1,0,Math.PI/2);
+    add(faceGeo,e235?stripes[0]:tokyu?steel:white,9.76,0,0,1,1,1,0,Math.PI/2);
     // A different mask, glazing layout and lamp arrangement for every cab family.
     if(e235) {
       frontRect(faceBlack,2.95,0,2.55,1.87,9.985,.2);
-      for(const s of [-1,1]) {
-        frontRect(stripes[0],2.61,s*1.22,.19,2.35,10.004,.06);
-        frontRect(stripes[1],2.61,s*1.04,.17,2.35,10.009,.035);
-      }
       frontRect(cabGlass,2.85,0,1.9,1.05,10.025,.1);
       frontRing(trim,2.85,0,1.98,1.12,10.035,.035);
       frontRect(faceBlack,3.61,0,1.46,.34,10.03);
@@ -338,7 +347,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
         frontRect(trim,3.73,s*.99,.39,.17,10.03);
         for(const dz of [-.095,.095])frontRect(rear?tailLight:light,3.73,s*.99+dz,.14,.09,10.05,.025);
       }
-      frontRect(white,1.8,0,1.89,.52,10.01,.07);
+      frontRect(yokosukaPanel,1.94,0,2.49,.66,10.048,.09);
     } else if(tokyu) {
       frontRect(faceBlack,2.95,0,2.64,1.83,9.99,.15);
       // The traditional 5050 has an offset black emergency door, not a silver bar.
@@ -451,6 +460,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   group.userData={trainId:cfg.id,front:0,frontX:10.3,rearX:-PITCH*(carCount-1)-10.3,length,carCount,wheelRadius:WHEEL_RADIUS,spinAxis:'z',carMetadata};
   let disposed=false;
   return {group,wheels,length,front:0,frontX:10.3,rearX:group.userData.rearX,carCount,wheelRadius:WHEEL_RADIUS,config:cfg,
+    setHeadlights(level){light.emissiveIntensity=3.8*level;light.color.setScalar(.2+.8*level);},
     dispose() {if(disposed)return;disposed=true;group.removeFromParent();group.traverse(o=>{if(o.isInstancedMesh)o.dispose();});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures)t.dispose();group.clear();wheels.length=0;},
   };
 }

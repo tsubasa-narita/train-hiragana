@@ -1,4 +1,9 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { REWARD_3D_TRAINS } from './reward3d-catalog.js';
+import { bendTrainModel } from './reward3d-curve.js';
+import { createDepotWorld } from './reward3d-depot.js';
+import { createSkybridgeWorld, skyPose, SKY_RADIUS } from './reward3d-skybridge.js';
+import { rewardScenario } from './reward3d-scenarios.js';
 import { createTrainModel } from './reward3d-trains.js';
 import { createRailwayWorld, createReflectionEnvironment } from './reward3d-world.js';
 
@@ -13,33 +18,43 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  const scene = new THREE.Scene(), warm = config.id === 'shonan-shinjuku';
+  const scenario=rewardScenario(config.sceneId).id,night=scenario==='night',depot=scenario==='depot',skybridge=scenario==='skybridge';
+  const scene = new THREE.Scene(), warm = depot;
   scene.background = new THREE.Color(warm ? 0xe3c9aa : 0xb8d3de);
-  scene.fog = new THREE.Fog(warm ? 0xd7cbbc : 0xbbcdd0, 200, 750);
+  scene.fog = new THREE.Fog(night?0x0b1934:warm?0xe7c49a:0xc7e3f0, night?160:300, night?650:1200);
   const environment = createReflectionEnvironment(renderer, warm); scene.environment = environment.texture;
-  scene.environmentIntensity = .85;
-  const hemisphere = new THREE.HemisphereLight(0xe8f4ff, 0x78836c, 1.35); scene.add(hemisphere);
-  const sun = new THREE.DirectionalLight(warm ? 0xffdab0 : 0xffefd8, 2.7);
+  scene.environmentIntensity = night?.42:.85;
+  renderer.toneMappingExposure=night?1.15:1.05;
+  const hemisphere = new THREE.HemisphereLight(0xe8f4ff, night?0x14213c:0x78836c, night?.5:depot?.55:1.35); scene.add(hemisphere);
+  const sun = new THREE.DirectionalLight(night?0x7aafff:warm?0xffdab0:0xffefd8, night?1.3:depot?3.2:2.7);
   sun.castShadow = true; sun.shadow.mapSize.set(1024,1024);
   Object.assign(sun.shadow.camera, { left:-90, right:65, top:30, bottom:-30, near:1, far:200 });
   sun.shadow.bias = -.00015; sun.shadow.normalBias = .035;
   scene.add(sun, sun.target);
   const camera = new THREE.PerspectiveCamera(44,1,.1,1300);
-  const world = createRailwayWorld(scene, { warm, blossom:config.id==='toyoko' });
+  const world = depot?createDepotWorld(scene,{config}):skybridge?createSkybridgeWorld(scene,{config}):createRailwayWorld(scene,{night:true});
   const train = createTrainModel(config); scene.add(train.group);
-  const cameraPath = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(28,3.2,-16), new THREE.Vector3(19,2.3,-10),
-    new THREE.Vector3(10,3.1,-19), new THREE.Vector3(24,7,-34), new THREE.Vector3(40,14,-58),
-  ],false,'catmullrom',.35);
-  const targetPath = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(5,2.3,0), new THREE.Vector3(7,2.3,0),
-    new THREE.Vector3(3,2.3,0), new THREE.Vector3(-5,2,0),new THREE.Vector3(-24,1.6,0),
-  ]);
+  if(skybridge)bendTrainModel(train,SKY_RADIUS);
+  const opposite=night?createTrainModel(REWARD_3D_TRAINS[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id)+1)%4]):null;
+  if(opposite){opposite.group.rotation.y=Math.PI;scene.add(opposite.group);}
+  const v=a=>new THREE.Vector3(...a),curve=points=>new THREE.CatmullRomCurve3(points.map(v),false,'catmullrom',.2);
+  const cameraPath=curve(depot?[[20,3.2,-8],[17,2.2,-8],[18,2.4,-8],[19,2.8,-10],[21,3.5,-12]]:
+    skybridge?[[20,4,-13],[18,3,-12],[20,5,-17],[28,18,-45],[38,32,-78]]:
+    [[-6,.9,-3],[12,1.9,-5.5],[18,2.5,-8],[17,2.8,-7.5],[16,2.8,-6]]);
+  const targetPath=curve(depot?[[8,2.6,0],[8,2.5,0],[8,2.5,0],[7,2.5,0],[6,2.3,0]]:
+    skybridge?[[7,2.6,0],[8,2.3,0],[6,2.3,0],[-15,0,0],[-12,0,0]]:
+    [[-6,.8,0],[8,2.1,0],[8,2.4,0],[8,2.5,0],[9,2.6,0]]);
+  const glowTexture=(()=>{
+    const c=document.createElement('canvas');c.width=c.height=64;const ctx=c.getContext('2d'),g=ctx.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0,'rgba(255,248,218,1)');g.addColorStop(.12,'rgba(255,239,184,.8)');g.addColorStop(.4,'rgba(255,227,168,.12)');g.addColorStop(1,'rgba(255,227,168,0)');ctx.fillStyle=g;ctx.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);
+  })();
+  const glowMaterial=new THREE.SpriteMaterial({map:glowTexture,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:night?.7:.3});
+  for(const z of [-1,1]){const glow=new THREE.Sprite(glowMaterial);glow.position.set(10.16,config.id==='toyoko'?1.64:3.72,z);glow.scale.setScalar(night?1.1:.6);train.group.add(glow);}
   let raf = 0, elapsed = 0, started = 0, running = false, disposed = false, completed = false;
   let frame = 0, slowFrames = 0, previous = 0, qualityReduced = false;
   const oldError = event => { event.preventDefault(); pause(); onError?.('context-lost'); };
   canvas.addEventListener('webglcontextlost',oldError);
-  canvas.dataset.renderer='webgl'; canvas.dataset.train=config.id;
+  canvas.dataset.renderer='webgl'; canvas.dataset.train=config.id;canvas.dataset.scenario=scenario;
   function resize() {
     if (disposed) return;
     const parent = canvas.parentElement;
@@ -49,20 +64,25 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   }
   function draw(milliseconds) {
     if(disposed)return;
-    const seconds=milliseconds/1000,t=clamp(milliseconds/REWARD_DURATION,0,1),travel=24*seconds;
-    train.group.position.x=-45+travel;
-    train.group.position.y=Math.sin(seconds*11)*.006;
+    const seconds=milliseconds/1000,t=clamp(milliseconds/REWARD_DURATION,0,1);
+    const depart=clamp((seconds-1.65)/5.35,0,1),travel=depot?109*depart*depart:24*seconds;
+    const headS=-32+travel,pose=skybridge?skyPose(headS):{x:(depot?-14:-45)+travel,y:0,z:0,yaw:0};
+    train.group.position.set(pose.x,pose.y+Math.sin(seconds*11)*.006,pose.z);train.group.rotation.y=pose.yaw;
+    train.setHeadlights(depot?THREE.MathUtils.smoothstep(seconds,.15,.65):1);
+    glowMaterial.opacity=(night?.7:.3)*(depot?THREE.MathUtils.smoothstep(seconds,.15,.65):1);
     for(const wheel of train.wheels) wheel.rotation[wheel.userData?.spinAxis || 'z']=-travel/(wheel.userData?.radius || .43);
-    const position=cameraPath.getPoint(t),target=targetPath.getPoint(t);
-    const aspectScale=Math.max(1,1.05/camera.aspect);
-    if (reduced) {camera.position.set(40,16,-150*aspectScale);target.set(-15,1.5,0);}
-    else {
-      position.z*=aspectScale; position.x+=train.group.position.x;
-      camera.position.copy(position);target.x+=train.group.position.x;
-    }
-    camera.lookAt(target); camera.fov=44+Math.sin(t*Math.PI)*3;camera.updateProjectionMatrix();
-    sun.position.set(train.group.position.x+35,55,-32);sun.target.position.set(train.group.position.x-20,0,0);
-    world.sky.position.x=camera.position.x;world.update(seconds);
+    if(opposite){opposite.group.position.set(180-28*seconds,0,4.4);for(const wheel of opposite.wheels)wheel.rotation.z=-28*seconds/.43;}
+    const position=cameraPath.getPoint(t),target=targetPath.getPoint(t),aspectScale=Math.max(1,1.05/camera.aspect);
+    position.z*=aspectScale;
+    // Keep the opening sightline inside the shutter's jambs in portrait too.
+    if(depot)position.z=THREE.MathUtils.lerp(Math.max(position.z,-6),position.z,THREE.MathUtils.smoothstep(seconds,2.8,4));
+    if(reduced){position.set(depot?38:40,skybridge?30:12,-(skybridge?110:80)*aspectScale);target.set(-15,1.5,0);}
+    const axis=new THREE.Vector3(0,1,0);
+    position.applyAxisAngle(axis,pose.yaw).add(train.group.position);target.applyAxisAngle(axis,pose.yaw).add(train.group.position);
+    camera.position.copy(position);camera.lookAt(target);camera.fov=night?48:44;camera.updateProjectionMatrix();
+    sun.position.set(pose.x+(depot?55:35),55,pose.z-32);sun.target.position.set(pose.x-20,0,pose.z);
+    if(world.sky)world.sky.position.copy(camera.position);
+    world.update(seconds,{headX:pose.x,headS,train});
     renderer.render(scene,camera);
     canvas.dataset.progress=t.toFixed(3);canvas.dataset.frame=String(++frame);
     onFrame?.(t);
@@ -94,7 +114,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   function dispose() {
     if(disposed)return;pause();disposed=true;observer.disconnect();
     canvas.removeEventListener('webglcontextlost',oldError);
-    train.dispose();world.dispose();environment.dispose();sun.shadow.map?.dispose();sun.shadow.mapPass?.dispose();
+    train.dispose();opposite?.dispose();glowTexture.dispose();glowMaterial.dispose();world.dispose();environment.dispose();sun.shadow.map?.dispose();sun.shadow.mapPass?.dispose();
     scene.clear();renderer.dispose();renderer.forceContextLoss();
     delete canvas.rewardScene;
   }

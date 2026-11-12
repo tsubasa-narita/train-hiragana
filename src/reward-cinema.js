@@ -1,6 +1,7 @@
 import { stopVoice } from './voice.js';
 import { quizImageFile } from './quiz-images.js';
 import { REWARD_3D_TRAINS } from './reward3d-catalog.js';
+import { chooseRewardExperience, resolveRewardExperience, rewardScenario } from './reward3d-scenarios.js';
 
 export const REWARD_TRAINS = REWARD_3D_TRAINS;
 export const REWARD_BOOK_IDS = Object.freeze(Object.fromEntries(REWARD_TRAINS.map(train=>[train.id,train.bookId])));
@@ -20,7 +21,7 @@ export function unlockRewardAudio(enabled){
   try{context??=new(window.AudioContext||window.webkitAudioContext)();context.resume().catch(()=>{});}catch{}
 }
 // A restrained motor chord, rail rhythm and passing air, all owned by this clip.
-function passSound(enabled,duration=7){
+function passSound(enabled,duration=7,sceneId='night',offset=0){
   if(!enabled)return()=>{};
   try{
     unlockRewardAudio(true);if(!context)return()=>{};
@@ -31,11 +32,16 @@ function passSound(enabled,duration=7){
     filter.type='lowpass';filter.frequency.value=1350;filter.connect(gain);
     if(panner){gain.connect(panner);panner.connect(context.destination);panner.pan.setValueAtTime(-.35,now);panner.pan.linearRampToValueAtTime(.35,now+duration);nodes.push(panner);}else gain.connect(context.destination);
     const buffer=context.createBuffer(1,Math.ceil(context.sampleRate*duration),context.sampleRate),samples=buffer.getChannelData(0);
-    for(let i=0;i<samples.length;i++){const t=i/context.sampleRate,beat=(t*3.6)%1;samples[i]=(Math.random()*2-1)*(beat<.026||beat>.27&&beat<.296?.58:.14);}
+    for(let i=0;i<samples.length;i++){
+      const t=i/context.sampleRate+offset,speed=sceneId==='depot'?Math.max(0,Math.min(1,(t-1.65)/4)):1,beat=(t*(1+speed*2.6))%1;
+      const passing=sceneId==='night'?.38*Math.exp(-Math.pow((t-3.8)/.55,2)):0;
+      const shutter=sceneId==='depot'&&t>.35&&t<1.6?.11:0;
+      samples[i]=(Math.random()*2-1)*((beat<.026||beat>.27&&beat<.296?.58:.14)*speed+passing+shutter);
+    }
     const noise=context.createBufferSource();noise.buffer=buffer;noise.connect(filter);noise.start(now);noise.stop(now+duration);sources.push(noise);
     for(const hz of [104,208,312]){
       const motor=context.createOscillator(),level=context.createGain();motor.type='sine';
-      motor.frequency.setValueAtTime(hz*.95,now);motor.frequency.linearRampToValueAtTime(hz*1.06,now+duration);
+      motor.frequency.setValueAtTime(hz*(sceneId==='depot'?.55+Math.min(1,offset/7)*.5:.95),now);motor.frequency.linearRampToValueAtTime(hz*1.06,now+duration);
       level.gain.value=.025;motor.connect(level);level.connect(gain);motor.start(now);motor.stop(now+duration);sources.push(motor);nodes.push(level);
     }
     let stopped=false;
@@ -46,7 +52,7 @@ function passSound(enabled,duration=7){
 export function showTrainReward({ train:requested, sound=true, speak, onDone, onBook, onTrainChange, onSoundChange,
   loadScene=()=>import('./reward3d.js') }={}){
   stopTrainReward();unlockRewardAudio(sound);
-  const current={...(REWARD_TRAINS.find(item=>item.id===requested?.id)||chooseReward())};
+  const current=resolveRewardExperience(requested);
   const dialog=document.createElement('dialog');dialog.className='reward-dialog reward-cinema';
   dialog.setAttribute('aria-labelledby','reward-title');
   dialog.innerHTML=`<header class="reward-heading"><div><span class="reward-eyebrow">ごほうびの でんしゃ</span><h2 id="reward-title"></h2><small class="reward-model-name"></small></div><button class="reward-mute" data-reward="mute"></button></header>
@@ -55,7 +61,7 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
       <div class="reward-fallback" hidden><img alt=""><small>この端末ではイラストで表示しています</small></div>
       <div class="reward-film-edge" aria-hidden="true"></div><div class="reward-progress" aria-hidden="true"><i></i></div>
     </div><p class="reward-status" role="status">でんしゃが やってくるよ</p>
-    <div class="reward-controls"><button class="reward-launch" data-reward="start" hidden>▶ はしらせる</button><button class="reward-launch" data-reward="replay" hidden>↻ もういちど！</button><button class="reward-secondary" data-reward="another" hidden>べつの でんしゃ</button><button class="reward-secondary" data-reward="book" hidden>でんしゃ ずかん</button><button class="reward-secondary" data-reward="continue">おしまい →</button></div>`;
+    <div class="reward-controls"><button class="reward-launch" data-reward="start" hidden>▶ はしらせる</button><button class="reward-launch" data-reward="replay" hidden>↻ もういちど！</button><button class="reward-secondary" data-reward="another" hidden>ほかも みる</button><button class="reward-secondary" data-reward="book" hidden>でんしゃ ずかん</button><button class="reward-secondary" data-reward="continue">おしまい →</button></div>`;
   document.body.append(dialog);
   const get=key=>dialog.querySelector(key),button=key=>get(`[data-reward="${key}"]`);
   let canvas=get('canvas');
@@ -70,7 +76,8 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
     const parts=current.id==='shonan-shinjuku'?['しょうなん','しんじゅくらいん']:[current.name];
     title.innerHTML=parts.map(part=>`<span>${part}</span>`).join('');
     title.classList.toggle('reward-long-title',parts.length>1);
-    get('.reward-model-name').textContent=current.model;
+    get('.reward-model-name').textContent=rewardScenario(current.sceneId).name;
+    dialog.dataset.scenario=current.sceneId;
     dialog.style.setProperty('--train-color',current.color);
     canvas.setAttribute('aria-label',`${current.name}が線路と風景の中を走る3Dアニメーション`);
     button('mute').textContent=sound?'♪ おと あり':'♪ おと なし';
@@ -89,10 +96,11 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
   }
   function run(){
     if(closed||loadingScene)return;
+    if(document.hidden){wasPlaying=true;controls('waiting');return;}
     clearTimeout(fallbackTimer);runSound();stopVoice();controls('running');progress.style.transform='scaleX(0)';
     status.textContent='でんしゃが はしるよ！';
     if(sound)speak?.(current.name);
-    runSound=passSound(sound);
+    runSound=passSound(sound,7,current.sceneId);
     if(scene)scene.play();else startFallback(0);
   }
   function startFallback(from){
@@ -129,21 +137,21 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
   function visibility(){
     if(closed)return;
     if(document.hidden){
-      wasPlaying=phase==='running';scene?.pause();runSound();stopVoice();clearTimeout(fallbackTimer);
+      wasPlaying=phase==='running'||phase==='waiting';scene?.pause();runSound();stopVoice();clearTimeout(fallbackTimer);
       if(wasPlaying&&!scene)fallbackElapsed=Math.min(REWARD_DURATION,fallbackElapsed+Date.now()-fallbackStarted);
     }else if(wasPlaying){
-      wasPlaying=false;if(scene)scene.resume();else startFallback(fallbackElapsed);
-      runSound=passSound(sound,Math.max(.2,(REWARD_DURATION-(scene?scene.elapsed:fallbackElapsed))/1000));
+      wasPlaying=false;if(phase==='waiting'){run();return;}if(scene)scene.resume();else startFallback(fallbackElapsed);
+      runSound=passSound(sound,Math.max(.2,(REWARD_DURATION-(scene?scene.elapsed:fallbackElapsed))/1000),current.sceneId,(scene?scene.elapsed:fallbackElapsed)/1000);
     }
   }
   activeClose=close;labels();
   button('start').onclick=run;button('replay').onclick=run;
   button('another').onclick=()=>{
-    if(loadingScene)return;runSound();stopVoice();Object.assign(current,chooseReward(current.id));onTrainChange?.(current);void prepare();
+    if(loadingScene)return;runSound();stopVoice();Object.assign(current,chooseRewardExperience(current));onTrainChange?.(current);void prepare();
   };
   button('mute').onclick=()=>{
     sound=!sound;onSoundChange?.(sound);labels();runSound();stopVoice();
-    if(sound&&phase==='running')runSound=passSound(true,scene?Math.max(.2,(REWARD_DURATION-scene.elapsed)/1000):7);
+    if(sound&&phase==='running')runSound=passSound(true,scene?Math.max(.2,(REWARD_DURATION-scene.elapsed)/1000):7,current.sceneId,(scene?scene.elapsed:fallbackElapsed)/1000);
   };
   button('continue').onclick=()=>close();button('book').onclick=()=>{close(false);onBook?.(current);};
   dialog.addEventListener('cancel',event=>{event.preventDefault();close();});

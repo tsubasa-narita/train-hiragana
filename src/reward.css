@@ -53,4 +53,9 @@
  .reward-status { padding-top: 5px; min-height: 24px; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .reward-loading-ring { animation: none; } }
+.reward-cinema[data-scenario='depot'] { --scene-color: #e6b660; }
+.reward-cinema[data-scenario='night'] { --scene-color: #73c9ff; }
+.reward-cinema[data-scenario='skybridge'] { --scene-color: #7bd7c5; }
+.reward-cinema .reward-progress i { background: var(--scene-color, var(--train-color)); }
+.reward-cinema .reward-model-name { color: var(--scene-color, var(--train-color)); }
 @media (max-height: 500px) and (max-width: 500px) { .reward-heading > div { display: block; min-width: 0; } .reward-model-name { display: none; } .reward-heading h2 { font-size: 17px; } }

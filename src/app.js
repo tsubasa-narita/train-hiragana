@@ -401,11 +401,13 @@ function moveHistory(delta) {
   history.go(delta);
 }
 function restoreHistory(state) {
+  const watchedReward=screen==='finish'&&rewardOpen&&state?.screen==='finish'&&!state?.rewardOpen?lastReward:null;
   cancelAdvance(); stopTrainReward(); stopVoice();
   if (state?.app !== HISTORY_APP) return;
   historyMoving = false;
   ({ screen, trail, rewardOpen, mode, journey, gameRows, gameOffset, station, letterIndex, answered,
     selectedTrain, selectedGalleryKana = 'あ', choices, hint, wrong, lastReward } = state);
+  if(watchedReward)lastReward=watchedReward;
   traceState = state.traceState || null;
   // The current connection journey survives visiting home or other modes.
   connectState = screen === 'connect' ? (state.connectState || connectState) : (connectState || state.connectState || null);

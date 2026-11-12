@@ -3,7 +3,7 @@ import * as THREE from '../vendor/three/three.module.js';
 function seeded(seed = 4827) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 }
-export function createRailwayWorld(scene, { warm = false, blossom = false } = {}) {
+export function createRailwayWorld(scene, { warm = false, blossom = false, night = false } = {}) {
   const random = seeded(), group = new THREE.Group();
   group.name = 'riverside-viaduct'; scene.add(group);
   const resources = new Set(), geometries = new Map();
@@ -36,7 +36,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false } = {}
     for(let i=0;i<9500;i++) { const n=random(); ctx.fillStyle=`rgba(${n>.5?'192,191,143':'54,84,44'},.22)`; ctx.fillRect(random()*256,random()*256,1+random()*3,1+random()*5); }
   });
   grassMap.wrapS=grassMap.wrapT=THREE.RepeatWrapping; grassMap.repeat.set(85,85);
-  const ground=mesh(keep(new THREE.PlaneGeometry(1400,1400)),material({map:grassMap,roughness:1}),0,-6.6,0);
+  const ground=mesh(keep(new THREE.PlaneGeometry(1400,1400)),material({map:grassMap,color:night?0x263343:0xffffff,roughness:1}),0,-6.6,0);
   ground.rotation.x=-Math.PI/2; ground.receiveShadow=true;
 
   const waterMap=texture(256,256,ctx=>{
@@ -50,7 +50,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false } = {}
   for(const x of [-13,63]) { const m=mesh(box(),bank,x,-6.15,0,4,1,1200);m.receiveShadow=true; }
 
   // Concrete piers, separate deck girders, gravel, sleepers and four railheads.
-  const concrete=material({color:0xb5b2a6,roughness:.85}), edge=material({color:0xc8c7bb,roughness:.7});
+  const concrete=material({color:night?0x344158:0xb5b2a6,roughness:.85}), edge=material({color:night?0x51607b:0xc8c7bb,roughness:.7});
   const gravelMap=texture(256,128,ctx=>{
     ctx.fillStyle='#777975';ctx.fillRect(0,0,256,128);
     for(let i=0;i<3500;i++){const v=Math.floor(65+random()*100);ctx.fillStyle=`rgb(${v},${v+2},${v})`;ctx.beginPath();ctx.ellipse(random()*256,random()*128,random()*2+1,random()*1.3+.5,random()*3,0,7);ctx.fill();}
@@ -98,10 +98,10 @@ export function createRailwayWorld(scene, { warm = false, blossom = false } = {}
   const drops=[];for(let x=-400;x<330;x+=8)for(const z of [0,4.4])drops.push({x,y:5.85,z,sx:.012,sy:.5,sz:.012});instances(box(),wire,drops);
 
   const cityMap=texture(128,256,ctx=>{
-    ctx.fillStyle='#b5c0be';ctx.fillRect(0,0,128,256);
-    for(let y=8;y<256;y+=15)for(let x=7;x<128;x+=13){ctx.fillStyle=random()>.3?'#64818e':'#d7dfd9';ctx.fillRect(x,y,7,9);ctx.fillStyle='rgba(255,255,235,.28)';ctx.fillRect(x,y,2,9);}
+    ctx.fillStyle=night?'#101d32':'#b5c0be';ctx.fillRect(0,0,128,256);
+    for(let y=8;y<256;y+=15)for(let x=7;x<128;x+=13){ctx.fillStyle=night?(random()>.5?'#ffd092':random()>.3?'#50c8ff':'#111f32'):(random()>.3?'#64818e':'#d7dfd9');ctx.fillRect(x,y,7,9);ctx.fillStyle='rgba(255,255,235,.28)';ctx.fillRect(x,y,2,9);}
   });
-  const buildingMat=material({map:cityMap,color:0xe1dfd5,metalness:.18,roughness:.6});
+  const buildingMat=material({map:cityMap,color:night?0x76879d:0xe1dfd5,emissive:night?0xffffff:0x000000,emissiveMap:night?cityMap:null,emissiveIntensity:night?.65:0,metalness:.18,roughness:.6});
   const buildings=[],roofs=[];
   for(let i=0;i<150;i++){
     const x=-350+random()*750;if(x>-25&&x<80)continue;
@@ -136,7 +136,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false } = {}
   }
   // The sky is a smooth atmospheric gradient with a warm horizon.
   const skyMaterial=keep(new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{
-    top:{value:new THREE.Color(warm?0x508bb8:0x409fdc)},bottom:{value:new THREE.Color(warm?0xffd3a2:0xe8f2f6)},time:{value:0},
+    top:{value:new THREE.Color(night?0x020b23:warm?0x508bb8:0x409fdc)},bottom:{value:new THREE.Color(night?0x274d83:warm?0xffd3a2:0xe8f2f6)},time:{value:0},
   },vertexShader:'varying vec3 vPosition; void main(){vPosition=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`varying vec3 vPosition; uniform vec3 top; uniform vec3 bottom; uniform float time;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -145,16 +145,35 @@ export function createRailwayWorld(scene, { warm = false, blossom = false } = {}
       void main(){vec3 d=normalize(vPosition);float h=clamp(d.y,0.,1.);vec3 sky=mix(bottom,top,pow(h,.28));
         vec2 p=d.xz/max(d.y+.2,.2)*2.+vec2(time*.003,0.);
         float cloud=smoothstep(.52,.73,fbm(p))*smoothstep(.02,.15,h)*(1.-smoothstep(.65,.9,h));
-        sky=mix(sky,vec3(.96,.97,.98),cloud*.8);
+        sky=mix(sky,${night?'vec3(.06,.12,.25)':'vec3(.96,.97,.98)'},cloud*.8);
         float sun=pow(max(dot(d,normalize(vec3(-.35,.3,.8))),0.),650.);sky+=vec3(1.,.85,.6)*sun*.6;
         gl_FragColor=vec4(sky,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }` }));
   const sky=mesh(keep(new THREE.SphereGeometry(950,32,16)),skyMaterial,0,0,0);sky.renderOrder=-10;
+  // Wet maintenance lanes catch long coloured city-light reflections. Their
+  // procedural ripples stay on the ground instead of obscuring the cab.
+  const rainResources=[];
+  if(night){
+    const wetMap=texture(128,512,ctx=>{
+      ctx.fillStyle='#08152a';ctx.fillRect(0,0,128,512);
+      for(let i=0;i<90;i++){const x=random()*128,y=random()*512;ctx.fillStyle=i%3?'rgba(59,161,255,.30)':'rgba(255,175,71,.40)';ctx.fillRect(x,y,1+random()*3,10+random()*65);}
+    });
+    wetMap.wrapS=wetMap.wrapT=THREE.RepeatWrapping;wetMap.repeat.set(1,60);
+    for(const z of [-2,6.4])mesh(box(),material({map:wetMap,color:0xb9d7ff,metalness:.8,roughness:.16,emissiveMap:wetMap,emissive:0x9cbfff,emissiveIntensity:.45}),-45,.12,z,750,.025,.65);
+    const lights=[];
+    for(let x=-390;x<330;x+=24){lights.push({x,y:.4,z:-2.75,sx:.12,sy:.08,sz:.15});}
+    instances(box(),material({color:0xc5e7ff,emissive:0x6cbfff,emissiveIntensity:2.5}),lights);
+
+    const count=500,positions=new Float32Array(count*6);
+    for(let i=0;i<count;i++){const x=-50+random()*150,y=random()*19,z=-35+random()*75;positions.set([x,y,z,x-.08,y-.7,z],i*6);}
+    const g=keep(new THREE.BufferGeometry());g.setAttribute('position',new THREE.BufferAttribute(positions,3));
+    const rain=new THREE.LineSegments(g,keep(new THREE.LineBasicMaterial({color:0x81b6e0,transparent:true,opacity:.18,depthWrite:false})));group.add(rain);rainResources.push(rain);
+  }
   return {
     group, sky,
-    update(time){waterMap.offset.x=time*.012;skyMaterial.uniforms.time.value=time;},
+    update(time,frame){if(night&&rainResources[0]){rainResources[0].position.set((frame?.headX||0)-20,-(time*8)%15,0);}waterMap.offset.x=time*.012;skyMaterial.uniforms.time.value=time;},
     dispose(){group.traverse(object=>{if(object.isInstancedMesh)object.dispose();});for(const value of resources)value.dispose?.();scene.remove(group);group.clear();},
   };
 }

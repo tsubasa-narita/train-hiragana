@@ -211,6 +211,33 @@ test('3D engine owns progress and completion; replay reuses the engine', async t
   h.click('continue'); assert.equal(done, 1);
 });
 
+test('saved scene/train pair restores exactly and another updates that pair for history',async t=>{
+  const h=harness(t),changes=[];
+  const current=h.open({train:{id:'yokosuka',sceneId:'night'},onTrainChange:r=>changes.push({...r})});await settled();
+  assert.equal(current.sceneId,'night');assert.equal(h.engines[0].train.sceneId,'night');
+  h.engines[0].options.onComplete();h.click('replay');
+  assert.equal(h.dialog().dataset.scenario,'night');assert.equal(h.engines[0].plays,2);
+  h.engines[0].options.onComplete();h.click('another');await settled();
+  assert.equal(h.engines[1].train.sceneId,changes[0].sceneId);
+  assert.equal(current.sceneId,changes[0].sceneId);
+  assert.equal(h.dialog().dataset.scenario,changes[0].sceneId);
+});
+
+test('loading while hidden defers the complete WebGL clip until visible',async t=>{
+  const h=harness(t),loading=deferred();
+  h.open({loadScene:()=>loading.promise});h.visibility(true);loading.resolve(h.module);await settled();
+  assert.equal(h.engines[0].plays,0);assert.equal(h.dialog().dataset.phase,'waiting');
+  h.visibility(false);assert.equal(h.engines[0].plays,1);assert.equal(h.dialog().dataset.phase,'running');
+});
+
+test('hidden fallback also waits for foreground before its seven second timer',async t=>{
+  const h=harness(t),loading=deferred();
+  h.open({loadScene:()=>loading.promise});h.visibility(true);loading.resolve({createReward3D(){throw Error('no GPU');}});await settled();
+  t.mock.timers.tick(30000);assert.equal(h.dialog().dataset.phase,'waiting');
+  h.visibility(false);t.mock.timers.tick(6999);assert.equal(h.dialog().dataset.phase,'running');
+  t.mock.timers.tick(1);assert.equal(h.dialog().dataset.phase,'arrived');
+});
+
 test('another train notifies history and replaces the disposed renderer canvas in the same scene', async t => {
   const h = harness(t), changes = [];
   h.open({ onTrainChange: train => changes.push({ ...train }) }); await settled();
@@ -218,7 +245,7 @@ test('another train notifies history and replaces the disposed renderer canvas i
   previous.options.onComplete(); h.click('another');
   assert.equal(previous.disposals, 1);
   assert.equal(changes.length, 1);
-  assert.notEqual(changes[0].id, previous.train.id);
+  assert.notEqual(`${changes[0].sceneId}:${changes[0].id}`,`${previous.train.sceneId}:${previous.train.id}`);
   assert.equal(h.dialog().dataset.phase, 'loading');
   assertArrivalControls(h, false);
   await settled();

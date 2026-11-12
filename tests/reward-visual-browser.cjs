@@ -14,7 +14,7 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
       await page.evaluate(async({id,extras})=>{
         const r=await import('./src/reward.js');
         window.booked=null;window.rewardChanged=null;window.rewardDone=0;
-        r.showTrainReward({train:r.REWARD_TRAINS.find(t=>t.id===id),sound:false,...extras,
+        r.showTrainReward({train:{...r.REWARD_TRAINS.find(t=>t.id===id),sceneId:extras.sceneId||'depot'},sound:false,...extras,
           onBook:t=>window.booked=t.id,onTrainChange:t=>window.rewardChanged=t.id,onDone:()=>window.rewardDone++});
       },{id,extras});
       await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
@@ -35,26 +35,26 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
     assert.ok(await page.locator('canvas').evaluate(c=>c.rewardScene.elapsed<2000));
     await page.locator('[data-reward="continue"]').click();
     assert.equal(await page.evaluate(()=>window.rewardDone),1);
-    for(const id of ['yokosuka','shonan-shinjuku','saikyo','toyoko']) {
-      await open(id,{letters:['あ','い','う','え','お'],words:['こまち']});
+    for(const sceneId of ['depot','night','skybridge']) for(const id of ['yokosuka','shonan-shinjuku','saikyo','toyoko']) {
+      await open(id,{sceneId,letters:['あ','い','う','え','お'],words:['こまち']});
       for(const milliseconds of [0,2200,4500,6800]) {
         await page.locator('canvas').evaluate((c,t)=>c.rewardScene.seek(t),milliseconds);
-        await page.locator('.reward-scene').screenshot({path:path.join(output,`${id}-${milliseconds}.png`)});
+        await page.locator('.reward-scene').screenshot({path:path.join(output,`${sceneId}-${id}-${milliseconds}.png`)});
       }
       const stats=await page.locator('canvas').evaluate(c=>c.rewardScene.stats);
-      assert.ok(stats.triangles>50000 && stats.triangles<900000);
-      assert.ok(stats.calls<350,'instancing keeps the scene within its draw-call budget');
+      assert.ok(stats.triangles>50000 && stats.triangles<1100000,JSON.stringify(stats));
+      assert.ok(stats.calls<400,'instancing keeps the scene within its draw-call budget');
       await end();
       await page.locator('[data-reward="another"]').click();
-      await page.waitForFunction(id=>document.querySelector('canvas')?.rewardScene && document.querySelector('canvas').dataset.train!==id,id);
-      const changed=await page.evaluate(()=>window.rewardChanged);assert.notEqual(changed,id);
+      await page.waitForFunction(({id,sceneId})=>{const c=document.querySelector('canvas');return c?.rewardScene&&(c.dataset.train!==id||c.dataset.scenario!==sceneId);},{id,sceneId});
+      const changed=await page.evaluate(()=>window.rewardChanged);assert.ok(changed);
       await end();await page.locator('[data-reward="book"]').click();
       assert.equal(await page.evaluate(()=>window.booked),changed);
       assert.equal(await page.locator('dialog').count(),0);
     }
     for(const [width,height] of [[390,844],[320,667],[667,375],[320,375]]) {
       await page.setViewportSize({width,height});
-      await open('shonan-shinjuku');
+      await open('shonan-shinjuku',{sceneId:width===320?'skybridge':width===667?'night':'depot'});
       await page.locator('canvas').evaluate(c=>c.rewardScene.seek(2200));
       await page.locator('.reward-dialog').screenshot({path:path.join(output,`mobile-${width}x${height}.png`)});
       await end();
@@ -77,6 +77,6 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
     assert.equal(await page.locator('.reward-fallback img').getAttribute('alt'),'とうよこせんのイラスト');
     await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').count(),0);
     assert.deepEqual(errors,[]);
-    console.log('3D cinema passed: four train models, real seven-second playback, auto-start, replay, another/book identity, 320px/landscape controls, reduced motion, WebGL loss fallback and cleanup.');
+    console.log('3D cinema passed: twelve scene/train pairs, real seven-second playback, auto-start, replay, another/book identity, 320px/landscape controls, reduced motion, WebGL loss fallback and cleanup.');
   } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1);});
