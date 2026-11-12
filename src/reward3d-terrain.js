@@ -5,7 +5,7 @@ import * as THREE from '../vendor/three/three.module.js';
 // the rear opening. The return rings form the bore: there are no end caps,
 // rectangular skirts, intersecting hill sheets, or hidden black portal disks.
 export function createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap }) {
-  const front = -25, length = 585, sides = 120, rings = 144, capRings = 10;
+  const front = -25, length = 585, sides = 120, rings = 144, capRings = 18;
   const tau = Math.PI * 2;
   function aperture(angle) {
     if (angle <= Math.PI) return { offset: 3.65 * Math.cos(angle), y: 3.9 + 3.65 * Math.sin(angle) };
@@ -38,7 +38,8 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     // A bowed, irregular escarpment, not a flat end plate. Extra relief is a
     // function of location on the rock face, and vanishes at its shared edges.
     const bow = t * (.45 + .55 * t);
-    const relief = Math.sin(offset * .087 + y * .039) * 2.5 + Math.cos(y * .071 - offset * .033) * 1.5;
+    const relief = Math.sin(offset * .087 + y * .039) * 22 + Math.cos(y * .071 - offset * .033) * 13
+      + Math.sin(offset * .21 - y * .14) * 5;
     const s = THREE.MathUtils.lerp(mouthS, edge.s, bow) + t * (1 - t) * relief;
     return at(s, y, offset);
   }
@@ -81,7 +82,7 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     const strata = .5 + .5 * Math.sin(y * .27 + Math.sin(x * .031 + z * .07) * 2.8);
     const mottling = Math.sin(x * .12 + z * .09) * Math.sin(y * .18 - z * .04);
     color.copy(deep).lerp(slate, THREE.MathUtils.smoothstep(y, -120, -10));
-    color.lerp(limestone, (.28 + strata * .38) * THREE.MathUtils.smoothstep(y, -65, 25));
+    color.lerp(limestone, (.24 + strata * .26 + mottling * .16) * THREE.MathUtils.smoothstep(y, -65, 25));
     const vegetation = THREE.MathUtils.smoothstep(normal.getY(v) + mottling * .12, .49, .84)
       * THREE.MathUtils.smoothstep(y, -5, 22);
     color.lerp(moss, vegetation).lerp(grass, vegetation * (.22 + .18 * mottling));

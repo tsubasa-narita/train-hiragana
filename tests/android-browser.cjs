@@ -1,6 +1,7 @@
 const { chromium, devices } = require('playwright');
 const assert = require('node:assert/strict');
 (async () => {
+  const { REWARD_3D_TRAINS } = await import('../src/reward3d-catalog.js');
   const browser = await chromium.launch({headless:true, channel:'msedge',args:['--enable-unsafe-swiftshader']});
   try {
     const context = await browser.newContext({...devices['Pixel 7']});
@@ -57,17 +58,28 @@ const assert = require('node:assert/strict');
     const firstReward=await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;});
     await page.locator('.reward-canvas').evaluate(c=>{c.rewardScene.seek(6800);c.rewardScene.resume();});
     await page.locator('.reward-dialog.arrived').waitFor();
-    await page.locator('[data-reward="another"]').click();
-    await page.waitForFunction(first=>{const r=history.state.lastReward;return !!document.querySelector('.reward-canvas')?.rewardScene&&`${r.sceneId}:${r.id}`!==first;},firstReward);
-    const watchedReward=await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;});
+    async function assertCompletedReward() {
+      assert.equal(await page.evaluate(()=>history.state.lastReward.played),true);
+      assert.equal(await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;}),firstReward);
+      assert.equal(await page.locator('.reward-canvas').evaluate(c=>c.rewardScene.elapsed),7000);
+      assert.deepEqual(await page.locator('.reward-controls button:visible').evaluateAll(buttons=>buttons.map(b=>b.dataset.reward)),['book','continue']);
+      assert.equal(await page.locator('[data-reward="start"],[data-reward="replay"],[data-reward="another"],[data-action="replay-reward"]').count(),0);
+    }
+    await assertCompletedReward();
     await page.goBack();
     await page.locator('.reward-dialog').waitFor({state:'detached'});
     assert.equal(await page.locator('.finish').count(),1);
-    assert.equal(await page.evaluate(()=>{const r=history.state.lastReward;return `${r.sceneId}:${r.id}`;}),watchedReward);
-    await page.locator('[data-action="replay-reward"]').click();
+    assert.equal(await page.locator('[data-action="replay-reward"]').count(),0,'finish has no replay action');
+    assert.equal(await page.evaluate(()=>history.state.lastReward.played),true);
+    await page.goForward();
     await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
-    assert.equal(await page.locator('.reward-canvas').evaluate(c=>`${c.dataset.scenario}:${c.dataset.train}`),watchedReward);
-    await page.goBack();await page.locator('.reward-dialog').waitFor({state:'detached'});
+    await page.locator('.reward-dialog.arrived').waitFor();
+    assert.equal(await page.locator('.reward-canvas').evaluate(c=>`${c.dataset.scenario}:${c.dataset.train}`),firstReward);
+    await assertCompletedReward();
+    await page.waitForTimeout(300);
+    await assertCompletedReward();
+    await page.locator('[data-reward="continue"]').click();await page.locator('.reward-dialog').waitFor({state:'detached'});
+    await page.locator('.finish').waitFor();
     await page.goBack(); await page.locator('.home').waitFor();
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('train-hiragana-v1')).trips),1);
     await page.locator('[data-action="settings"]').click();
@@ -87,7 +99,7 @@ const assert = require('node:assert/strict');
     await page.locator('.train-picture img').evaluate(img=>img.decode());
     const seenImage = await page.locator('.train-picture img').getAttribute('src');
     await context.setOffline(true);
-    for(const path of ['src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js','src/reward3d-assets.js','src/reward3d-terrain.js','assets/reward3d/yokosuka.glb','assets/reward3d/environment/small_hangar_01.hdr','vendor/three/addons/libs/meshopt_decoder.module.js']){
+    for(const path of ['src/reward3d-shinkansen.js','src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js','src/reward3d-assets.js','src/reward3d-terrain.js',...REWARD_3D_TRAINS.map(train=>`assets/reward3d/${train.id}.glb`),'assets/reward3d/environment/small_hangar_01.hdr','vendor/three/addons/libs/meshopt_decoder.module.js']){
       assert.equal(await page.evaluate(async path=>(await fetch(path)).status,path),200,'all new reward modules are precached for installed Android use');
     }
     await page.reload(); await page.locator('.game').waitFor();
@@ -103,7 +115,7 @@ const assert = require('node:assert/strict');
     await page.keyboard.press('Escape');
     await page.locator('[data-action="home"]').first().click(); await page.locator('.home').waitFor();
     await page.reload(); await page.locator('.home').waitFor();
-    console.log('Android browser checks passed: PWA manifest/icons/service worker, isolated cache, offline shell and seen images, back/forward, reload/resume, timer cancellation, reward dismissal, no duplicate completion, install prompt.');
+    console.log('Android browser checks passed: PWA manifest/icons/service worker, isolated cache, seven offline train assets, offline shell and seen images, completed reward back/forward without autoplay, two choices, reload/resume, timer cancellation, no duplicate completion, install prompt.');
     await context.close();
   } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exit(1)});

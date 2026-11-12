@@ -13,9 +13,10 @@ export function skyPose(s) {
 }
 
 export function createSkybridgeWorld(scene, { config } = {}) {
+  const halfGauge=(config?.gauge||1.067)/2;
   const group = new THREE.Group();
   group.name = 'skybridge-world';
-  group.userData = { radius: SKY_RADIUS, railTop: .15, gauge: 1.067, deckWidth: 7, cloudCount: 28, terrain: 'closed-bored-mountain' };
+  group.userData = { radius: SKY_RADIUS, railTop: .15, gauge: halfGauge*2, deckWidth: 7, cloudCount: 28, terrain: 'closed-bored-mountain' };
   scene.add(group);
   const resources = new Set();
   const keep = value => { resources.add(value); return value; };
@@ -85,13 +86,13 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   ribbon(deck, -400, 450, 2, -.94, 0, 1.5, 7);
   ribbon(ballast, -400, 450, 2, -.1, 0, .18, 3.2);
   for (const offset of [-3.34, 3.34]) ribbon(coping, -400, 450, 2, -.02, offset, .34, .32);
-  for (const offset of [-.5335, .5335]) {
+  for (const offset of [-halfGauge, halfGauge]) {
     ribbon(railHeads, -400, 450, 1, .125, offset, .05, .068);
     ribbon(railWebs, -400, 450, 1, .085, offset, .06, .035);
   }
   for (let s = -400; s <= 450; s += .66) {
     sleepers.push({ ...at(s, .025), sx: .22, sy: .09, sz: 2.22 });
-    for (const offset of [-.5335, .5335]) clips.push({ ...at(s, .095, offset), sx: .13, sy: .035, sz: .19 });
+    for (const offset of [-halfGauge, halfGauge]) clips.push({ ...at(s, .095, offset), sx: .13, sy: .035, sz: .19 });
   }
   instances(box, stone, deck, 'seven-metre-curved-deck');
   instances(box, keep(new THREE.MeshStandardMaterial({ map: ballastMap, roughness: 1 })), ballast, 'ballast');
@@ -361,7 +362,7 @@ export function createSkybridgeWorld(scene, { config } = {}) {
       float fbm(vec2 p){float f=0.,a=.5;for(int i=0;i<4;i++){f+=a*noise(p);p=p*2.03+vec2(9.7,4.1);a*=.5;}return f;}
       void main(){vec3 d=normalize(vDirection);float h=max(0.,d.y);
         vec3 color=mix(vec3(.46,.66,.80),vec3(.012,.12,.42),pow(h,.55));
-        vec3 sunDirection=normalize(vec3(-.62,.57,.31));
+        vec3 sunDirection=normalize(vec3(.48,.75,-.44));
         float sun=max(0.,dot(d,sunDirection));
         color=mix(color,vec3(.80,.72,.55),pow(sun,12.)*.20*(1.-h*.4));
         vec2 p=d.xz/max(.18,d.y+.16)*2.3+vec2(time*.0015,0.);

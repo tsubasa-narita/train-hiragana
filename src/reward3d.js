@@ -11,9 +11,13 @@ import { createRailwayWorld, createReflectionEnvironment } from './reward3d-worl
 export const REWARD_DURATION = 7000;
 const clamp = THREE.MathUtils.clamp;
 const buildTrain=config=>createBlenderTrainModel(config)||createTrainModel(config);
+function oppositeTrain(config){
+  const pool=REWARD_3D_TRAINS.filter(t=>t.id!==config.id&&(t.gauge||1.067)===(config.gauge||1.067));
+  return pool[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id))%pool.length]||config;
+}
 export async function prepareReward3D(config){
   const ids=[config.id];
-  if(config.sceneId==='night')ids.push(REWARD_3D_TRAINS[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id)+1)%4].id);
+  if(config.sceneId==='night')ids.push(oppositeTrain(config).id);
   try{await Promise.all([prepareTrainModels(ids),prepareEnvironment(config.sceneId)]);}catch(error){console.warn('Blender asset unavailable; using local geometry.',error.message);}
 }
 
@@ -26,7 +30,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scenario=rewardScenario(config.sceneId).id,night=scenario==='night',depot=scenario==='depot',skybridge=scenario==='skybridge';
-  const scene = new THREE.Scene(), warm = depot;
+  const scene = new THREE.Scene(), warm = depot,shinkansen=config.family==='e5'||config.family==='e6';
   scene.background = new THREE.Color(warm ? 0xe3c9aa : 0xb8d3de);
   scene.fog = new THREE.Fog(night?0x0b1934:warm?0xe7c49a:0xc7e3f0, night?160:300, night?650:1200);
   const environment = createReflectionEnvironment(renderer,warm,scenario,rewardEnvironment(scenario)); scene.environment = environment.texture;scene.environmentRotation.set(0,night?-1.57:depot?.9:-.4,0);
@@ -42,16 +46,24 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   // The key still defines the shadows; this only keeps night steel readable.
   const heroFill=new THREE.DirectionalLight(0xd5e5fa,night?1.3:depot?.4:.3);scene.add(heroFill,heroFill.target);
   const camera = new THREE.PerspectiveCamera(44,1,.1,1300);
-  const world = depot?createDepotWorld(scene,{config}):skybridge?createSkybridgeWorld(scene,{config}):createRailwayWorld(scene,{night:true});
+  const world = depot?createDepotWorld(scene,{config}):skybridge?createSkybridgeWorld(scene,{config}):createRailwayWorld(scene,{night:true,gauge:config.gauge||1.067});
   const train = buildTrain(config); scene.add(train.group);
   if(skybridge)bendTrainModel(train,SKY_RADIUS);
-  const opposite=night?buildTrain({...REWARD_3D_TRAINS[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id)+1)%4],sceneId:scenario}):null;
+  const opposite=night?buildTrain({...oppositeTrain(config),sceneId:scenario}):null;
   if(opposite){opposite.group.rotation.y=Math.PI;scene.add(opposite.group);}
   const v=a=>new THREE.Vector3(...a),curve=points=>new THREE.CatmullRomCurve3(points.map(v),false,'catmullrom',.2);
-  const cameraPath=curve(depot?[[20,3.2,-8],[17,2.2,-8],[18,2.4,-8],[19,2.8,-10],[21,3.5,-12]]:
+  // A long-nose cab needs its own lens path: the same commuter framing makes
+  // the E5/E6 look like a thin needle, with the windscreen too far away.
+  const cameraPath=curve(shinkansen?(depot?[[25,3.6,-4],[22,2.9,-4.5],[21,2.8,-9],[20,3,-11],[20,3.8,-13]]:
+    skybridge?[[24,4,-12],[22,3.2,-13],[23,5,-17],[26,8,-22],[29,12,-28]]:
+    [[21,1.6,-8],[21,2.4,-11],[20,2.8,-12],[20,3.2,-13],[19,3.8,-15]]):
+    depot?[[20,3.2,-8],[17,2.2,-8],[18,2.4,-8],[19,2.8,-10],[21,3.5,-12]]:
     skybridge?[[20,4,-13],[18,3,-12],[20,5,-17],[22,8,-21],[23,12,-25]]:
     [[-6,.9,-3],[16,2.8,-8],[18,2.8,-8],[17,2.8,-7.5],[16,2.8,-6]]);
-  const targetPath=curve(depot?[[8,2.6,0],[8,2.5,0],[8,2.5,0],[7,2.5,0],[6,2.3,0]]:
+  const targetPath=curve(shinkansen?(depot?[[4,2.1,0],[4,2.1,0],[4,2,0],[3,2,0],[2,2,0]]:
+    skybridge?[[4,2.2,0],[4,2.1,0],[2,2,0],[0,1.6,0],[-3,1,0]]:
+    [[5,1.8,0],[4,2,0],[3,2,0],[2,2,0],[1,2.1,0]]):
+    depot?[[8,2.6,0],[8,2.5,0],[8,2.5,0],[7,2.5,0],[6,2.3,0]]:
     skybridge?[[7,2.6,0],[8,2.3,0],[6,2.3,0],[6,2,0],[5,1.5,0]]:
     [[-6,.8,0],[8,2.1,0],[8,2.4,0],[8,2.5,0],[9,2.6,0]]);
   const glowTexture=(()=>{
@@ -59,7 +71,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     g.addColorStop(0,'rgba(255,248,218,1)');g.addColorStop(.12,'rgba(255,239,184,.8)');g.addColorStop(.4,'rgba(255,227,168,.12)');g.addColorStop(1,'rgba(255,227,168,0)');ctx.fillStyle=g;ctx.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);
   })();
   const glowMaterial=new THREE.SpriteMaterial({map:glowTexture,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:night?.7:.3});
-  for(const z of [-1,1]){const glow=new THREE.Sprite(glowMaterial);glow.position.set(10.16,config.id==='toyoko'?3.67:3.72,z);glow.scale.setScalar(night?.85:.48);train.group.add(glow);}
+  for(const z of (shinkansen?[]:[-1,1])){const glow=new THREE.Sprite(glowMaterial);glow.position.set(shinkansen?(config.frontX||13)-4.4:10.16,shinkansen?1.55:config.id==='toyoko'?3.67:3.72,z);glow.scale.setScalar(night?.85:.48);train.group.add(glow);}
   let raf = 0, elapsed = 0, started = 0, running = false, disposed = false, completed = false;
   let frame = 0, slowFrames = 0, previous = 0, qualityReduced = false;
   const oldError = event => { event.preventDefault(); pause(); onError?.('context-lost'); };
@@ -84,6 +96,14 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     if(opposite){opposite.group.position.set(180-28*seconds,0,4.4);for(const wheel of opposite.wheels)wheel.rotation.z=-28*seconds/.43;}
     const position=cameraPath.getPoint(t),target=targetPath.getPoint(t),aspectScale=Math.max(1,1.05/camera.aspect);
     position.z*=aspectScale;
+    // In a tall phone viewport the long nose is the hero, while the tail may
+    // extend beyond the frame. Keep the tip clear of the left crop and jamb.
+    const portrait=clamp((1.05-camera.aspect)/.35,0,1);
+    if(shinkansen&&portrait){
+      target.x+=1.8*portrait;
+      if(depot){const opening=1-THREE.MathUtils.smoothstep(seconds,2.8,4.2);position.x+=4*portrait*opening;target.x+=1.2*portrait*opening;}
+    }
+
     // Keep the opening sightline inside the shutter's jambs in portrait too.
     if(depot)position.z=THREE.MathUtils.lerp(Math.max(position.z,-6),position.z,THREE.MathUtils.smoothstep(seconds,2.8,4));
     if(reduced){position.set(depot?38:40,skybridge?30:12,-(skybridge?110:80)*aspectScale);target.set(-15,1.5,0);}

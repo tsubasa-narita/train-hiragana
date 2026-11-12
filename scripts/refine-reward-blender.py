@@ -21,7 +21,7 @@ import bpy
 from mathutils import Matrix, Quaternion, Vector
 
 
-TRAINS = ("yokosuka", "shonan-shinjuku", "saikyo", "toyoko")
+TRAINS = ("yokosuka", "shonan-shinjuku", "saikyo", "toyoko", "yamanote", "komachi", "hayabusa")
 WIDTHS = {"cab-shell": 0.012, "cab-skirt": 0.010, "coupler": 0.008,
           "roof-housing": 0.008, "underfloor-housing": 0.006}
 PROTOTYPES = {"CAB", "STANDARD", "GREEN", "PANTOGRAPH", "AXLE"}

@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import {createShinkansenModel} from './reward3d-shinkansen.js';
 
 // Metres, railhead=.15, axle=.58. The leading cab faces +X; car centres 0,-20.6,….
 // Basic formations: Yokosuka 11, Shonan-Shinjuku 10, Saikyo 10, Toyoko 8 cars.
@@ -80,8 +81,8 @@ function destinationTexture(text) {
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
 
-function yokosukaFaceTexture(){
-  const w=512,h=256,data=new Uint8Array(w*h*4),blue=[41,62,154],cream=[230,211,160];
+function yokosukaFaceTexture(yamanote=false){
+  const w=512,h=256,data=new Uint8Array(w*h*4),blue=yamanote?[131,185,57]:[41,62,154],cream=yamanote?[14,23,25]:[230,211,160];
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const t=y/(h-1),cx=(x%6-3)/3,cy=(y%6-3)/3;
     const radius=.798*Math.sqrt(2*Math.min(t,1-t));
@@ -103,6 +104,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const base=REWARD_3D_TRAINS.find(c=>c.id===input?.id);
   if(!base) throw new RangeError(`Unknown reward train: ${input?.id}`);
   const cfg={...base,...input};
+  if(cfg.family==='e5'||cfg.family==='e6')return createShinkansenModel(cfg);
   const carCount=Math.max(2,Math.min(12,Math.round(Number(cfg.cars)||8)));
   const group=new THREE.Group();group.name=`reward-train-${cfg.id}`;
   const wheels=[], geometries=new Set(),materials=new Set(),textures=new Set(),batches=new Map();
@@ -129,12 +131,12 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const faceBlack=mat({color:'#081217',metalness:.12,roughness:.17,clearcoat:1,clearcoatRoughness:.13});
   const pink=mat({color:'#d49eac',metalness:.35,roughness:.28});
   const stripes=cfg.stripes.map(color=>mat({color,metalness:.38,roughness:.3,clearcoat:.45}));
-  const yokosukaPanel=cfg.family==='e235'?mat({map:ownT(yokosukaFaceTexture()),metalness:.32,roughness:.3,clearcoat:.5}):null;
+  const yokosukaPanel=cfg.family==='e235'?mat({map:ownT(yokosukaFaceTexture(cfg.id==='yamanote')),metalness:.32,roughness:.3,clearcoat:.5}):null;
   const glass=mat({color:'#65828a',map:ownT(makeGlassTexture()),metalness:.07,roughness:.075,transparent:true,opacity:.84,depthWrite:false,side:THREE.DoubleSide,clearcoat:1,clearcoatRoughness:.09,envMapIntensity:1.2});
   const cabGlass=mat({color:'#67878a',map:ownT(makeGlassTexture()),metalness:.06,roughness:.055,clearcoat:1,clearcoatRoughness:.08,transparent:true,opacity:.78,depthWrite:false,side:THREE.DoubleSide,envMapIntensity:2.4});
   const reflection=mat({color:'#c4e5e9',metalness:.12,roughness:.19,transparent:true,opacity:.26,depthWrite:false,side:THREE.DoubleSide});
   const inside=mat({color:'#899797',metalness:.02,roughness:.85});
-  const seat=mat({color:cfg.id==='toyoko'?'#8a5655':cfg.id==='yokosuka'?'#326f97':'#3f6879',roughness:.96});
+  const seat=mat({color:cfg.id==='yamanote'?'#4a9762':cfg.id==='toyoko'?'#8a5655':cfg.id==='yokosuka'?'#326f97':'#3f6879',roughness:.96});
   const greenSeat=mat({color:'#72575d',roughness:.92});
   const light=mat({color:'#fff7cf',emissive:'#ffedb3',emissiveIntensity:3.8,roughness:.18});
   const tailLight=mat({color:'#bb2435',emissive:'#ee1735',emissiveIntensity:1.8,roughness:.24});
@@ -208,7 +210,8 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const doorGeometry=ownG(new THREE.ExtrudeGeometry(doorShape,{depth:.023,bevelEnabled:false,curveSegments:4}));
   function passengerDoor(x,side) {
     const z=side*1.457;
-    sidePanel(doorGeometry,doorSteel,x,0,z);
+    sidePanel(doorGeometry,cfg.id==='yamanote'?stripes[0]:doorSteel,x,0,z);
+    if(cfg.id==='yamanote')box(stripes[0],x,3.46,z,1.34,.2,.022);
     sidePanel(ring(1.38,2.04,.06,.045),trim,x,2.36,z+side*.01);
     box(rubber,x,2.35,z+side*.033,.018,1.91,.012);
     box(aluminium,x,1.37,z+side*.043,1.34,.035,.1);
@@ -325,6 +328,8 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
       if(green) {
         box(stripes[0],0,2.44,z,19.5,.17,.012);
         if(stripes[1])box(stripes[1],0,2.25,z,19.5,.19,.012);
+      } else if(cfg.id==='yamanote') {
+        // E235 Yamanote emphasizes green door leaves, not a waist stripe.
       } else {
         // Belt passes over the closed door leaves, as on the real stainless cars.
         box(stripes[0],0,2.08,z,19.48,.17,.012);
@@ -384,7 +389,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
         frontRect(trim,3.73,s*.99,.39,.17,10.03);
         for(const dz of [-.095,.095])frontRect(rear?tailLight:light,3.73,s*.99+dz,.14,.09,10.05,.025);
       }
-      frontRect(yokosukaPanel,1.84,0,2.55,.65,10.048,.08);
+      frontRect(yokosukaPanel||stripes[0],1.84,0,2.55,.65,10.048,.08);
       frontRect(stripes[0],1.46,0,2.53,.1,10.045,.035);
     } else if(tokyu) {
 
@@ -509,7 +514,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
     mesh.computeBoundingBox();mesh.computeBoundingSphere();group.add(mesh);
   }
   const length=CAR_LENGTH+(carCount-1)*PITCH;
-  group.userData={trainId:cfg.id,front:0,frontX:10.3,rearX:-PITCH*(carCount-1)-10.3,length,carCount,wheelRadius:WHEEL_RADIUS,spinAxis:'z',carMetadata};
+  group.userData={trainId:cfg.id,carPitch:PITCH,front:0,frontX:10.3,rearX:-PITCH*(carCount-1)-10.3,length,carCount,wheelRadius:WHEEL_RADIUS,spinAxis:'z',carMetadata};
   let disposed=false;
   return {group,wheels,length,front:0,frontX:10.3,rearX:group.userData.rearX,carCount,wheelRadius:WHEEL_RADIUS,config:cfg,
     setHeadlights(level){light.emissiveIntensity=3.8*level;light.color.setScalar(.2+.8*level);},

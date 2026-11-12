@@ -7,12 +7,12 @@ import { REWARD_TRAINS, chooseReward, REWARD_DURATION } from '../src/reward.js';
 import { quizImageFile } from '../src/quiz-images.js';
 const baseKana = character => character.normalize('NFD')[0];
 test('reward images exist and random rewards never immediately repeat', () => {
-  assert.deepEqual(REWARD_TRAINS.map(t=>t.id), ['yokosuka','shonan-shinjuku','saikyo','toyoko']);
+  assert.deepEqual(REWARD_TRAINS.map(t=>t.id).sort(), ['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa'].sort());
   for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/trains/${quizImageFile(t.image)}`), t.image);
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }
 });
-test('the cinema lasts seven seconds and another train excludes the one being watched', () => {
+test('the cinema lasts seven seconds and successive rewards exclude the previous train', () => {
   assert.equal(REWARD_DURATION, 7000);
   for (const train of REWARD_TRAINS) for(let i=0;i<10;i++) assert.notEqual(chooseReward(train.id).id,train.id);
 });

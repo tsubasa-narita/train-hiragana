@@ -3,7 +3,8 @@ import * as THREE from '../vendor/three/three.module.js';
 function seeded(seed = 4827) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 }
-export function createRailwayWorld(scene, { warm = false, blossom = false, night = false } = {}) {
+export function createRailwayWorld(scene, { warm = false, blossom = false, night = false, gauge = 1.067 } = {}) {
+  const halfGauge=gauge/2;
   const random = seeded(), group = new THREE.Group();
   let disposed = false;
   group.name = 'riverside-viaduct'; scene.add(group);
@@ -69,12 +70,12 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   const sleepers=[], fasteners=[];
   for(let x=-420;x<330;x+=.66) for(const z of [0,4.4]) {
     sleepers.push({x,y:.015,z,sx:.25,sy:.14,sz:2.35});
-    for(const rail of [-.5335,.5335]) fasteners.push({x,y:.105,z:z+rail,sx:.12,sy:.045,sz:.2});
+    for(const rail of [-halfGauge,halfGauge]) fasteners.push({x,y:.105,z:z+rail,sx:.12,sy:.045,sz:.2});
   }
   instances(box(),material({color:night?0x666c6c:0xa7a69b,roughness:night?.55:.9}),sleepers);
   instances(box(),material({color:0x494940,roughness:.55}),fasteners);
   const rail=material({color:0xa9b3b7,metalness:.94,roughness:night?.13:.22}), railSide=material({color:0x786552,metalness:.5,roughness:.6});
-  for(const z of [-.5335,.5335,4.4-.5335,4.4+.5335]) {
+  for(const z of [-halfGauge,halfGauge,4.4-halfGauge,4.4+halfGauge]) {
     mesh(box(),rail,-45,.128,z,750,.044,.075);
     mesh(box(),railSide,-45,.075,z,750,.1,.035);
   }
@@ -170,7 +171,14 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     const r=1+.1*Math.sin(x*13+y*8)*Math.sin(z*11-x*5)+.05*Math.sin(y*23+z*8);
     crownPosition.setXYZ(i,x*r,y*r,z*r);
   }
-  crown.computeVertexNormals();
+  const leafColors=[],leafNormal=new THREE.Vector3();
+  for(let i=0;i<crownPosition.count;i++){
+    const x=crownPosition.getX(i),y=crownPosition.getY(i),z=crownPosition.getZ(i);
+    leafNormal.set(x,y,z).normalize();crown.attributes.normal.setXYZ(i,...leafNormal);
+    const shade=.68+.25*(y+1)/2+.07*Math.sin(x*17+z*13);
+    leafColors.push(shade*.95,shade,shade*.88);
+  }
+  crown.setAttribute('color',new THREE.Float32BufferAttribute(leafColors,3));
   for(let i=0;i<430;i++){
     const x=-400+random()*850,z=(random()>.5?1:-1)*(14+random()*170);
     if(x>-13&&x<63)continue;
@@ -184,7 +192,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     }
   }
   instances(box(),material({color:0x786651,roughness:1}),trunks);
-  instances(crown,material({color:0xffffff,roughness:1}),leaves);
+  instances(crown,material({color:0xffffff,vertexColors:true,roughness:1}),leaves);
   // Distant ridges have continuous silhouettes, rather than a flat backdrop.
   for(let layer=0;layer<3;layer++){
     const geometry=keep(new THREE.PlaneGeometry(1800,260,100,8)),p=geometry.attributes.position;

@@ -8,13 +8,13 @@ const fs=require('node:fs');
     const page=await browser.newPage({serviceWorkers:'block'});
     page.on('console',msg=>{if(msg.type()==='error')console.error(msg.text());});
     await page.goto(process.env.TEST_URL||'http://127.0.0.1:4180/');
-    for(const id of (process.argv.length>2?process.argv.slice(2):['yokosuka','shonan-shinjuku','saikyo','toyoko'])){
+    for(const id of (process.argv.length>2?process.argv.slice(2):['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa'])){
       const base64=await page.evaluate(async id=>{
         const THREE=await import('./vendor/three/three.module.js');
         const {GLTFExporter}=await import('./vendor/three/addons/exporters/GLTFExporter.js');
         const {mergeGeometries}=await import('./vendor/three/addons/utils/BufferGeometryUtils.js');
         const {createTrainModel}=await import('./src/reward3d-trains.js');
-        const model=createTrainModel(id),cfg=model.config,root=new THREE.Group();root.name=id;
+        const model=createTrainModel(id),cfg=model.config,pitch=cfg.pitch||20.6,root=new THREE.Group();root.name=id;
         const standardIndex=Array.from({length:cfg.cars},(_,i)=>i).find(i=>i>0&&i<cfg.cars-1&&!cfg.greenCars.includes(i)&&!cfg.pantographCars.includes(i));
         const prototypes=[['CAB',0],['STANDARD',standardIndex],['PANTOGRAPH',cfg.pantographCars[0]]];
         if(cfg.greenCars.length)prototypes.push(['GREEN',cfg.greenCars[0]]);
@@ -25,10 +25,10 @@ const fs=require('node:fs');
             if(!source.isInstancedMesh)continue;
             for(let j=0;j<source.count;j++){
               source.getMatrixAt(j,original);
-              const car=Math.max(0,Math.min(cfg.cars-1,Math.round(-original.elements[12]/20.6)));
+              const car=Math.max(0,Math.min(cfg.cars-1,Math.round(-original.elements[12]/pitch)));
               if(car!==index)continue;
-              const x=original.elements[12]+index*20.6,y=original.elements[13],z=original.elements[14];
-              const panto=x>-7.3&&x<-4.7&&y>=4.04&&Math.abs(z)<.86;
+              const x=original.elements[12]+index*pitch,y=original.elements[13],z=original.elements[14];
+              const panto=source.geometry.name==='pantograph'||(x>-7.3&&x<-4.7&&y>=4.04&&Math.abs(z)<.86);
               if((name==='PANTOGRAPH')!==panto)continue;
               let role=source.geometry.name||'body';
               const scale=new THREE.Vector3().setFromMatrixScale(original);
@@ -37,7 +37,7 @@ const fs=require('node:fs');
               if(source.userData.groundEffect)role='contact-shadow';
               const key=`${role}/${source.material.uuid}`;
               if(!batches.has(key))batches.set(key,{role,material:source.material,parts:[]});
-              translation.makeTranslation(index*20.6,0,0).multiply(original);
+              translation.makeTranslation(index*pitch,0,0).multiply(original);
               let geometry=source.geometry.clone().applyMatrix4(translation);
               if(geometry.index){const expanded=geometry.toNonIndexed();geometry.dispose();geometry=expanded;}
               batches.get(key).parts.push(geometry);

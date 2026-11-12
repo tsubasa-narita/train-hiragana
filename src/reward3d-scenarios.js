@@ -5,7 +5,7 @@ export const REWARD_SCENARIOS = Object.freeze([
   Object.freeze({id:'night',name:'きらめく よるの すれちがい'}),
   Object.freeze({id:'skybridge',name:'くもの うえの にじの はし'}),
 ]);
-const KEY='train-reward-cinema-bag-v1';
+const KEY='train-reward-cinema-bag-v2';
 const pairs=REWARD_SCENARIOS.flatMap(s=>REWARD_3D_TRAINS.map(t=>`${s.id}:${t.id}`));
 let memory,storageFailed=false;
 function read(){if(storageFailed)return memory;try{return JSON.parse(globalThis.localStorage?.getItem(KEY))||memory;}catch{return memory;}}

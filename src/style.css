@@ -19,7 +19,6 @@
 .train-picture img,.detail-image{object-fit:contain}
 @media(max-width:800px){.row-buttons{grid-template-columns:repeat(6,minmax(0,1fr))}}
 @media(max-width:580px){.row-selection{padding:17px 14px;margin-top:20px}.row-selection h2{font-size:16px}.row-buttons{gap:7px}.row-buttons button{min-height:60px}.row-selection p{font-size:10px}}
-.replay-reward{margin-top:13px;font-size:12px;min-height:44px;background:#fff5dd;border:1px solid #e5cd9b;border-radius:12px;padding:8px 15px;color:#967331}
 @media(max-width:580px){.sound span{display:none}.sound{width:42px;height:42px;padding:0}.brand{font-size:15px}.header-actions{gap:4px}}
 @media(prefers-reduced-motion:no-preference){.hero .train-body{animation:sway 4s ease-in-out infinite}.choice.correct{animation:pop .35s ease-out}.finish-seal{animation:pop .5s ease-out}.try-again{animation:nudge .25s ease-in-out}@keyframes sway{50%{transform:translateY(-2px)}}@keyframes pop{50%{transform:scale(1.08)}}@keyframes nudge{33%{transform:translateX(-3px)}66%{transform:translateX(3px)}}}
 

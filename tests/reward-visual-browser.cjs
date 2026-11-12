@@ -4,6 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
 (async () => {
+  const {REWARD_3D_TRAINS}=await import('../src/reward3d-catalog.js');
+  const {REWARD_SCENARIOS}=await import('../src/reward3d-scenarios.js');
+  const catalogIds=REWARD_3D_TRAINS.map(train=>train.id);
+  const ids=process.env.REWARD_TEST_IDS ? [...new Set(process.env.REWARD_TEST_IDS.split(',').map(id=>id.trim()).filter(Boolean))] : catalogIds;
+  assert.ok(ids.length>0,'REWARD_TEST_IDS needs at least one catalog ID');
+  for(const id of ids)assert.ok(catalogIds.includes(id),`unknown REWARD_TEST_IDS entry: ${id}`);
   fs.mkdirSync(output,{recursive:true});
   const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
   try {
@@ -13,31 +19,45 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
     async function open(id, extras={}) {
       await page.evaluate(async({id,extras})=>{
         const r=await import('./src/reward.js');
-        window.booked=null;window.rewardChanged=null;window.rewardDone=0;
-        r.showTrainReward({train:{...r.REWARD_TRAINS.find(t=>t.id===id),sceneId:extras.sceneId||'depot'},sound:false,...extras,
-          onBook:t=>window.booked=t.id,onTrainChange:t=>window.rewardChanged=t.id,onDone:()=>window.rewardDone++});
+        window.booked=null;window.rewardPlayed=[];window.rewardDone=0;
+        r.showTrainReward({train:{...r.REWARD_TRAINS.find(t=>t.id===id),sceneId:extras.sceneId||'depot',played:extras.played===true},sound:false,...extras,
+          onBook:t=>window.booked={...t},onPlayed:t=>window.rewardPlayed.push({...t}),onDone:()=>window.rewardDone++});
       },{id,extras});
       await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
       assert.equal(await page.locator('.reward-dialog').getAttribute('data-renderer'),'webgl');
       assert.equal(await page.locator('canvas').getAttribute('data-asset'),'blender-glb','actual Blender assets must load, not a procedural fallback');
       assert.equal(await page.locator('canvas').getAttribute('data-lighting'),'hdr-ibl');
       assert.equal(await page.locator('.reward-review,.reward-ticket').count(),0);
+      assert.equal(await page.locator('[data-reward="start"],[data-reward="replay"],[data-reward="another"]').count(),0);
+      assert.deepEqual(await page.locator('.reward-controls button').evaluateAll(buttons=>buttons.map(b=>b.dataset.reward)),['book','continue']);
+      assert.equal(await page.locator('[data-reward="continue"]').isVisible(),true,'continue can skip a running clip');
     }
     async function end() {
       await page.locator('canvas').evaluate(c=>{c.rewardScene.seek(6800);c.rewardScene.resume();});
       await page.locator('.reward-dialog.arrived').waitFor();
+      assert.equal(await page.locator('canvas').evaluate(c=>c.rewardScene.elapsed),7000);
+      assert.deepEqual(await page.locator('.reward-controls button:visible').evaluateAll(buttons=>buttons.map(b=>b.dataset.reward)),['book','continue']);
+      assert.equal(await page.evaluate(()=>window.rewardPlayed.length),1);
     }
     // Measure one unmodified playback against the real browser clock.
     await open('yokosuka');
     const begun=Date.now();await page.locator('.reward-dialog.arrived').waitFor({timeout:12000});
     assert.ok(Date.now()-begun>=6000,'automatic movie really runs for approximately seven seconds');
     assert.equal(await page.locator('canvas').evaluate(c=>c.rewardScene.elapsed),7000);
-    await page.locator('[data-reward="replay"]').click();
-    await page.locator('.reward-dialog.running').waitFor();
-    assert.ok(await page.locator('canvas').evaluate(c=>c.rewardScene.elapsed<2000));
+    assert.equal(await page.evaluate(()=>window.rewardPlayed.length),1);
+    assert.deepEqual(await page.locator('.reward-controls button:visible').evaluateAll(buttons=>buttons.map(b=>b.dataset.reward)),['book','continue']);
     await page.locator('[data-reward="continue"]').click();
     assert.equal(await page.evaluate(()=>window.rewardDone),1);
-    for(const sceneId of ['depot','night','skybridge']) for(const id of ['yokosuka','shonan-shinjuku','saikyo','toyoko']) {
+    // Restoring a completed history entry displays its last frame without another play.
+    await open('yokosuka',{sceneId:'night',played:true});
+    await page.locator('.reward-dialog.arrived').waitFor();
+    assert.equal(await page.locator('canvas').evaluate(c=>c.rewardScene.elapsed),7000);
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('canvas').evaluate(c=>c.rewardScene.elapsed),7000);
+    assert.equal(await page.evaluate(()=>window.rewardPlayed.length),0);
+    await page.locator('[data-reward="book"]').click();
+    assert.deepEqual(await page.evaluate(()=>{const t=window.booked;return [t.id,t.sceneId,t.played];}),['yokosuka','night',true]);
+    for(const {id:sceneId} of REWARD_SCENARIOS) for(const id of ids) {
       await open(id,{sceneId,letters:['あ','い','う','え','お'],words:['こまち']});
       for(const milliseconds of [0,2200,4500,6800]) {
         await page.locator('canvas').evaluate((c,t)=>c.rewardScene.seek(t),milliseconds);
@@ -47,25 +67,26 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
       assert.ok(stats.triangles>50000 && stats.triangles<1100000,JSON.stringify(stats));
       assert.ok(stats.calls<400,'instancing keeps the scene within its draw-call budget');
       await end();
-      await page.locator('[data-reward="another"]').click();
-      await page.waitForFunction(({id,sceneId})=>{const c=document.querySelector('canvas');return c?.rewardScene&&(c.dataset.train!==id||c.dataset.scenario!==sceneId);},{id,sceneId});
-      const changed=await page.evaluate(()=>window.rewardChanged);assert.ok(changed);
-      await end();await page.locator('[data-reward="book"]').click();
-      assert.equal(await page.evaluate(()=>window.booked),changed);
+      assert.deepEqual(await page.evaluate(()=>window.rewardPlayed.map(t=>[t.id,t.sceneId,t.played])),[[id,sceneId,true]]);
+      await page.locator('[data-reward="book"]').click();
+      assert.deepEqual(await page.evaluate(()=>{const t=window.booked;return [t.id,t.sceneId,t.played];}),[id,sceneId,true]);
+      assert.equal(await page.evaluate(()=>window.rewardDone),0,'book does not continue the quiz');
       assert.equal(await page.locator('dialog').count(),0);
     }
-    for(const [width,height] of [[390,844],[320,667],[667,375],[320,375]]) {
+    const mobileCases=[...[[390,844],[320,667],[667,375],[320,375]].map(([w,h])=>['shonan-shinjuku',w,h,w===320?'skybridge':w===667?'night':'depot']),
+      ...['komachi','hayabusa'].flatMap(id=>REWARD_SCENARIOS.map(({id:sceneId})=>[id,390,844,sceneId]))];
+    for(const [id,width,height,sceneId] of mobileCases) {
       await page.setViewportSize({width,height});
-      await open('shonan-shinjuku',{sceneId:width===320?'skybridge':width===667?'night':'depot'});
+      await open(id,{sceneId});
       await page.locator('canvas').evaluate(c=>c.rewardScene.seek(2200));
-      await page.locator('.reward-dialog').screenshot({path:path.join(output,`mobile-${width}x${height}.png`)});
+      await page.locator('.reward-dialog').screenshot({path:path.join(output,`mobile-${id}-${sceneId}-${width}x${height}.png`)});
       await end();
       const controls=await page.locator('.reward-controls button:visible').evaluateAll(buttons=>buttons.map(button=>{
         const b=button.getBoundingClientRect(),d=button.closest('dialog').getBoundingClientRect();
         return {height:b.height,visible:b.top>=d.top&&b.bottom<=d.bottom&&b.left>=d.left&&b.right<=d.right};
       }));
-      assert.equal(controls.length,4);
-      assert.ok(controls.every(b=>b.height>=48&&b.visible),'all four controls fit and have large touch targets');
+      assert.equal(controls.length,2);
+      assert.ok(controls.every(b=>b.height>=48&&b.visible),'both controls fit and have large touch targets');
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
       await page.keyboard.press('Escape');
     }
@@ -79,6 +100,6 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
     assert.equal(await page.locator('.reward-fallback img').getAttribute('alt'),'とうよこせんのイラスト');
     await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').count(),0);
     assert.deepEqual(errors,[]);
-    console.log('3D cinema passed: twelve scene/train pairs, real seven-second playback, auto-start, replay, another/book identity, 320px/landscape controls, reduced motion, WebGL loss fallback and cleanup.');
+    console.log(`3D cinema passed: ${ids.length*REWARD_SCENARIOS.length} scene/train pairs, real seven-second single playback, completed history without autoplay, same-train book identity, two 320px/landscape controls, reduced motion, WebGL loss fallback and cleanup.`);
   } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1);});

@@ -6,10 +6,10 @@ import {
   rewardBookId, showTrainReward, stopTrainReward,
 } from '../src/reward.js';
 
-test('four cinematic rewards resolve only explicit valid book entries', () => {
+test('seven cinematic rewards resolve only explicit valid book entries', () => {
   assert.equal(REWARD_DURATION, 7000);
-  assert.deepEqual(REWARD_TRAINS.map(train => train.id), ['yokosuka', 'shonan-shinjuku', 'saikyo', 'toyoko']);
-  assert.equal(Object.keys(REWARD_BOOK_IDS).length, 4);
+  assert.deepEqual(REWARD_TRAINS.map(train => train.id).sort(), ['yokosuka', 'shonan-shinjuku', 'saikyo', 'toyoko', 'yamanote', 'komachi', 'hayabusa'].sort());
+  assert.equal(Object.keys(REWARD_BOOK_IDS).length, 7);
   for (const [reward, book] of Object.entries(REWARD_BOOK_IDS)) {
     assert.ok(REWARD_TRAINS.some(train => train.id === reward));
     assert.ok(TRAINS.some(train => train.id === book));
@@ -147,6 +147,7 @@ function harness(t, { reduced = false } = {}) {
     createReward3D(canvas, train, options) {
       assert.ok(document.body.querySelector('dialog').open, 'show the native dialog before scene creation');
       const engine = { canvas, train: { ...train }, options, elapsed: 0, plays: 0, pauses: 0, resumes: 0, disposals: 0,
+        seeks: [], seek(value) { this.seeks.push(value); this.elapsed = value; },
         play() { this.plays++; }, pause() { this.pauses++; }, resume() { this.resumes++; }, dispose() { this.disposals++; },
       };
       engines.push(engine);
@@ -166,10 +167,11 @@ function harness(t, { reduced = false } = {}) {
 async function settled() { await Promise.resolve(); await Promise.resolve(); }
 function deferred() { let resolve; const promise = new Promise(yes => { resolve = yes; }); return { promise, resolve }; }
 function assertArrivalControls(h, visible) {
-  for (const name of ['replay', 'another', 'book']) assert.equal(h.button(name).hidden, !visible, name);
+  for (const name of ['start', 'replay', 'another']) assert.equal(h.button(name), null, `${name} must not exist`);
+  assert.deepEqual(h.dialog().querySelectorAll('.reward-controls button').map(node => node.getAttribute('data-reward')), ['book', 'continue']);
+  assert.equal(h.button('book').hidden, !visible);
   assert.equal(h.button('continue').hidden, false);
   assert.equal(h.button('mute').hidden, false);
-  assert.equal(h.button('start').hidden, true);
 }
 
 test('native dialog opens during loading and successful 3D loading starts playback automatically', async t => {
@@ -190,9 +192,10 @@ test('native dialog opens during loading and successful 3D loading starts playba
   assertArrivalControls(h, false);
 });
 
-test('3D engine owns progress and completion; replay reuses the engine', async t => {
-  const h = harness(t); let done = 0;
-  h.open({ onDone: () => done++ }); await settled();
+test('3D engine owns completion and marks a reward played exactly once', async t => {
+  const h = harness(t), played = []; let done = 0;
+  const current = h.open({ onDone: () => done++, onPlayed: train => played.push({ ...train }) }); await settled();
+  assert.equal(current.played, false);
   const engine = h.engines[0];
   engine.options.onFrame(.45);
   assert.equal(h.dialog().querySelector('.reward-progress i').style.transform, 'scaleX(0.45)');
@@ -202,25 +205,55 @@ test('3D engine owns progress and completion; replay reuses the engine', async t
   assert.equal(h.dialog().dataset.phase, 'arrived');
   assertArrivalControls(h, true);
   assert.equal(done, 0, 'arrival must wait for the child to continue');
-  h.click('replay');
+  assert.equal(current.played, true);
+  assert.deepEqual(played, [{ ...current }]);
+  engine.options.onComplete();
+  assert.equal(played.length, 1, 'duplicate engine completion must not duplicate history updates');
   assert.equal(h.engines.length, 1);
-  assert.equal(engine.plays, 2);
-  assert.equal(h.dialog().dataset.phase, 'running');
-  assertArrivalControls(h, false);
-  assert.equal(h.dialog().querySelector('.reward-progress i').style.transform, 'scaleX(0)');
+  assert.equal(engine.plays, 1);
+  assert.equal(h.dialog().dataset.phase, 'arrived');
+  assertArrivalControls(h, true);
+  assert.equal(h.dialog().querySelector('.reward-progress i').style.transform, 'scaleX(1)');
   h.click('continue'); assert.equal(done, 1);
 });
 
-test('saved scene/train pair restores exactly and another updates that pair for history',async t=>{
-  const h=harness(t),changes=[];
-  const current=h.open({train:{id:'yokosuka',sceneId:'night'},onTrainChange:r=>changes.push({...r})});await settled();
-  assert.equal(current.sceneId,'night');assert.equal(h.engines[0].train.sceneId,'night');
-  h.engines[0].options.onComplete();h.click('replay');
-  assert.equal(h.dialog().dataset.scenario,'night');assert.equal(h.engines[0].plays,2);
-  h.engines[0].options.onComplete();h.click('another');await settled();
-  assert.equal(h.engines[1].train.sceneId,changes[0].sceneId);
-  assert.equal(current.sceneId,changes[0].sceneId);
-  assert.equal(h.dialog().dataset.scenario,changes[0].sceneId);
+test('completed history restores the same scene at seven seconds without playing or announcing it',async t=>{
+  const h=harness(t),played=[],spoken=[];
+  const current=h.open({train:{id:'yokosuka',sceneId:'night',played:true},sound:true,speak:value=>spoken.push(value),onPlayed:r=>played.push({...r})});await settled();
+  assert.deepEqual([current.id,current.sceneId,current.played],['yokosuka','night',true]);
+  const engine=h.engines[0];
+  assert.equal(engine.train.sceneId,'night');assert.equal(engine.plays,0);
+  assert.deepEqual(engine.seeks,[7000]);assert.equal(engine.elapsed,7000);
+  assert.equal(h.dialog().dataset.scenario,'night');assert.equal(h.dialog().dataset.phase,'arrived');
+  assertArrivalControls(h,true);
+  h.visibility(true);h.visibility(false);t.mock.timers.tick(30000);
+  engine.options.onComplete();
+  assert.equal(engine.plays+engine.resumes,0);assert.deepEqual(played,[]);assert.deepEqual(spoken,[]);
+});
+
+test('returning to completed reward history never autoplays it again',async t=>{
+  const h=harness(t);let played=0;
+  const current=h.open({train:{id:'saikyo',sceneId:'skybridge'},onPlayed:()=>played++});await settled();
+  h.engines[0].options.onComplete();const saved=JSON.parse(JSON.stringify(current));h.click('continue');
+  for(let visit=0;visit<2;visit++){
+    h.open({train:saved,onPlayed:()=>played++});await settled();
+    const engine=h.engines.at(-1);
+    assert.equal(engine.plays,0);assert.equal(engine.elapsed,7000);assertArrivalControls(h,true);
+    assert.deepEqual([engine.train.id,engine.train.sceneId],['saikyo','skybridge']);
+    h.click('continue');engine.options.onComplete();
+  }
+  assert.equal(played,1);
+});
+
+test('a completed saved reward still shows choices immediately when WebGL fails',async t=>{
+  const h=harness(t);let played=0;
+  const current=h.open({train:{id:'saikyo',sceneId:'night',played:true},onPlayed:()=>played++,loadScene:async()=>{throw Error('offline');}});
+  h.visibility(true);await settled();
+  assert.equal(h.dialog().dataset.renderer,'illustration');assert.equal(h.dialog().dataset.phase,'arrived');
+  assertArrivalControls(h,true);assert.equal(current.played,true);
+  h.visibility(false);t.mock.timers.tick(30000);
+  assert.equal(h.dialog().dataset.phase,'arrived');assert.equal(played,0);
+  assert.equal(h.engines.length,0);
 });
 
 test('loading while hidden defers the complete WebGL clip until visible',async t=>{
@@ -245,45 +278,37 @@ test('hidden fallback also waits for foreground before its seven second timer',a
   t.mock.timers.tick(1);assert.equal(h.dialog().dataset.phase,'arrived');
 });
 
-test('another train notifies history and replaces the disposed renderer canvas in the same scene', async t => {
-  const h = harness(t), changes = [];
-  h.open({ onTrainChange: train => changes.push({ ...train }) }); await settled();
-  const previous = h.engines[0], container = previous.canvas.parentElement;
-  previous.options.onComplete(); h.click('another');
-  assert.equal(previous.disposals, 1);
-  assert.equal(changes.length, 1);
-  assert.notEqual(`${changes[0].sceneId}:${changes[0].id}`,`${previous.train.sceneId}:${previous.train.id}`);
-  assert.equal(h.dialog().dataset.phase, 'loading');
-  assertArrivalControls(h, false);
-  await settled();
-  const next = h.engines[1];
-  assert.equal(next.plays, 1);
-  assert.notEqual(next.canvas, previous.canvas);
-  assert.equal(previous.canvas.parentElement, null);
-  assert.equal(next.canvas.parentElement, container);
-  assert.equal(next.train.id, changes[0].id);
-  assert.equal(h.dialog().querySelector('#reward-title').textContent, changes[0].name);
+test('a late context error after completion keeps choices without starting a second clip', async t => {
+  const h = harness(t); let played = 0;
+  h.open({ onPlayed: () => played++ }); await settled();
+  const engine = h.engines[0];
+  engine.options.onComplete();engine.options.onError(new Error('late context loss'));
+  assert.equal(engine.disposals, 1);
+  assert.equal(h.dialog().dataset.renderer, 'illustration');
+  assert.equal(h.dialog().dataset.phase, 'arrived');assertArrivalControls(h, true);
+  t.mock.timers.tick(30000);
+  assert.equal(engine.plays, 1);assert.equal(played, 1);
 });
 
 test('book disposes before opening the current train without continuing the quiz', async t => {
   const h = harness(t), books = []; let done = 0;
-  h.open({ onDone: () => done++, onBook: train => {
+  const current = h.open({ train: { id: 'yokosuka', sceneId: 'night' }, onDone: () => done++, onBook: train => {
     assert.equal(h.dialog(), null);
     assert.equal(h.engines.at(-1).disposals, 1);
     books.push({ ...train });
   } });
   await settled();
-  h.engines[0].options.onComplete(); h.click('another'); await settled();
-  h.engines[1].options.onComplete(); h.click('book');
+  h.engines[0].options.onComplete(); h.click('book');
   assert.equal(books.length, 1);
-  assert.equal(books[0].id, h.engines[1].train.id);
+  assert.deepEqual(books[0], { ...current });
+  assert.deepEqual([books[0].id, books[0].sceneId, books[0].played], ['yokosuka', 'night', true]);
   assert.equal(done, 0);
   assert.equal(h.listeners.size, 0);
 });
 
 test('cancel continues once and late engine callbacks cannot update the removed dialog', async t => {
-  const h = harness(t); let done = 0, books = 0, changes = 0;
-  h.open({ onDone: () => done++, onBook: () => books++, onTrainChange: () => changes++ }); await settled();
+  const h = harness(t); let done = 0, books = 0, played = 0;
+  const current = h.open({ onDone: () => done++, onBook: () => books++, onPlayed: () => played++ }); await settled();
   const dialog = h.dialog(), engine = h.engines[0], progress = dialog.querySelector('.reward-progress i');
   const before = progress.style.transform, stops = h.voiceStops;
   const cancel = new Event('cancel', { cancelable: true });
@@ -300,7 +325,8 @@ test('cancel continues once and late engine callbacks cannot update the removed 
   assert.equal(progress.style.transform, before);
   assert.equal(engine.disposals, 1);
   assert.equal(engine.pauses + engine.resumes, 0);
-  assert.deepEqual([done, books, changes], [1, 0, 0]);
+  assert.deepEqual([done, books, played], [1, 0, 0]);
+  assert.equal(current.played, false, 'skipping an unfinished clip does not mark it watched');
 });
 
 test('continue during module loading prevents late renderer creation and callbacks', async t => {
@@ -366,11 +392,12 @@ test('fallback excludes ten background seconds and resumes only its remaining fi
 
 test('legacy review options have no review UI or letter speech; unsupported saved train normalizes', async t => {
   const h = harness(t), spoken = [];
-  const current = h.open({ train: { id: 'hayabusa', name: '旧保存名' }, sound: true,
+  const current = h.open({ train: { id: 'missing-train', name: '旧保存名', played: true }, sound: true,
     speak: value => spoken.push(value), reviewLetters: ['を', 'ま'], words: [{ name: 'ひのとり' }],
   });
   await settled();
   assert.ok(REWARD_TRAINS.some(train => train.id === current.id));
+  assert.equal(current.played, false, 'a stale played flag must not skip a newly selected train');
   assert.equal(h.engines[0].train.id, current.id);
   assert.equal(h.dialog().querySelector('#reward-title').textContent, current.name);
   assert.deepEqual(spoken, [current.name]);
@@ -382,17 +409,18 @@ test('legacy review options have no review UI or letter speech; unsupported save
   h.click('mute');
   assert.equal(h.button('mute').getAttribute('aria-pressed'), 'false');
   assert.ok(h.voiceStops > stops);
-  h.engines[0].options.onComplete(); h.click('replay');
-  assert.deepEqual(spoken, [current.name], 'muted replay must stay silent');
+  h.engines[0].options.onComplete();
+  assertArrivalControls(h, true);
+  assert.deepEqual(spoken, [current.name], 'completion must not announce the train again');
   h.click('mute'); assert.equal(h.button('mute').getAttribute('aria-pressed'), 'true');
 });
 
 for (const failure of ['module rejection', 'renderer creation', 'context loss']) {
   test(`${failure} shows an honest illustration fallback and arrives at exactly seven seconds`, async t => {
-    const h = harness(t); let done = 0;
+    const h = harness(t); let done = 0, played = 0;
     const options = failure === 'module rejection' ? { loadScene: async () => { throw new Error('offline'); } }
       : failure === 'renderer creation' ? { loadScene: async () => ({ createReward3D() { throw new Error('no WebGL'); } }) } : {};
-    h.open({ ...options, onDone: () => done++ }); await settled();
+    const current = h.open({ ...options, onDone: () => done++, onPlayed: () => played++ }); await settled();
     if (failure === 'context loss') {
       h.engines[0].options.onError(new Error('context lost'));
       assert.equal(h.engines[0].disposals, 1);
@@ -410,10 +438,9 @@ for (const failure of ['module rejection', 'renderer creation', 'context loss'])
     t.mock.timers.tick(1); assert.equal(h.dialog().dataset.phase, 'arrived');
     assertArrivalControls(h, true);
     assert.equal(done, 0);
-    h.click('replay');
-    t.mock.timers.tick(6999); assert.equal(h.dialog().dataset.phase, 'running');
-    t.mock.timers.tick(1); assert.equal(h.dialog().dataset.phase, 'arrived');
-    h.click('replay'); h.click('continue'); t.mock.timers.tick(60000);
+    assert.equal(current.played, true);assert.equal(played, 1);
+    t.mock.timers.tick(30000);assert.equal(played, 1);assert.equal(h.dialog().dataset.phase, 'arrived');
+    h.click('continue'); t.mock.timers.tick(60000);
     assert.equal(done, 1);
     assert.equal(h.dialog(), null);
   });

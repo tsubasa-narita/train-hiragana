@@ -109,6 +109,8 @@ Androidの戻る操作・ブラウザの戻る/進むは、画面ごとの履歴
 
 専用車両と検証の記録は [車両連結の対応一覧](docs/connect-train-models.md) を参照してください。
 
-ごほうび映画は3つの舞台×4編成の12通りをランダム再生します。[演出と選択の仕様](docs/reward-cinema-scenarios.md)を参照してください。
+ごほうび映画は3つの舞台×7編成の21通りをランダム再生します。[演出と選択の仕様](docs/reward-cinema-scenarios.md)を参照してください。
 
 車両のBlender加工、GLB圧縮、実写HDRIによる環境光の構成と再制作手順は [Blender制作工程](docs/reward-blender-pipeline.md) を参照してください。
+
+ごほうび電車は完走ごとに1回だけ自動再生し、終了後は図鑑とおしまいの2択です。

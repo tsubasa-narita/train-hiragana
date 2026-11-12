@@ -1,7 +1,7 @@
 import { stopVoice } from './voice.js';
 import { quizImageFile } from './quiz-images.js';
 import { REWARD_3D_TRAINS } from './reward3d-catalog.js';
-import { chooseRewardExperience, resolveRewardExperience, rewardScenario } from './reward3d-scenarios.js';
+import { resolveRewardExperience, rewardScenario } from './reward3d-scenarios.js';
 
 export const REWARD_TRAINS = REWARD_3D_TRAINS;
 export const REWARD_BOOK_IDS = Object.freeze(Object.fromEntries(REWARD_TRAINS.map(train=>[train.id,train.bookId])));
@@ -49,10 +49,11 @@ function passSound(enabled,duration=7,sceneId='night',offset=0){
   }catch{return()=>{};}
 }
 
-export function showTrainReward({ train:requested, sound=true, speak, onDone, onBook, onTrainChange, onSoundChange,
+export function showTrainReward({ train:requested, sound=true, speak, onDone, onBook, onPlayed, onSoundChange,
   loadScene=()=>import('./reward3d.js') }={}){
   stopTrainReward();unlockRewardAudio(sound);
   const current=resolveRewardExperience(requested);
+  current.played=requested?.id===current.id&&requested?.played===true;
   const dialog=document.createElement('dialog');dialog.className='reward-dialog reward-cinema';
   dialog.setAttribute('aria-labelledby','reward-title');
   dialog.innerHTML=`<header class="reward-heading"><div><span class="reward-eyebrow">ごほうびの でんしゃ</span><h2 id="reward-title"></h2><small class="reward-model-name"></small></div><button class="reward-mute" data-reward="mute"></button></header>
@@ -61,7 +62,7 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
       <div class="reward-fallback" hidden><img alt=""><small>この端末ではイラストで表示しています</small></div>
       <div class="reward-film-edge" aria-hidden="true"></div><div class="reward-progress" aria-hidden="true"><i></i></div>
     </div><p class="reward-status" role="status">でんしゃが やってくるよ</p>
-    <div class="reward-controls"><button class="reward-launch" data-reward="start" hidden>▶ はしらせる</button><button class="reward-launch" data-reward="replay" hidden>↻ もういちど！</button><button class="reward-secondary" data-reward="another" hidden>ほかも みる</button><button class="reward-secondary" data-reward="book" hidden>でんしゃ ずかん</button><button class="reward-secondary" data-reward="continue">おしまい →</button></div>`;
+    <div class="reward-controls"><button class="reward-secondary" data-reward="book" hidden>でんしゃ ずかん</button><button class="reward-secondary" data-reward="continue">おしまい →</button></div>`;
   document.body.append(dialog);
   const get=key=>dialog.querySelector(key),button=key=>get(`[data-reward="${key}"]`);
   let canvas=get('canvas');
@@ -87,15 +88,16 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
   }
   function controls(next){
     phase=next;dialog.dataset.phase=next;dialog.classList.toggle('running',next==='running');dialog.classList.toggle('arrived',next==='arrived');
-    for(const key of ['replay','another','book'])button(key).hidden=next!=='arrived';
-    button('start').hidden=true;
+    button('book').hidden=next!=='arrived';
   }
   function finish(){
     if(closed)return;runSound();runSound=()=>{};clearTimeout(fallbackTimer);controls('arrived');
     progress.style.transform='scaleX(1)';status.textContent='かっこよかったね！';
+    if(!current.played){current.played=true;onPlayed?.(current);}
   }
   function run(){
     if(closed||loadingScene)return;
+    if(current.played){scene?.seek?.(REWARD_DURATION);finish();return;}
     if(document.hidden){wasPlaying=true;controls('waiting');return;}
     clearTimeout(fallbackTimer);runSound();stopVoice();controls('running');progress.style.transform='scaleX(0)';
     status.textContent='でんしゃが はしるよ！';
@@ -146,10 +148,6 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
     }
   }
   activeClose=close;labels();
-  button('start').onclick=run;button('replay').onclick=run;
-  button('another').onclick=()=>{
-    if(loadingScene)return;runSound();stopVoice();Object.assign(current,chooseRewardExperience(current));onTrainChange?.(current);void prepare();
-  };
   button('mute').onclick=()=>{
     sound=!sound;onSoundChange?.(sound);labels();runSound();stopVoice();
     if(sound&&phase==='running')runSound=passSound(true,scene?Math.max(.2,(REWARD_DURATION-scene.elapsed)/1000):7,current.sceneId,(scene?scene.elapsed:fallbackElapsed)/1000);

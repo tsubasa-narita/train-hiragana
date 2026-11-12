@@ -3,6 +3,7 @@ import * as THREE from '../vendor/three/three.module.js';
 // Coordinates are metres: the exit is x=0, the single track is z=0,
 // and the railhead is y=.15. The camera-facing wall is deliberately open.
 export function createDepotWorld(scene, { config } = {}) {
+  const halfGauge=(config?.gauge||1.067)/2;
   const group = new THREE.Group();
   group.name = 'depot-hero-world';
   scene.add(group);
@@ -17,7 +18,14 @@ export function createDepotWorld(scene, { config } = {}) {
     const r=1+.13*Math.sin(x*12+y*9)*Math.sin(z*9-x*4)+.06*Math.sin(y*19+z*11);
     crownPositions.setXYZ(i,x*r,y*r,z*r);
   }
-  crown.computeVertexNormals();
+  const leafColors=[],leafNormal=new THREE.Vector3();
+  for(let i=0;i<crownPositions.count;i++){
+    const x=crownPositions.getX(i),y=crownPositions.getY(i),z=crownPositions.getZ(i);
+    leafNormal.set(x,y,z).normalize();crown.attributes.normal.setXYZ(i,...leafNormal);
+    const shade=.68+.25*(y+1)/2+.07*Math.sin(x*17+z*13);
+    leafColors.push(shade*.95,shade,shade*.88);
+  }
+  crown.setAttribute('color',new THREE.Float32BufferAttribute(leafColors,3));
   const steel = options => keep(new THREE.MeshStandardMaterial(options));
   const basic = options => keep(new THREE.MeshBasicMaterial(options));
   let seed = 11427, disposed = false;
@@ -58,18 +66,16 @@ export function createDepotWorld(scene, { config } = {}) {
   const accent=steel({color:config?.color||0x2d7897,metalness:.35,roughness:.5});
   const lampMaterial=steel({color:0xffdf9e,emissive:0xffb94e,emissiveIntensity:2.6,roughness:.35});
 
+  // Seamless multiscale turf avoids repeating square patches in the chase shot.
   const grassMap=repeatingMap(ctx=>{
-    ctx.fillStyle='#526343';ctx.fillRect(0,0,256,256);
-    for(let i=0;i<70;i++){
-      const x=random()*256,y=random()*256,r=12+random()*65,g=ctx.createRadialGradient(x,y,0,x,y,r);
-      g.addColorStop(0,i%3?'rgba(137,132,76,.32)':'rgba(27,56,34,.45)');
-      g.addColorStop(1,'rgba(59,78,43,0)');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+    const image=ctx.createImageData(256,256),tau=Math.PI*2;
+    for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+      const u=x/256*tau,v=y/256*tau;
+      const n=Math.sin(u+Math.sin(v))*5+Math.sin(u*3-v*2)*3+Math.sin(u*7+v*5)*2+(random()-.5)*13;
+      image.data.set([68+n,88+n,48+n*.7,255],(y*256+x)*4);
     }
-    for(let i=0;i<5500;i++){
-      ctx.fillStyle=random()>.5?'rgba(166,157,99,.15)':'rgba(30,55,29,.2)';
-      ctx.fillRect(random()*256,random()*256,1+random()*3,1+random()*5);
-    }
-  },32,32);
+    ctx.putImageData(image,0,0);
+  },110,110);
   const ground=mesh(keep(new THREE.PlaneGeometry(1600,1600)),steel({map:grassMap,roughness:1}),0,-.12,0);
   ground.rotation.x=-Math.PI/2; ground.name='depot-meadow';
   const floorMap=repeatingMap(ctx=>{
@@ -118,13 +124,13 @@ export function createDepotWorld(scene, { config } = {}) {
   const sleepers=[],clips=[];
   for(let x=-300;x<=280;x+=.66){
     sleepers.push({x,y:.015,z:0,sx:.23,sy:.11,sz:2.3});
-    for(const z of [-.5335,.5335])clips.push({x,y:.092,z,sx:.14,sy:.038,sz:.19});
+    for(const z of [-halfGauge,halfGauge])clips.push({x,y:.092,z,sx:.14,sy:.038,sz:.19});
   }
   batch(box,steel({color:0x989b90,roughness:.9}),sleepers);
   batch(box,darkMetal,clips);
   const railhead=steel({color:0xc1c9c5,metalness:.94,roughness:.2});
   const railWeb=steel({color:0x6e5844,metalness:.72,roughness:.58});
-  for(const z of [-.5335,.5335]){
+  for(const z of [-halfGauge,halfGauge]){
     mesh(box,railhead,-10,.128,z,580,.044,.072);
     mesh(box,railWeb,-10,.067,z,580,.08,.033);
     mesh(box,railWeb,-10,.035,z,580,.025,.13);
@@ -374,7 +380,7 @@ export function createDepotWorld(scene, { config } = {}) {
     if(i%9===0)flowers.push({x,y:h-.03,z,sx:.09,sy:.07,sz:.09,color:i%2?0xf3d181:0xe3dfcf});
   }
   batch(trunkGeometry,bark,trunks);
-  const leafMaterial=steel({color:0xffffff,roughness:.95});
+  const leafMaterial=steel({color:0xffffff,vertexColors:true,roughness:.95});
   batch(crown,leafMaterial,foliage,true);batch(crown,leafMaterial,shrubs);
   const bladeGeometry=keep(new THREE.BufferGeometry());
   bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute([-.5,-.5,0,.5,-.5,0,.12,.5,.05,0,-.5,-.5,0,-.5,.5,.03,.4,.1],3));
@@ -412,14 +418,15 @@ export function createDepotWorld(scene, { config } = {}) {
     fragmentShader:`varying vec3 vDirection;uniform float time;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
+        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+      float fbm(vec2 p){float f=0.,a=.5;for(int i=0;i<4;i++){f+=a*noise(p);p=p*2.03+vec2(9.7,4.1);a*=.5;}return f;}
       void main(){vec3 d=normalize(vDirection);float h=max(0.,d.y);
-        vec3 color=mix(vec3(.95,.69,.39),vec3(.12,.34,.57),pow(h,.38));
+        vec3 color=mix(vec3(.50,.67,.85),vec3(.015,.18,.54),pow(h,.45));
         vec2 p=d.xz/max(.18,d.y+.18)*2.+time*.002;
-        float cloud=smoothstep(.55,.76,noise(p)+.2*noise(p*2.1));
+        float density=fbm(p+fbm(p*.7)*.75);float cloud=smoothstep(.49,.69,density);
         cloud*=smoothstep(.04,.2,h)*(1.-smoothstep(.55,.85,h));
-        color=mix(color,vec3(.82,.79,.66),cloud*.4);
-        float sun=pow(max(0.,dot(d,normalize(vec3(.65,.36,.47)))),700.);
+        color=mix(color,mix(vec3(.56,.64,.75),vec3(1.,.91,.77),smoothstep(.49,.70,density)),cloud*.86);
+        float sun=pow(max(0.,dot(d,normalize(vec3(.65,.65,-.38)))),700.);
         color+=vec3(1.,.76,.35)*sun;
         gl_FragColor=vec4(color,1.);
         #include <tonemapping_fragment>

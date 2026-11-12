@@ -3,8 +3,13 @@ import assert from 'node:assert/strict';
 import {readFile,stat} from 'node:fs/promises';
 import {REWARD_3D_TRAINS} from '../src/reward3d-catalog.js';
 
-test('four Blender libraries are self contained, compressed and preserve reusable prototypes',async()=>{
-  for(const train of REWARD_3D_TRAINS){
+test('Blender asset catalog covers all seven reward trains',()=>{
+  assert.equal(REWARD_3D_TRAINS.length,7);
+  assert.equal(new Set(REWARD_3D_TRAINS.map(train=>train.id)).size,7);
+});
+
+for(const train of REWARD_3D_TRAINS){
+  test(`${train.id}: Blender library is self contained, compressed and preserves reusable prototypes`,async()=>{
     const data=await readFile(new URL(`../assets/reward3d/${train.id}.glb`,import.meta.url));
     assert.equal(data.toString('ascii',0,4),'glTF');assert.equal(data.readUInt32LE(4),2);assert.equal(data.readUInt32LE(8),data.length);
     assert.ok(data.length<2500000,'mobile download stays below 2.5 MB per train');
@@ -17,5 +22,5 @@ test('four Blender libraries are self contained, compressed and preserve reusabl
     assert.ok(json.materials.some(m=>m.pbrMetallicRoughness?.metallicFactor>.5));
     assert.ok(json.buffers.every(b=>!b.uri));assert.ok(json.images.every(i=>i.bufferView!==undefined&&!i.uri));
     assert.ok((await stat(new URL(`../design/reward3d/${train.id}.blend`,import.meta.url))).size>100000);
-  }
-});
+  });
+}

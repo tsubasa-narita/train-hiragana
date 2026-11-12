@@ -233,8 +233,8 @@ function start(type, preferredId) {
   mode = type; journey = makeJourney(preferredId, gameRows, mode, gameOffset, progress.recentImages, progress.imageDecks, progress.stamps);
   station = 0; letterIndex = journey[0].targets[0]; prepare(); navigate('game'); prompt();
 }
-function reward(replay = false, restoring = false) {
-  lastReward = showTrainReward({ train: replay ? lastReward : undefined, sound: progress.sound, speak, onSoundChange: enabled => { progress.sound = enabled; save(); }, onTrainChange: train => { lastReward = train; recordHistory(); }, onBook: train => {
+function reward(reuseSaved = false, restoring = false) {
+  lastReward = showTrainReward({ train: reuseSaved ? lastReward : undefined, sound: progress.sound, speak, onSoundChange: enabled => { progress.sound = enabled; save(); }, onPlayed: () => recordHistory(), onBook: train => {
     if (screen !== 'finish') return;
     const id = rewardBookId(train, TRAINS);
     rewardOpen = false; recordHistory();
@@ -317,7 +317,7 @@ function answer(letter) {
   render(); advanceAfterNarration(speak(mode === 'find' ? currentFactText() : 'できたね！'), advance);
 }
 function finish() {
-  return `<main class="finish"><div class="finish-seal">★</div><div class="eyebrow">${mode === 'connect' ? '3つの なまえ、つながったね！' : '5えきの たび、とうちゃく！'}</div><h1>やったね、<br>すてきな うんてんしゅ！</h1><p>きょうは こんな でんしゃと あそんだよ。</p><div class="earned-trains">${journey.map(t => `<div><img src="${imagePath(t)}" alt=""/><b>${t.name}</b><span>✓</span></div>`).join('')}</div><div class="finish-actions">${mode === 'connect' ? '<button class="primary" data-action="start-connect">もういっかい つなごう →</button>' : mode === 'word' ? '<button class="primary" data-action="start-word">もういっかい よもう →</button>' : mode === 'fill' ? '<button class="primary" data-action="start-fill">もういっかい のせよう →</button>' : ''}<button class="primary" data-action="home">えきに もどる ⌂</button><button class="secondary" data-action="collection">ずかんを みる →</button></div><button class="replay-reward" data-action="replay-reward">↻ ごほうびを もういっかい</button><p class="gentle-note">つづきは また こんどでも。おつかれさま！</p></main>`;
+  return `<main class="finish"><div class="finish-seal">★</div><div class="eyebrow">${mode === 'connect' ? '3つの なまえ、つながったね！' : '5えきの たび、とうちゃく！'}</div><h1>やったね、<br>すてきな うんてんしゅ！</h1><p>きょうは こんな でんしゃと あそんだよ。</p><div class="earned-trains">${journey.map(t => `<div><img src="${imagePath(t)}" alt=""/><b>${t.name}</b><span>✓</span></div>`).join('')}</div><div class="finish-actions">${mode === 'connect' ? '<button class="primary" data-action="start-connect">もういっかい つなごう →</button>' : mode === 'word' ? '<button class="primary" data-action="start-word">もういっかい よもう →</button>' : mode === 'fill' ? '<button class="primary" data-action="start-fill">もういっかい のせよう →</button>' : ''}<button class="primary" data-action="home">えきに もどる ⌂</button><button class="secondary" data-action="collection">ずかんを みる →</button></div><p class="gentle-note">つづきは また こんどでも。おつかれさま！</p></main>`;
 }
 function collection() {
   return `<main class="library"><div class="page-heading"><div class="eyebrow">きみだけの でんしゃずかん</div><h1>すきな でんしゃ、みつけた？</h1><p>でんしゃを タッチして、なまえを きいてみよう。</p><span class="collection-total">あそんだ でんしゃ <b>${progress.stamps.length} / ${TRAINS.length}</b></span><button class="kana-library-link" data-action="kana-library">あいうえお から<br/>でんしゃの えを みる →</button></div><div class="train-grid">${TRAINS.map(t => `<button class="train-card" data-action="train" data-id="${t.id}"><div class="train-thumbnail"><img src="${imagePath(t)}" alt="" loading="lazy"/>${progress.stamps.includes(t.id) ? '<span class="stamp">✓ あそんだよ</span>' : ''}</div><div class="train-card-caption"><b>${t.name}</b><span>♪</span></div><p>${t.detail}</p></button>`).join('')}</div></main>`;
@@ -471,7 +471,6 @@ root.addEventListener('click', e => {
   }
   if (action === 'listen') { if (!progress.sound) { progress.sound = true; save(); render(); } prompt(); }
   if (action === 'answer') answer(button.dataset.letter);
-  if (action === 'replay-reward' && screen === 'finish' && lastReward) reward(true);
   if (action === 'hint') { hint = hintText(journey[station].name[letterIndex]); render(); prompt(); }
   if (action === 'next') advance();
   if (action === 'train') { selectedTrain = button.dataset.id; navigate('train'); speak(TRAINS.find(t => t.id === selectedTrain).name); }

@@ -3,19 +3,33 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
 import { createTrainModel, REWARD_3D_TRAINS } from '../src/reward3d-trains.js';
 
-const formations = { yokosuka: 11, 'shonan-shinjuku': 10, saikyo: 10, toyoko: 8 };
+const formations = { yokosuka: 11, 'shonan-shinjuku': 10, saikyo: 10, toyoko: 8, yamanote: 11, komachi: 7, hayabusa: 10 };
 const closeTo = (actual, expected, tolerance = 1e-5) =>
   assert.ok(Math.abs(actual - expected) < tolerance, `${actual} should be near ${expected}`);
 
-test('3D catalog has four distinct commuter train formations', () => {
-  assert.deepEqual(REWARD_3D_TRAINS.map(train => train.id), Object.keys(formations));
-  assert.equal(new Set(REWARD_3D_TRAINS.map(train => train.model)).size, 4);
+test('3D catalog has seven distinct commuter and Shinkansen formations', () => {
+  assert.deepEqual(REWARD_3D_TRAINS.map(train => train.id).sort(), Object.keys(formations).sort());
+  assert.equal(new Set(REWARD_3D_TRAINS.map(train => train.model)).size, 7);
   for (const train of REWARD_3D_TRAINS) {
     assert.equal(train.cars, formations[train.id], train.id);
     assert.ok(train.stripes.length > 0);
     assert.ok(train.name && train.model && train.destination && train.image && train.bookId);
   }
-  assert.throws(() => createTrainModel('hayabusa'), RangeError);
+  const byId = Object.fromEntries(REWARD_3D_TRAINS.map(train => [train.id, train]));
+  assert.equal(byId.yamanote.family, 'e235');
+  assert.deepEqual(byId.yamanote.greenCars, []);
+  assert.equal(byId.yamanote.pitch ?? 20.6, 20.6);
+  for (const [id, family, bodyLength, pitch, frontExtra, width, frontX] of [
+    ['hayabusa', 'e5', 24.5, 25, 1.5, 3.35, 13.75],
+    ['komachi', 'e6', 20, 20.5, 2.575, 2.945, 12.575],
+  ]) {
+    const config = byId[id];
+    assert.equal(config.family, family);
+    closeTo(config.bodyLength ?? config.carLength, bodyLength);
+    closeTo(config.pitch, pitch);closeTo(config.frontExtra, frontExtra);
+    closeTo(config.width, width);closeTo(config.gauge, 1.435);closeTo(config.frontX, frontX);
+  }
+  assert.throws(() => createTrainModel('missing-train'), RangeError);
 });
 
 for (const config of REWARD_3D_TRAINS) {
@@ -26,20 +40,30 @@ for (const config of REWARD_3D_TRAINS) {
     assert.ok(group instanceof THREE.Group);
     assert.equal(group.userData.trainId, config.id);
     const count = formations[config.id];
+    const bodyLength = config.bodyLength ?? config.carLength ?? 20;
+    const pitch = config.pitch ?? 20.6, frontExtra = config.frontExtra ?? 0;
+    const width = config.width ?? 2.95, halfGauge = (config.gauge ?? 1.067) / 2;
+    const wheelRadius = config.wheelRadius ?? .43;
+    assert.equal(group.name, `reward-train-${config.id}`);
     assert.equal(group.userData.carCount, count);
     const cars = group.userData.carMetadata;
     assert.equal(cars.length, count);
-    closeTo(model.length, 20 + (count - 1) * 20.6);
+    closeTo(model.length, bodyLength + (count - 1) * pitch + 2 * frontExtra);
     closeTo(group.userData.length, model.length);
+    if (config.frontX !== undefined) {
+      closeTo(model.frontX, config.frontX);
+      closeTo(model.rearX, -(count - 1) * pitch - config.frontX);
+    }
     assert.deepEqual(cars.filter(car => car.green).map(car => car.index),
-      ['yokosuka', 'shonan-shinjuku'].includes(config.id) ? [3, 4] : []);
+      config.greenCars);
     for (const [index, car] of cars.entries()) {
       assert.equal(car.index, index);
-      closeTo(car.centerX, -20.6 * index);
-      assert.equal(car.passengerDoorsPerSide, car.green ? 2 : 4);
+      closeTo(car.centerX, -pitch * index);
+      assert.equal(car.passengerDoorsPerSide, car.green ? 2 : (config.doorsPerSide ?? 4));
       if (index) {
-        const gap = cars[index - 1].centerX - car.centerX - 20;
-        assert.ok(gap > .2 && gap < 1, 'coupled 20 m bodies must not overlap or float apart');
+        const gap = cars[index - 1].centerX - car.centerX - bodyLength;
+        closeTo(gap, pitch - bodyLength);
+        assert.ok(gap > .2 && gap < 1, 'coupled bodies must not overlap or float apart');
       }
     }
     group.updateMatrixWorld(true);
@@ -47,13 +71,13 @@ for (const config of REWARD_3D_TRAINS) {
     for(const item of group.children)if(!item.userData.groundEffect)bounds.union(new THREE.Box3().setFromObject(item));
     const size = bounds.getSize(new THREE.Vector3());
     for (const value of [...bounds.min, ...bounds.max, ...size]) assert.ok(Number.isFinite(value));
-    assert.ok(size.x >= model.length && size.x < model.length + 2, 'body geometry must span the entire consist');
-    assert.ok(size.z > 2.7 && size.z < 3.5, 'commuter cars are approximately three metres wide');
+    assert.ok(size.x >= model.length - 1e-5 && size.x < model.length + 2, 'body geometry must span the entire consist');
+    assert.ok(size.z > width - .25 && size.z < width + .55, `body width matches ${width} m configuration: ${size.z}`);
     assert.ok(size.y > 3.8 && size.y < 6, 'roof and pantograph height must use metre scale');
     closeTo(bounds.getCenter(new THREE.Vector3()).z, 0, .1);
     assert.ok(bounds.min.y >= .1 && bounds.min.y < .3, 'wheels sit at the railhead');
-    assert.ok(bounds.min.x < cars.at(-1).centerX - 9.5);
-    assert.ok(bounds.max.x > cars[0].centerX + 9.5, 'both cab ends must have geometry');
+    assert.ok(bounds.min.x < cars.at(-1).centerX - bodyLength / 2 - frontExtra + .5);
+    assert.ok(bounds.max.x > cars[0].centerX + bodyLength / 2 + frontExtra - .5, 'both cab ends must have full geometry');
 
     const meshes = [], geometries = new Set(), materials = new Set(), textures = new Set(), instances = [];
     group.traverse(object => {
@@ -96,38 +120,47 @@ for (const config of REWARD_3D_TRAINS) {
 
     assert.equal(wheels.length, count * 4, 'two bogies with two axles each per car');
     assert.equal(new Set(wheels).size, wheels.length);
-    closeTo(group.userData.wheelRadius, .43);
+    const expectedAxles = cars.flatMap(car => {
+      const reversed = car.index === count - 1;
+      const isCab = car.index === 0 || reversed;
+      const bogies = isCab && config.cabBogieCenters ? config.cabBogieCenters : (config.bogieCenters ?? [-6.8, 6.8]);
+      return bogies.flatMap(center => [-1.05, 1.05].map(offset => car.centerX + (reversed && isCab && config.cabBogieCenters ? -center : center) + offset));
+    }).sort((a, b) => a - b);
+    const actualAxles = wheels.map(wheel => wheel.getWorldPosition(new THREE.Vector3()).x).sort((a, b) => a - b);
+    actualAxles.forEach((value, index) => closeTo(value, expectedAxles[index]));
+    closeTo(group.userData.wheelRadius, wheelRadius);
     assert.equal(group.userData.spinAxis, 'z');
     const axis = new THREE.Vector3(0, 0, 1), rotation = new THREE.Quaternion();
     for (const wheel of wheels) {
       assert.equal(wheel.userData.spinAxis, 'z');
-      closeTo(wheel.userData.radius, .43);
+      closeTo(wheel.userData.radius, wheelRadius);
       const position = wheel.getWorldPosition(new THREE.Vector3());
-      closeTo(position.y - .43, .15);
+      closeTo(position.y - wheelRadius, .15);
       closeTo(position.z, 0);
-      const car = cars.reduce((nearest, item) => Math.abs(item.centerX - position.x) < Math.abs(nearest.centerX - position.x) ? item : nearest);
-      assert.ok(Math.abs(position.x - car.centerX) > 5 && Math.abs(position.x - car.centerX) < 8.5);
       const axleBox = new THREE.Box3().setFromObject(wheel);
-      assert.ok(axleBox.min.z < -.65 && axleBox.max.z > .65, 'each axle includes wheels at both rails');
+      assert.ok(axleBox.min.z < -halfGauge && axleBox.max.z > halfGauge, 'each axle includes wheels at both configured rails');
+      assert.ok(axleBox.min.z > -halfGauge - .45 && axleBox.max.z < halfGauge + .45, 'wheel width remains appropriate to the configured gauge');
       wheel.getWorldQuaternion(rotation);
       assert.ok(axis.clone().applyQuaternion(rotation).distanceTo(axis) < 1e-5, 'rear cab retains the same wheel spin direction');
       wheel.rotation.z = -.75; wheel.updateMatrixWorld(true);
       closeTo(wheel.getWorldPosition(new THREE.Vector3()).y, position.y);
     }
     for (const car of cars) {
-      assert.equal(wheels.filter(wheel => Math.abs(wheel.position.x - car.centerX) < 9).length, 4, 'each car has its own axles');
-      // Inspect actual instances near each car instead of trusting metadata alone.
+      assert.equal(wheels.filter(wheel => Math.abs(wheel.getWorldPosition(new THREE.Vector3()).x - car.centerX) < pitch / 2).length, 4, 'each car has its own axles');
+      // Inspect actual geometry near each car instead of trusting metadata alone.
       const occupied = new THREE.Box3(), matrix = new THREE.Matrix4(), world = new THREE.Matrix4();
-      for (const mesh of instances) {
-        for (let i = 0; i < mesh.count; i++) {
-          mesh.getMatrixAt(i, matrix); world.multiplyMatrices(mesh.matrixWorld, matrix);
+      for (const mesh of meshes) {
+        if (mesh.userData.groundEffect) continue;
+        for (let i = 0; i < (mesh.isInstancedMesh ? mesh.count : 1); i++) {
+          if (mesh.isInstancedMesh) { mesh.getMatrixAt(i, matrix); world.multiplyMatrices(mesh.matrixWorld, matrix); }
+          else world.copy(mesh.matrixWorld);
           const box = mesh.geometry.boundingBox.clone().applyMatrix4(world);
-          if (Math.abs(box.getCenter(new THREE.Vector3()).x - car.centerX) < 10) occupied.union(box);
+          if (Math.abs(box.getCenter(new THREE.Vector3()).x - car.centerX) < pitch / 2) occupied.union(box);
         }
       }
       const carSize = occupied.getSize(new THREE.Vector3());
-      assert.ok(carSize.x > 19 && carSize.x < 22, 'each metadata car has a full length body');
-      assert.ok(carSize.y > 3 && carSize.z > 2.7, 'each car needs height and both sides');
+      assert.ok(carSize.x > bodyLength - 1 && carSize.x < bodyLength + frontExtra + 2, `each metadata car has a full length body: ${carSize.x}`);
+      assert.ok(carSize.y > 3 && carSize.z > width - .25, 'each car needs height and both sides');
     }
 
     const parent = new THREE.Scene(); parent.add(group);

@@ -4,7 +4,7 @@ import * as THREE from '../vendor/three/three.module.js';
 // transform: no per-frame uploads of thousands of instance matrices on phones.
 export function bendTrainModel(train,radius){
   const original=new THREE.Matrix4(),local=new THREE.Matrix4(),pose=new THREE.Matrix4();
-  const pitch=20.6;
+  const pitch=train.config?.pitch||train.group.userData.carPitch||20.6;
   function carPose(x){
     const index=THREE.MathUtils.clamp(Math.round(-x/pitch),0,train.carCount-1),s=-index*pitch;
     pose.makeRotationY(-s/radius);pose.setPosition(radius*Math.sin(s/radius),0,radius*(1-Math.cos(s/radius)));

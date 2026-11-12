@@ -34,7 +34,7 @@ export async function prepareTrainModels(ids){
 
 export function createBlenderTrainModel(config){
   const library=libraries.get(config.id);if(!library)return null;
-  const cfg={...REWARD_3D_TRAINS.find(t=>t.id===config.id),...config},count=cfg.cars;
+  const cfg={...REWARD_3D_TRAINS.find(t=>t.id===config.id),...config},count=cfg.cars,pitch=cfg.pitch||20.6,carLength=cfg.carLength||20,frontX=cfg.frontX||10.35;
   const group=new THREE.Group();group.name=`blender-train-${cfg.id}`;
   const geometries=new Set(),materials=new Set(),textures=new Set(),wheels=[],headlights=[];
   const geometryCache=new Map(),materialCache=new Map(),textureCache=new Map(),batches=new Map();
@@ -72,7 +72,7 @@ export function createBlenderTrainModel(config){
   const matrix=new THREE.Matrix4(),rotation=new THREE.Quaternion(),axis=new THREE.Vector3(0,1,0);
   function addPrototype(name,index,rear=false){
     const prototype=library.getObjectByName(name);if(!prototype)return;
-    matrix.compose(new THREE.Vector3(-20.6*index,0,0),rotation.setFromAxisAngle(axis,rear?Math.PI:0),new THREE.Vector3(1,1,1));
+    matrix.compose(new THREE.Vector3(-pitch*index,0,0),rotation.setFromAxisAngle(axis,rear?Math.PI:0),new THREE.Vector3(1,1,1));
     prototype.traverse(mesh=>{
       if(!mesh.isMesh)return;
       const g=geometry(mesh),m=material(mesh.material,rear),key=`${g.uuid}/${m.uuid}`;
@@ -85,7 +85,7 @@ export function createBlenderTrainModel(config){
     const cab=i===0||i===count-1,green=!cab&&cfg.greenCars.includes(i);
     addPrototype(cab?'CAB':green?'GREEN':'STANDARD',i,i===count-1);
     if(!cab&&!green&&cfg.pantographCars.includes(i))addPrototype('PANTOGRAPH',i);
-    carMetadata.push({index:i,centerX:-20.6*i,green,passengerDoorsPerSide:green?2:4});
+    carMetadata.push({index:i,centerX:-pitch*i,green,passengerDoorsPerSide:green?2:(cfg.doorsPerSide||4)});
   }
   for(const batch of batches.values()){
     const mesh=new THREE.InstancedMesh(batch.geometry,batch.material,batch.transforms.length);
@@ -95,15 +95,15 @@ export function createBlenderTrainModel(config){
     mesh.receiveShadow=!batch.material.transparent;mesh.computeBoundingBox();mesh.computeBoundingSphere();group.add(mesh);
   }
   const axle=[];library.getObjectByName('AXLE').traverse(mesh=>{if(mesh.isMesh)axle.push(mesh);});
-  for(let i=0;i<count;i++)for(const bogie of [-6.8,6.8])for(const offset of [-1.05,1.05]){
-    const pivot=new THREE.Group();pivot.name='wheel-axle';pivot.position.set(-20.6*i+bogie+offset,.58,0);pivot.userData={spinAxis:'z',radius:.43};
+  for(let i=0;i<count;i++)for(const bogie of (cfg.cabBogieCenters&&(i===0||i===count-1)?cfg.cabBogieCenters.map(x=>i===count-1?-x:x):cfg.bogieCenters||[-6.8,6.8]))for(const offset of [-1.05,1.05]){
+    const pivot=new THREE.Group();pivot.name='wheel-axle';pivot.position.set(-pitch*i+bogie+offset,.58,0);pivot.userData={spinAxis:'z',radius:.43};
     for(const source of axle){const mesh=new THREE.Mesh(geometry(source),material(source.material));mesh.castShadow=true;mesh.receiveShadow=true;pivot.add(mesh);}
     group.add(pivot);wheels.push(pivot);
   }
-  const length=20+(count-1)*20.6;
-  group.userData={trainId:cfg.id,assetPipeline:'blender-glb',front:0,frontX:10.35,rearX:-20.6*(count-1)-10.35,length,carCount:count,wheelRadius:.43,spinAxis:'z',carMetadata};
+  const length=carLength+(count-1)*pitch+2*(cfg.frontExtra||0);
+  group.userData={trainId:cfg.id,assetPipeline:'blender-glb',front:0,carPitch:pitch,frontX,rearX:-pitch*(count-1)-frontX,length,carCount:count,wheelRadius:.43,spinAxis:'z',carMetadata};
   let disposed=false;
-  return {group,wheels,length,front:0,frontX:10.35,rearX:group.userData.rearX,carCount:count,wheelRadius:.43,config:cfg,
+  return {group,wheels,length,front:0,frontX,rearX:group.userData.rearX,carCount:count,wheelRadius:.43,config:cfg,
     setHeadlights(level){for(const m of headlights){m.emissiveIntensity=3.8*level;m.color.setScalar(.2+.8*level);}},
     dispose(){if(disposed)return;disposed=true;group.removeFromParent();group.traverse(o=>{if(o.isInstancedMesh)o.dispose();});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures)t.dispose();group.clear();wheels.length=0;},
   };
