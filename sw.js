@@ -1,5 +1,5 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v30';
+const CACHE = PREFIX + 'v31';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-facts.js', 'src/train-facts-a.js', 'src/train-facts-b.js', 'src/train-facts-c.js', 'src/train-facts-d.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
@@ -19,7 +19,10 @@ const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-fac
   'src/announcement-manifest.js',
   'assets/connect/komachi-carriages.png',
   'src/reward.js', 'src/reward-trains.js', 'src/reward-models.js', 'src/reward-model-assets.js', 'src/reward-scene.js', 'src/reward.css', 'src/voice.js', 'src/voice-lines.js', 'src/voice-manifest.js', 'src/pwa.js',
-  'src/reward-cinema.js', 'src/reward3d.js', 'src/reward3d-world.js', 'src/reward3d-trains.js', 'src/reward3d-catalog.js', 'src/reward3d-scenarios.js', 'src/reward3d-curve.js', 'src/reward3d-depot.js', 'src/reward3d-skybridge.js',
+  'src/reward-cinema.js', 'src/reward3d.js', 'src/reward3d-world.js', 'src/reward3d-trains.js', 'src/reward3d-catalog.js', 'src/reward3d-scenarios.js', 'src/reward3d-curve.js', 'src/reward3d-assets.js', 'src/reward3d-terrain.js', 'src/reward3d-depot.js', 'src/reward3d-skybridge.js',
+  'assets/reward3d/yokosuka.glb', 'assets/reward3d/shonan-shinjuku.glb', 'assets/reward3d/saikyo.glb', 'assets/reward3d/toyoko.glb',
+  'assets/reward3d/environment/small_hangar_01.hdr', 'assets/reward3d/environment/shanghai_bund.hdr', 'assets/reward3d/environment/railway_bridge_02.hdr',
+  'vendor/three/addons/loaders/HDRLoader.js', 'vendor/three/addons/loaders/GLTFLoader.js', 'vendor/three/addons/utils/BufferGeometryUtils.js', 'vendor/three/addons/libs/meshopt_decoder.module.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js', 'vendor/three/LICENSE',
   'assets/icon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png'];
 self.addEventListener('install', event => {
@@ -48,7 +51,7 @@ async function respond(request) {
 self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET' || !url.href.startsWith(base)) return;
-  if (request.mode === 'navigate' || url.pathname.includes('/src/') || url.pathname.includes('/assets/') || url.pathname.endsWith('.webmanifest')) {
+  if (request.mode === 'navigate' || url.pathname.includes('/src/') || url.pathname.includes('/assets/') || url.pathname.includes('/vendor/') || url.pathname.endsWith('.webmanifest')) {
     event.respondWith(respond(request));
   }
 });

@@ -87,13 +87,20 @@ const assert = require('node:assert/strict');
     await page.locator('.train-picture img').evaluate(img=>img.decode());
     const seenImage = await page.locator('.train-picture img').getAttribute('src');
     await context.setOffline(true);
-    for(const path of ['src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js']){
+    for(const path of ['src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js','src/reward3d-assets.js','src/reward3d-terrain.js','assets/reward3d/yokosuka.glb','assets/reward3d/environment/small_hangar_01.hdr','vendor/three/addons/libs/meshopt_decoder.module.js']){
       assert.equal(await page.evaluate(async path=>(await fetch(path)).status,path),200,'all new reward modules are precached for installed Android use');
     }
     await page.reload(); await page.locator('.game').waitFor();
     await page.locator('.train-picture img').evaluate(img=>img.decode());
     assert.equal(await page.locator('.train-picture img').getAttribute('src'), seenImage);
     assert.equal(await page.locator('.target-letter').textContent(),'あ');
+    // A fresh offline document must really decode the compressed Blender model
+    // and HDRI, including vendor imports that were not part of the quiz shell.
+    await page.evaluate(async()=>{const r=await import('./src/reward.js');r.showTrainReward({train:{id:'toyoko',sceneId:'night'},sound:false});});
+    await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
+    assert.equal(await page.locator('.reward-canvas').getAttribute('data-asset'),'blender-glb');
+    assert.equal(await page.locator('.reward-canvas').getAttribute('data-lighting'),'hdr-ibl');
+    await page.keyboard.press('Escape');
     await page.locator('[data-action="home"]').first().click(); await page.locator('.home').waitFor();
     await page.reload(); await page.locator('.home').waitFor();
     console.log('Android browser checks passed: PWA manifest/icons/service worker, isolated cache, offline shell and seen images, back/forward, reload/resume, timer cancellation, reward dismissal, no duplicate completion, install prompt.');

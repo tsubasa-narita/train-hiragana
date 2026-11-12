@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { createTunnelMountain } from './reward3d-terrain.js';
 
 export const SKY_RADIUS = 600;
 
@@ -14,7 +15,7 @@ export function skyPose(s) {
 export function createSkybridgeWorld(scene, { config } = {}) {
   const group = new THREE.Group();
   group.name = 'skybridge-world';
-  group.userData = { radius: SKY_RADIUS, railTop: .15, gauge: 1.067, deckWidth: 7, cloudCount: 28 };
+  group.userData = { radius: SKY_RADIUS, railTop: .15, gauge: 1.067, deckWidth: 7, cloudCount: 28, terrain: 'closed-bored-mountain' };
   scene.add(group);
   const resources = new Set();
   const keep = value => { resources.add(value); return value; };
@@ -120,13 +121,13 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   }
   for (let i = 0; i <= 9; i++) {
     const s = bridgeStart + i * span;
-    piers.push({ ...at(s, -49), sx: 3.9, sy: 94, sz: 6.25 });
+    piers.push({ ...at(s, -69), sx: 3.9, sy: 134, sz: 6.25 });
     pierCaps.push({ ...at(s, -2), sx: 5.3, sy: 1.5, sz: 7.3 });
     pierCaps.push({ ...at(s, -34), sx: 5, sy: 2, sz: 6.8 });
   }
   instances(box, stone, archRibs, 'sweeping-arch-ribs');
   instances(box, stone, spandrels, 'open-arch-spandrels');
-  instances(box, stone, piers, 'piers-to-minus-96m');
+  instances(box, stone, piers, 'piers-rooted-below-bay');
   instances(box, trim, pierCaps, 'pier-cornices');
 
   const fencePosts = [], fenceRails = [], poles = [], brackets = [], wires = [], insulators = [];
@@ -154,73 +155,27 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   instances(box, darkMetal, wires, 'curved-contact-wires');
   instances(box, keep(new THREE.MeshStandardMaterial({ color: 0xe4ded0, roughness: .45 })), insulators, 'porcelain-insulators');
 
-  // A genuine open portal at s=-25: the terrain is behind that face and the
-  // large crest is on positive Z. The front car's nose is already outside.
-  const rockMap=canvasTexture(512,512,ctx=>{
-    ctx.scale(2,2);
-    ctx.fillStyle='#74867c';ctx.fillRect(0,0,256,256);
-    for(let i=0;i<2400;i++){
-      const x=random()*256,y=random()*256,w=3+random()*28,h=1+random()*8;
-      ctx.fillStyle=random()>.45?'rgba(37,55,49,.16)':'rgba(197,194,158,.17)';
-      ctx.fillRect(x,y,w,h);
+  // Neutral layered limestone lets vertex colors describe damp lower rock,
+  // warm exposed strata and moss. Fine irregular flecks avoid tiled rectangles.
+  const rockMap = canvasTexture(256, 256, ctx => {
+    ctx.fillStyle = '#c9c6b8'; ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 6000; i++) {
+      const value = 150 + Math.floor(random() * 100);
+      ctx.fillStyle = `rgba(${value},${value},${value},.24)`;
+      ctx.beginPath(); ctx.ellipse(random() * 256, random() * 256, .3 + random() * 1.8, .3 + random(), random() * 3, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.strokeStyle='rgba(35,49,43,.27)';ctx.lineWidth=1;
-    for(let i=0;i<55;i++){let x=random()*256,y=random()*256;ctx.beginPath();ctx.moveTo(x,y);for(let j=0;j<4;j++){x+=random()*20-7;y+=random()*12;ctx.lineTo(x,y);}ctx.stroke();}
+    for (let i = 0; i < 22; i++) {
+      const y = i * 13 + random() * 6;
+      ctx.strokeStyle = 'rgba(65,69,62,.12)'; ctx.lineWidth = .4 + random(); ctx.beginPath();
+      for (let x = -4; x <= 260; x += 4) {
+        const h = y + Math.sin(x * .034 + i) * 3 + Math.sin(x * .12 + i * 7);
+        if (x === -4) ctx.moveTo(x, h); else ctx.lineTo(x, h);
+      }
+      ctx.stroke();
+    }
   });
-  rockMap.wrapS=rockMap.wrapT=THREE.RepeatWrapping;rockMap.anisotropy=4;
-  const rock = keep(new THREE.MeshStandardMaterial({ color: 0xd1d8ca,map:rockMap,bumpMap:rockMap,bumpScale:.15,roughness:1,side:THREE.DoubleSide }));
-  const cliffGeometry = keep(new THREE.PlaneGeometry(375, 100, 60, 30));
-  const cp = cliffGeometry.attributes.position;
-  function mountainHeight(s, offset) {
-    const along = Math.max(0, Math.sin(Math.PI * (s + 420) / 440));
-    const crest=Math.exp(-Math.pow(offset/34,2));
-    return 7+24*crest*(.45+.55*along)+2*Math.sin(s*.073+offset*.052)*crest;
-  }
-  const terrainColors = [];
-  for (let i = 0; i < cp.count; i++) {
-    const s = cp.getX(i) - 212.5, offset = cp.getY(i);
-    const y = mountainHeight(s, offset), p = at(s, y, offset);
-    cp.setXYZ(i, p.x, p.y, p.z);
-    const color = new THREE.Color(y > 65 ? 0x9ca595 : 0x66886b);
-    color.multiplyScalar(.86 + random() * .25); terrainColors.push(color.r, color.g, color.b);
-  }
-  cliffGeometry.setAttribute('color', new THREE.Float32BufferAttribute(terrainColors, 3));
-  cliffGeometry.computeVertexNormals();
-  mesh(cliffGeometry, keep(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide })), 'tunnel-mountain-positive-z');
-
-  // Close both terrain edges down to the bay; the hillside must never look
-  // like a thin floating sheet when the camera reveals the bridge from above.
-  const sidePositions=[],sideUv=[],sideIndices=[];
-  for(const offset of [-50,50]){
-    const base=sidePositions.length/3;
-    for(let i=0;i<=60;i++){
-      const s=-400+375*i/60,top=at(s,mountainHeight(s,offset),offset),bottom=at(s,-130,offset);
-      sidePositions.push(top.x,top.y,top.z,bottom.x,bottom.y,bottom.z);sideUv.push(s/12,top.y/12,s/12,-130/12);
-      if(i<60){const n=base+i*2;sideIndices.push(n,n+1,n+2,n+1,n+3,n+2);}
-    }
-  }
-  const sideGeometry=keep(new THREE.BufferGeometry());sideGeometry.setAttribute('position',new THREE.Float32BufferAttribute(sidePositions,3));
-  sideGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(sideUv,2));sideGeometry.setIndex(sideIndices);sideGeometry.computeVertexNormals();
-  mesh(sideGeometry,rock,'mountain-rock-sides');
-
-  // Profile is in (offset,height), extruded backwards along the track tangent.
-  const mouth = new THREE.Shape();
-  mouth.moveTo(-50, -130); mouth.lineTo(50, -130); mouth.lineTo(50, -10);
-  for (let offset = 50; offset >= -50; offset -= 1) mouth.lineTo(offset, mountainHeight(-25, offset));
-  mouth.lineTo(-50, -130);
-  const opening = new THREE.Path();
-  opening.moveTo(-3.65, -.3); opening.lineTo(-3.65, 3.9);
-  opening.absarc(0, 3.9, 3.65, Math.PI, 0, true);
-  opening.lineTo(3.65, -.3); opening.closePath(); mouth.holes.push(opening);
-  const faceGeometry=keep(new THREE.ShapeGeometry(mouth,48)),facePositions=faceGeometry.attributes.position,faceUv=faceGeometry.attributes.uv;
-  for(let i=0;i<facePositions.count;i++){
-    const x=facePositions.getX(i),y=facePositions.getY(i);
-    faceUv.setXY(i,x/12,y/12);
-  }
-  faceGeometry.computeVertexNormals();
-  const cliffFace = mesh(faceGeometry, rock, 'mountain-face-with-open-tunnel');
-  const portalPose = at(-25);
-  cliffFace.position.set(portalPose.x, 0, portalPose.z); cliffFace.rotation.y = portalPose.ry - Math.PI / 2;
+  rockMap.wrapS = rockMap.wrapT = THREE.RepeatWrapping; rockMap.anisotropy = 4;
+  createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap });
 
   const arch = new THREE.Shape();
   arch.moveTo(-4.75, -.25); arch.lineTo(-4.75, 3.9);
@@ -232,80 +187,73 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   const portalFront = at(-24.8);
   portal.position.set(portalFront.x, 0, portalFront.z); portal.rotation.y = portalFront.ry - Math.PI / 2;
 
-  // Curved barrel lining, never a black disk closing the opening.
-  const barrelPositions = [], barrelIndices = [], cross = 28, segments = 100;
-  for (let j = 0; j <= segments; j++) for (let i = 0; i <= cross; i++) {
-    const a = Math.PI * i / cross, offset = 3.65 * Math.cos(a), y = 3.9 + 3.65 * Math.sin(a);
-    const p = at(-400 + 375 * j / segments, y, offset); barrelPositions.push(p.x, p.y, p.z);
+  // Fine recessed voussoir joints read as cut masonry at the opening, rather
+  // than a perfectly smooth white hoop. Everything stays outside the bore.
+  const portalJoints = [], portalFeet = [];
+  for (let i = 0; i <= 23; i++) {
+    const a = Math.PI * i / 23;
+    portalJoints.push(beam(at(-24.55, 3.9 + 3.69 * Math.sin(a), 3.69 * Math.cos(a)),
+      at(-24.55, 3.9 + 4.72 * Math.sin(a), 4.72 * Math.cos(a)), .028, .035));
   }
-  for (let j = 0; j < segments; j++) for (let i = 0; i < cross; i++) {
-    const a = j * (cross + 1) + i, b = a + cross + 1;
-    barrelIndices.push(a, b, a + 1, b, b + 1, a + 1);
+  for (const offset of [-4.2, 4.2]) {
+    portalFeet.push({ ...at(-24.55, .12, offset), sx: 1.45, sy: .65, sz: 1.55 });
+    for (let y = .8; y < 3.9; y += .72) portalJoints.push({ ...at(-24.55, y, offset), sx: .04, sy: .025, sz: 1.05 });
   }
-  const barrel = keep(new THREE.BufferGeometry());
-  barrel.setAttribute('position', new THREE.Float32BufferAttribute(barrelPositions, 3));
-  barrel.setIndex(barrelIndices); barrel.computeVertexNormals();
-  const liningMat = keep(new THREE.MeshStandardMaterial({ color: 0x484a43, roughness: 1, side: THREE.DoubleSide }));
-  mesh(barrel, liningMat, 'curved-tunnel-barrel');
-  const tunnelWalls = [];
-  for (const offset of [-3.65, 3.65]) ribbon(tunnelWalls, -400, -25, 2, 1.8, offset, 4.2, .3);
-  instances(box, liningMat, tunnelWalls, 'curved-tunnel-sidewalls');
+  instances(box, keep(new THREE.MeshStandardMaterial({ color: 0x8e9385, roughness: 1 })), portalJoints, 'portal-stone-joints');
+  instances(box, trim, portalFeet, 'portal-footing-stones');
+
   const lamps = [];
   for (let s = -385; s < -25; s += 18) lamps.push({ ...at(s, 7.34), sx: 1.2, sy: .055, sz: .2 });
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0xffd298 })), lamps, 'warm-tunnel-ceiling-lights');
-
-  const foliage = [], blossoms = [];
-  for (let i = 0; i < 250; i++) {
-    const s = -395 + random() * 365, offset = -45 + random() * 90;
-    if (Math.abs(offset) < 6) continue;
-    const y = mountainHeight(s, offset), size = 2 + random() * 4;
-    if (y < -2) continue;
-    foliage.push({ ...at(s, y + size * .45, offset), sx: size, sy: size * .85, sz: size,
-      color: [0x688856, 0x7d995d, 0x49725a, 0x98a56c][i % 4] });
-    if (i % 5 === 0) blossoms.push({ ...at(s, y + size * .9, offset + .5), sx: size * .7, sy: size * .35, sz: size * .65,
-      color: config?.id === 'toyoko' ? 0xf4d1df : (i % 2 ? 0xffe9bf : 0xf0c9d7) });
-  }
-  const foliageGeometry = keep(new THREE.IcosahedronGeometry(1, 2));
-  instances(foliageGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 })), foliage, 'mountainside-woodland');
-  instances(foliageGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .9 })), blossoms, 'sunlit-blossom-canopies');
 
   // Azure bay at -116 m. Its shader gives a long sunlight path and fine
   // moving wavelets without a second full-screen transparent water layer.
   const seaMaterial = keep(new THREE.ShaderMaterial({ uniforms: { time: { value: 0 } },
     vertexShader: `varying vec3 vWorld; void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader: `varying vec3 vWorld; uniform float time;
-      void main(){vec2 p=vWorld.xz;float ripple=sin(p.x*.73+p.y*1.13+time*.55)*sin(p.y*.48-p.x*.23-time*.35);
-        float distanceFade=smoothstep(100.,1500.,p.y);
-        vec3 col=mix(vec3(.018,.36,.63),vec3(.30,.66,.79),distanceFade);
-        col+=vec3(.03,.09,.11)*ripple*.22;
-        float sunPath=exp(-pow((p.x+85.+p.y*.12)/(32.+p.y*.09),2.));
-        float sparkle=pow(max(0.,sin(p.x*1.4+p.y*1.9+time*.4)*sin(p.y*.83-time*.7)),14.);
-        col+=vec3(1.,.91,.68)*sunPath*(.12+sparkle*.75);
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
+      void main(){vec2 p=vWorld.xz;
+        float wave=noise(p*.08+vec2(time*.07,0.))*.65+noise(p*.27-vec2(0.,time*.04))*.35;
+        float distanceFade=smoothstep(180.,1500.,p.y);
+        vec3 col=mix(vec3(.006,.095,.24),vec3(.12,.32,.47),distanceFade);
+        float coastal=exp(-pow((p.y-360.)/100.,2.))*(.5+.5*noise(p*.016));
+        col=mix(col,vec3(.018,.30,.36),coastal*.42);
+        col+=vec3(.009,.025,.035)*(wave-.35);
+        vec3 view=normalize(cameraPosition-vWorld);
+        vec3 normal=normalize(vec3((noise(p*.22+time*.03)-.5)*.14,1.,(noise(p*.19-time*.05)-.5)*.12));
+        float fresnel=pow(1.-max(0.,dot(view,normal)),4.);
+        col=mix(col,vec3(.31,.51,.64),fresnel*.6);
+        float sunPath=exp(-pow((p.x+220.+p.y*.19)/(26.+max(0.,p.y)*.05),2.));
+        float sparkle=pow(max(0.,noise(p*1.8+vec2(time*.15,-time*.09))),20.);
+        col+=vec3(1.,.77,.38)*sunPath*(.07+sparkle*3.2)*(1.-distanceFade*.6);
         gl_FragColor=vec4(col,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }` }));
-  const sea = mesh(keep(new THREE.PlaneGeometry(2400, 1600)), seaMaterial, 'vast-blue-bay');
-  sea.rotation.x = -Math.PI / 2; sea.position.set(100, -116, 890);
+  const sea = mesh(keep(new THREE.PlaneGeometry(5000, 5000)), seaMaterial, 'vast-blue-bay');
+  sea.rotation.x = -Math.PI / 2; sea.position.set(100, -116, 500);
 
-  // Layered distant mountain silhouettes, all on positive Z. Vertex colour
-  // haze stays vivid even when the engine's generic distance fog is active.
-  for (let layer = 0; layer < 3; layer++) {
-    const positions = [], indices = [], colors = [], base = new THREE.Color([0x5999af, 0x78b3c5, 0xa1ccd6][layer]);
-    for (let i = 0; i <= 100; i++) {
-      const x = -1000 + 2000 * i / 100;
-      const height = 40 + 45 * Math.pow(.5 + .5 * Math.sin(x * .009 + layer * 2), 2)
-        + 37 * Math.pow(.5 + .5 * Math.sin(x * .024 + 1 + layer), 3);
-      positions.push(x, -119, 0, x, -119 + height, 0);
-      for (const shade of [.85, 1.12]) colors.push(base.r * shade, base.g * shade, base.b * shade);
-      if (i < 100) { const a = i * 2; indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
-    }
-    const geometry = keep(new THREE.BufferGeometry());
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geometry.setIndex(indices);
-    const ridge = mesh(geometry, keep(new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false })), `bay-mountain-layer-${layer}`);
-    ridge.position.set(0, 0, 570 + layer * 135);
+  // Actual rounded land volumes, including the horizon: no upright silhouette
+  // panels with exposed straight edges when the camera climbs or turns.
+  const islandGeometry = keep(new THREE.SphereGeometry(1, 56, 24));
+  const ip = islandGeometry.attributes.position, islandColors = [], islandColor = new THREE.Color();
+  for (let i = 0; i < ip.count; i++) {
+    const x = ip.getX(i), y = ip.getY(i), z = ip.getZ(i);
+    const ridge = .67 + .2 * Math.sin(x * 13 + z * 3) + .12 * Math.sin(x * 29 - z * 8) + .06 * Math.cos(x * 47 + z * 19);
+    ip.setXYZ(i, x, y > 0 ? y * ridge : y * .3, z * (.9 + .1 * Math.sin(x * 11)));
+    islandColor.setRGB(1, 1, 1).multiplyScalar(.72 + Math.max(0, y) * .28);
+    islandColors.push(islandColor.r, islandColor.g, islandColor.b);
   }
+  islandGeometry.setAttribute('color', new THREE.Float32BufferAttribute(islandColors, 3)); islandGeometry.computeVertexNormals();
+  const distantRanges = [];
+  for (let layer = 0; layer < 4; layer++) {
+    distantRanges.push({ x: -180 + layer * 65, y: -126, z: 580 + layer * 145,
+      sx: 1080 + layer * 100, sy: 112 + layer * 25, sz: 125,
+      ry: layer % 2 ? .07 : -.045, color: [0x487f96, 0x6697ad, 0x8fb5c7, 0xb1cedb][layer] });
+  }
+  instances(islandGeometry, keep(new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, fog: false })), distantRanges, 'layered-rounded-coastal-ranges');
   const islands = [], shores = [], town = [], roofs = [], quays = [], boats = [], wakes = [];
   for (let i = 0; i < 13; i++) {
     const x = -620 + i * 105 + random() * 35, z = 350 + random() * 150;
@@ -325,9 +273,8 @@ export function createSkybridgeWorld(scene, { config } = {}) {
       quays.push({ x: x + 12, y: -106, z: z - 40, sx: .7, sy: .7, sz: 12 });
     }
   }
-  const islandGeometry = keep(new THREE.SphereGeometry(1, 18, 10));
   instances(islandGeometry, keep(new THREE.MeshBasicMaterial({ color: 0xc3d8c6, fog: false })), shores, 'pale-island-shorelines');
-  instances(islandGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, fog: false })), islands, 'green-bay-islands');
+  instances(islandGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 1, fog: false })), islands, 'green-bay-islands');
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false })), town, 'tiny-harbour-town');
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0x9dafa9, fog: false })), roofs, 'harbour-roofs');
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0xaabec0, fog: false })), quays, 'quays-and-port-cranes');
@@ -358,27 +305,35 @@ export function createSkybridgeWorld(scene, { config } = {}) {
         #include <colorspace_fragment>
       }` }));
   const rainbow = mesh(rainbowGeometry, rainbowMaterial, 'distant-bay-rainbow');
-  rainbow.position.set(-50, 13, 335); rainbow.renderOrder = 1;
+  rainbow.position.set(-125, -212, 265); rainbow.renderOrder = 1;
 
   // One softly shaded texture shared by just 28 billboards. No white sphere
   // pile, no full-screen cloud quad, and every cloud's top is below -18 m.
-  const cloudMap = canvasTexture(256, 128, ctx => {
-    ctx.clearRect(0, 0, 256, 128);
-    for (let i = 0; i < 36; i++) {
-      const x = 35 + random() * 186, y = 62 + (random() - .5) * 34;
-      const radius = 18 + random() * 28;
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, 'rgba(255,255,255,.65)');
-      gradient.addColorStop(.4, 'rgba(255,255,255,.5)');
-      gradient.addColorStop(.76, 'rgba(255,255,255,.16)');
-      gradient.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gradient; ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  const cloudMap = canvasTexture(512, 256, ctx => {
+    ctx.clearRect(0, 0, 512, 256);
+    // Broad joined base, then rising cauliflower turrets. Each lobe has a
+    // narrow soft rim and its own illuminated shoulder, retaining volume.
+    const lobes = [];
+    for (let i = 0; i < 24; i++) lobes.push({ x: 65 + random() * 385, y: 148 + random() * 30, r: 32 + random() * 29 });
+    for (let i = 0; i < 23; i++) {
+      const x = 100 + random() * 310;
+      lobes.push({ x, y: 109 - Math.sin((x - 80) / 350 * Math.PI) * 26 + random() * 35, r: 26 + random() * 35 });
     }
-    ctx.globalCompositeOperation = 'source-in';
-    const tint = ctx.createLinearGradient(0, 15, 0, 115);
-    tint.addColorStop(0, '#fff9ec'); tint.addColorStop(.38, '#f9fcff');
-    tint.addColorStop(.72, '#d4e6f3'); tint.addColorStop(1, '#98bfdc');
-    ctx.fillStyle = tint; ctx.fillRect(0, 0, 256, 128);
+    lobes.sort((a, b) => b.y - a.y);
+    for (const { x, y, r } of lobes) {
+      const gradient = ctx.createRadialGradient(x - r * .3, y - r * .32, r * .08, x, y, r);
+      gradient.addColorStop(0, 'rgba(255,252,240,.98)');
+      gradient.addColorStop(.48, 'rgba(246,250,252,.96)');
+      gradient.addColorStop(.78, 'rgba(200,220,235,.86)');
+      gradient.addColorStop(.91, 'rgba(178,206,227,.48)');
+      gradient.addColorStop(1, 'rgba(167,198,223,0)');
+      ctx.fillStyle = gradient; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    ctx.globalCompositeOperation = 'source-atop';
+    const tint = ctx.createLinearGradient(0, 70, 0, 230);
+    tint.addColorStop(0, 'rgba(255,239,202,.12)'); tint.addColorStop(.4, 'rgba(218,237,250,0)');
+    tint.addColorStop(1, 'rgba(80,130,178,.48)');
+    ctx.fillStyle = tint; ctx.fillRect(0, 0, 512, 256);
   });
   const cloudMaterials = [.83, .73, .66].map(opacity => keep(new THREE.SpriteMaterial({ map: cloudMap, transparent: true,
     opacity, depthWrite: false, depthTest: true, fog: false, toneMapped: true })));
@@ -405,12 +360,19 @@ export function createSkybridgeWorld(scene, { config } = {}) {
         return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
       float fbm(vec2 p){float f=0.,a=.5;for(int i=0;i<4;i++){f+=a*noise(p);p=p*2.03+vec2(9.7,4.1);a*=.5;}return f;}
       void main(){vec3 d=normalize(vDirection);float h=max(0.,d.y);
-        vec3 color=mix(vec3(.48,.76,.96),vec3(.035,.29,.69),pow(h,.45));
-        vec2 p=d.xz/max(.22,d.y+.18)*2.4+vec2(time*.002,0.);
-        float cloud=smoothstep(.54,.76,fbm(p))*smoothstep(.04,.20,h)*(1.-smoothstep(.7,.95,h));
-        color=mix(color,vec3(.98,.985,1.),cloud*.8);
-        float sun=max(0.,dot(d,normalize(vec3(-.48,.46,-.2))));
-        color+=vec3(1.,.81,.5)*(pow(sun,20.)*.13+pow(sun,800.)*.9);
+        vec3 color=mix(vec3(.46,.66,.80),vec3(.012,.12,.42),pow(h,.55));
+        vec3 sunDirection=normalize(vec3(-.62,.57,.31));
+        float sun=max(0.,dot(d,sunDirection));
+        color=mix(color,vec3(.80,.72,.55),pow(sun,12.)*.20*(1.-h*.4));
+        vec2 p=d.xz/max(.18,d.y+.16)*2.3+vec2(time*.0015,0.);
+        float density=fbm(p+fbm(p*.7)*.75);
+        float cloud=smoothstep(.53,.71,density)*smoothstep(.035,.19,h)*(1.-smoothstep(.64,.88,h));
+        vec3 cloudColor=mix(vec3(.49,.64,.78),vec3(1.,.98,.90),smoothstep(.52,.70,density));
+        color=mix(color,cloudColor,cloud*.94);
+        float cirrus=smoothstep(.65,.78,fbm(p*vec2(.55,4.5)+7.))*smoothstep(.35,.7,h);
+        color=mix(color,vec3(.75,.84,.93),cirrus*.3);
+        color+=vec3(1.,.66,.28)*(pow(sun,40.)*.18+pow(sun,450.)*.30);
+        color+=vec3(2.8,2.2,1.4)*smoothstep(.99935,.9998,sun);
         gl_FragColor=vec4(color,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

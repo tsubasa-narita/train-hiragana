@@ -230,6 +230,13 @@ test('loading while hidden defers the complete WebGL clip until visible',async t
   h.visibility(false);assert.equal(h.engines[0].plays,1);assert.equal(h.dialog().dataset.phase,'running');
 });
 
+test('closing during Blender asset preparation cannot create a late renderer',async t=>{
+  const h=harness(t),preparing=deferred();
+  h.open({loadScene:async()=>({...h.module,prepareReward3D:()=>preparing.promise})});await settled();
+  assert.equal(h.engines.length,0);h.click('continue');preparing.resolve();await settled();
+  assert.equal(h.engines.length,0);assert.equal(h.dialog(),null);
+});
+
 test('hidden fallback also waits for foreground before its seven second timer',async t=>{
   const h=harness(t),loading=deferred();
   h.open({loadScene:()=>loading.promise});h.visibility(true);loading.resolve({createReward3D(){throw Error('no GPU');}});await settled();

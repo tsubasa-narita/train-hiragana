@@ -43,7 +43,9 @@ for (const config of REWARD_3D_TRAINS) {
       }
     }
     group.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(group), size = bounds.getSize(new THREE.Vector3());
+    const bounds = new THREE.Box3();
+    for(const item of group.children)if(!item.userData.groundEffect)bounds.union(new THREE.Box3().setFromObject(item));
+    const size = bounds.getSize(new THREE.Vector3());
     for (const value of [...bounds.min, ...bounds.max, ...size]) assert.ok(Number.isFinite(value));
     assert.ok(size.x >= model.length && size.x < model.length + 2, 'body geometry must span the entire consist');
     assert.ok(size.z > 2.7 && size.z < 3.5, 'commuter cars are approximately three metres wide');

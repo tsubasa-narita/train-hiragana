@@ -28,7 +28,7 @@ function panelGeometry(length,windows,doors=DOORS) {
   const s=roundedPath(new THREE.Shape(),-length/2,1.32,length,2.2,.045);
   for(const {x,w,y=2.78,h=1.03} of windows) s.holes.push(roundedPath(new THREE.Path(),x-w/2,y-h/2,w,h,.075));
   for(const x of doors) s.holes.push(roundedPath(new THREE.Path(),x-.67,1.37,1.34,1.98,.035));
-  return new THREE.ExtrudeGeometry(s,{depth:.034,bevelEnabled:false,curveSegments:4});
+  return new THREE.ExtrudeGeometry(s,{depth:.034,bevelEnabled:false,curveSegments:6});
 }
 
 // X-running surface between rounded cross-section points [y,z].
@@ -81,10 +81,11 @@ function destinationTexture(text) {
 }
 
 function yokosukaFaceTexture(){
-  const w=512,h=256,data=new Uint8Array(w*h*4),blue=[36,107,157],cream=[230,211,160];
+  const w=512,h=256,data=new Uint8Array(w*h*4),blue=[41,62,154],cream=[230,211,160];
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const t=y/(h-1),cx=(x%6-3)/3,cy=(y%6-3)/3;
-    const dot=cx*cx+cy*cy<Math.pow(Math.abs(t-.5)*1.65,2);
+    const radius=.798*Math.sqrt(2*Math.min(t,1-t));
+    const dot=cx*cx+cy*cy<radius*radius;
     const c=t>.5?(dot?blue:cream):(dot?cream:blue);
     data.set([...c,255],(y*w+x)*4);
   }
@@ -107,30 +108,51 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const wheels=[], geometries=new Set(),materials=new Set(),textures=new Set(),batches=new Map();
   const ownG=g=>(geometries.add(g),g),ownT=t=>(textures.add(t),t);
   const mat=props=>{const m=new THREE.MeshPhysicalMaterial(props);materials.add(m);return m;};
-  const steel=mat({color:'#bdc7ca',metalness:.82,roughness:.29,clearcoat:.22,clearcoatRoughness:.3,side:THREE.DoubleSide});
-  const doorSteel=mat({color:'#cbd3d5',metalness:.8,roughness:.25,clearcoat:.25,side:THREE.DoubleSide});
+  function finishTexture(roughness=false){
+    const w=128,h=128,data=new Uint8Array(w*h*4);let seed=9021;
+    const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const grain=Math.sin(y*2.3)*3+Math.sin(y*.31)*2+(rand()-.5)*2;
+      const v=Math.round((roughness?103:224)+grain);data.set([v,v,v,255],(y*w+x)*4);
+    }
+    const t=ownT(new THREE.DataTexture(data,w,h));t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,4);t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.anisotropy=4;t.needsUpdate=true;return t;
+  }
+  const brushed=finishTexture(),rough=finishTexture(true);
+  const steel=mat({color:'#c2cbd1',map:brushed,metalness:.87,roughness:.65,roughnessMap:rough,clearcoat:.16,clearcoatRoughness:.24,envMapIntensity:1.25,side:THREE.DoubleSide});
+  const doorSteel=mat({color:'#cad2d7',map:brushed,roughnessMap:rough,metalness:.84,roughness:.7,clearcoat:.15,side:THREE.DoubleSide});
   const roofMat=mat({color:'#858f95',metalness:.65,roughness:.56,side:THREE.DoubleSide});
   const trim=mat({color:'#59636a',metalness:.72,roughness:.29});
   const rubber=mat({color:'#192126',metalness:.04,roughness:.86});
   const machinery=mat({color:'#414e56',metalness:.62,roughness:.58});
   const aluminium=mat({color:'#a6b3bb',metalness:.9,roughness:.3});
-  const white=mat({color:'#e3e6e3',metalness:.22,roughness:.31,clearcoat:.4});
-  const faceBlack=mat({color:'#101d23',metalness:.22,roughness:.22,clearcoat:.7});
+  const white=mat({color:'#e2e7e8',metalness:.12,roughness:.24,clearcoat:.8,clearcoatRoughness:.18});
+  const faceBlack=mat({color:'#081217',metalness:.12,roughness:.17,clearcoat:1,clearcoatRoughness:.13});
+  const pink=mat({color:'#d49eac',metalness:.35,roughness:.28});
   const stripes=cfg.stripes.map(color=>mat({color,metalness:.38,roughness:.3,clearcoat:.45}));
   const yokosukaPanel=cfg.family==='e235'?mat({map:ownT(yokosukaFaceTexture()),metalness:.32,roughness:.3,clearcoat:.5}):null;
-  const glass=mat({color:'#b3d7d6',map:ownT(makeGlassTexture()),metalness:.15,roughness:.13,transparent:true,opacity:.92,depthWrite:false,side:THREE.DoubleSide,clearcoat:1,clearcoatRoughness:.09,envMapIntensity:1.2});
-  const cabGlass=mat({color:'#27464b',metalness:.28,roughness:.12,clearcoat:1,transparent:true,opacity:.83,depthWrite:false,side:THREE.DoubleSide,envMapIntensity:1.5});
+  const glass=mat({color:'#65828a',map:ownT(makeGlassTexture()),metalness:.07,roughness:.075,transparent:true,opacity:.84,depthWrite:false,side:THREE.DoubleSide,clearcoat:1,clearcoatRoughness:.09,envMapIntensity:1.2});
+  const cabGlass=mat({color:'#67878a',map:ownT(makeGlassTexture()),metalness:.06,roughness:.055,clearcoat:1,clearcoatRoughness:.08,transparent:true,opacity:.78,depthWrite:false,side:THREE.DoubleSide,envMapIntensity:2.4});
   const reflection=mat({color:'#c4e5e9',metalness:.12,roughness:.19,transparent:true,opacity:.26,depthWrite:false,side:THREE.DoubleSide});
-  const inside=mat({color:'#c6c9b9',metalness:.02,roughness:.85});
+  const inside=mat({color:'#899797',metalness:.02,roughness:.85});
   const seat=mat({color:cfg.id==='toyoko'?'#8a5655':cfg.id==='yokosuka'?'#326f97':'#3f6879',roughness:.96});
   const greenSeat=mat({color:'#72575d',roughness:.92});
   const light=mat({color:'#fff7cf',emissive:'#ffedb3',emissiveIntensity:3.8,roughness:.18});
   const tailLight=mat({color:'#bb2435',emissive:'#ee1735',emissiveIntensity:1.8,roughness:.24});
-  const cabinLight=mat({color:'#fff5d9',emissive:'#fff1cf',emissiveIntensity:.65,roughness:.6});
-  const display=mat({map:ownT(destinationTexture(cfg.destination)),color:'#ffffff',emissive:'#c9ead1',emissiveMap:null,emissiveIntensity:.32,roughness:.64});
+  const cabinLight=mat({color:'#fff5d9',emissive:'#fff1cf',emissiveIntensity:cfg.sceneId==='night'?1.1:.32,roughness:.6});
+  const display=mat({map:ownT(destinationTexture(cfg.destination)),color:'#ffffff',emissive:'#c9ead1',emissiveMap:null,emissiveIntensity:cfg.sceneId==='night'?1.1:.32,roughness:.64});
   display.emissiveMap=display.map;
+  for(const [name,material] of Object.entries({STAINLESS:steel,DOOR_STEEL:doorSteel,ROOF:roofMat,TRIM:trim,RUBBER:rubber,MACHINERY:machinery,ALUMINIUM:aluminium,CAB_PAINT:white,CAB_MASK:faceBlack,GLASS:glass,CAB_GLASS:cabGlass,INTERIOR:inside,SEAT:seat,GREEN_SEAT:greenSeat,HEADLAMP:light,TAILLAMP:tailLight,CABIN_LIGHT:cabinLight,DISPLAY:display}))material.name=name;
+  stripes.forEach((material,i)=>material.name=`LIVERY_${i}`);
   const unitBox=ownG(new THREE.BoxGeometry(1,1,1));
   const unitCylinder=ownG(new THREE.CylinderGeometry(1,1,1,10));
+  const aoData=new Uint8Array(64*64*4);
+  for(let y=0;y<64;y++)for(let x=0;x<64;x++){
+    const d=Math.pow((x-31.5)/31.5,2)+Math.pow((y-31.5)/31.5,2);
+    aoData.set([0,0,0,Math.round(255*Math.pow(Math.max(0,1-d),1.6))],(y*64+x)*4);
+  }
+  const aoMap=ownT(new THREE.DataTexture(aoData,64,64));aoMap.magFilter=THREE.LinearFilter;aoMap.needsUpdate=true;
+  const contactShadow=new THREE.MeshBasicMaterial({map:aoMap,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});materials.add(contactShadow);
+  const contactGeometry=ownG(new THREE.PlaneGeometry(4.8,2.65));
   const rectCache=new Map(),ringCache=new Map();
   function rect(w,h,r=.06) {
     const key=`${w}/${h}/${r}`;
@@ -175,7 +197,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
     sidePanel(ring(w-.025,h-.025,.055,.018),aluminium,x,y,z+side*.008);
     sidePanel(rect(w-.06,h-.06,.05),glass,x,y,z+side*.018);
     // The bright top rim and a narrow off-centre pane distinguish glass from voids.
-    box(reflection,x-.12*w,y+h*.29,z+side*.024,w*.78,.026,.006);
+    box(reflection,x-.12*w,y+h*.29,z+side*.024,w*.72,.012,.004);
     if(w>1.6) box(aluminium,x,y,z+side*.026,.025,h-.08,.022);
     box(green?greenSeat:seat,x,y-h*.32,side*1.18,w-.16,.32,.22);
     box(inside,x,y+h*.38,side*1.25,w-.12,.055,.11);
@@ -193,7 +215,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
     for(const dx of [-.325,.325]) {
       sidePanel(ring(.48,.73,.06,.027),rubber,x+dx,2.82,z+side*.03);
       sidePanel(rect(.425,.675,.04),glass,x+dx,2.82,z+side*.049);
-      box(reflection,x+dx,3.035,z+side*.054,.34,.018,.006);
+      box(reflection,x+dx,3.035,z+side*.054,.3,.009,.004);
     }
     for(const dx of [-.09,.09])box(trim,x+dx,2.13,z+side*.04,.025,.12,.018);
     box(light,x+.48,3.42,z,.055,.037,.02);
@@ -222,8 +244,12 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   }
   const axleGeo=ownG(mergeGeometry(wheelParts));
   for(const p of new Set(wheelParts.map(p=>p.geometry)))p.dispose();
+  const springPoints=[];
+  for(let i=0;i<=32;i++){const a=i/32*Math.PI*8;springPoints.push(new THREE.Vector3(.105*Math.cos(a),i/32*.22-.11,.105*Math.sin(a)));}
+  const springGeo=ownG(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(springPoints),32,.022,5,false));
   const axleMat=mat({color:'#ffffff',vertexColors:true,metalness:.83,roughness:.4});
   function bogie(x) {
+    add(contactGeometry,contactShadow,x,.036,0,1,1,1,-Math.PI/2);
     box(machinery,x,.87,0,3.24,.23,2.03);
     for(const s of [-1,1]) {
       box(machinery,x,.66,s*.96,3.1,.18,.16);
@@ -235,7 +261,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
       for(const dx of [-1.05,1.05]) {
         box(machinery,x+dx,.58,s*.92,.3,.29,.22);
         add(unitCylinder,trim,x+dx,.6,s*1.05,.105,.065,.105,Math.PI/2);
-        for(let k=0;k<3;k++)box(aluminium,x+dx,.77+k*.035,s*.97,.3,.015,.15);
+        add(springGeo,trim,x+dx,.82,s*.97);
       }
     }
     for(const dx of [-1.05,1.05]) {
@@ -246,6 +272,8 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
     }
   }
   function roofEquipment(i,green) {
+    // Raised roof beads catch long, narrow highlights on stainless shoulders.
+    for(const side of [-1,1])for(const [z,y] of [[.84,3.958],[1.02,3.923],[1.17,3.855]])box(aluminium,0,y,side*z,18.9,.012,.018);
     // Ribbed air conditioning housing and dark recessed condenser grilles.
     const acPositions=cfg.family==='5050'?[-4.2,4.2]:[0];
     for(const x of acPositions) {
@@ -301,7 +329,8 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
         // Belt passes over the closed door leaves, as on the real stainless cars.
         box(stripes[0],0,2.08,z,19.48,.17,.012);
         if(stripes[1])box(stripes[1],0,1.91,z,19.48,.16,.012);
-        if(cfg.family==='e235')box(stripes[0],0,3.46,z,19.4,.08,.012);
+        if(cfg.family==='e235')box(stripes[0],0,3.46,z,19.4,.065,.012);
+        if(cfg.family==='5050')box(pink,0,3.43,z,19.4,.13,.012);
       }
       // Brushed seams, skirt reveal, door release buttons and car-end handrails.
       box(aluminium,0,1.48,s*1.471,19.45,.025,.02);
@@ -328,48 +357,58 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   faceShape.lineTo(-1.43,3.45);faceShape.quadraticCurveTo(-1.42,3.88,-.99,3.96);
   faceShape.quadraticCurveTo(0,4.06,.99,3.96);faceShape.quadraticCurveTo(1.42,3.88,1.43,3.45);
   faceShape.lineTo(1.43,1.48);faceShape.quadraticCurveTo(1.43,1.25,1.23,1.23);faceShape.closePath();
-  const faceGeo=ownG(new THREE.ExtrudeGeometry(faceShape,{depth:.16,bevelEnabled:true,bevelSize:.07,bevelThickness:.055,bevelSegments:3,curveSegments:7}));
+  const e235=cfg.family==='e235',tokyu=cfg.family==='5050';
+  const cabWindows=tokyu?[{z:-.62,y:2.84,w:1.08,h:1.27},{z:1.01,y:2.84,w:.36,h:1.27},{z:.32,y:2.88,w:.45,h:1.12}]:
+    [{z:0,y:e235?2.87:2.85,w:e235?2.36:2.34,h:e235?1.4:1.29}];
+  for(const w of cabWindows)faceShape.holes.push(roundedPath(new THREE.Path(),-w.z-w.w/2,w.y-w.h/2,w.w,w.h,.075));
+  const faceGeo=ownG(new THREE.ExtrudeGeometry(faceShape,{depth:.18,bevelEnabled:true,bevelSize:.04,bevelThickness:.055,bevelSegments:4,curveSegments:12}));
+  const maskShape=roundedShape(tokyu?2.64:2.62,e235?2.08:1.94,.16);
+  for(const w of cabWindows)maskShape.holes.push(roundedPath(new THREE.Path(),-w.z-w.w/2,w.y-(e235?2.91:2.96)-w.h/2,w.w,w.h,.075));
+  const cabMask=ownG(new THREE.ShapeGeometry(maskShape,12));
+  faceGeo.name='cab-shell';
   // Face planes have their normal +X; the plane's horizontal coordinate is -Z.
   function frontPlane(g,m,y,z=0,x=9.96) {add(g,m,x,y,z,1,1,1,0,Math.PI/2,0);}
   function frontRect(m,y,z,w,h,x=9.97,r=.04) {frontPlane(rect(w,h,r),m,y,z,x);}
   function frontRing(m,y,z,w,h,x=9.985,b=.04) {frontPlane(ring(w,h,.07,b),m,y,z,x);}
   function cab(rear=false) {
     const e235=cfg.family==='e235',tokyu=cfg.family==='5050',suburban=cfg.family==='e233-suburban';
-    add(faceGeo,e235?stripes[0]:tokyu?steel:white,9.76,0,0,1,1,1,0,Math.PI/2);
+    add(faceGeo,e235?stripes[0]:white,9.76,0,0,1,1,1,0,Math.PI/2);
+    frontPlane(cabMask,faceBlack,e235?2.91:2.96,0,10.015);
     // A different mask, glazing layout and lamp arrangement for every cab family.
     if(e235) {
-      frontRect(faceBlack,2.95,0,2.55,1.87,9.985,.2);
-      frontRect(cabGlass,2.85,0,1.9,1.05,10.025,.1);
-      frontRing(trim,2.85,0,1.98,1.12,10.035,.035);
+      frontRect(cabGlass,2.87,0,2.36,1.4,10.038,.075);
+      frontRing(rubber,2.87,0,2.42,1.46,10.047,.023);
       frontRect(faceBlack,3.61,0,1.46,.34,10.03);
       frontRect(display,3.61,0,1.3,.27,10.047,.015);
       for(const s of [-1,1]) {
         frontRect(trim,3.73,s*.99,.39,.17,10.03);
         for(const dz of [-.095,.095])frontRect(rear?tailLight:light,3.73,s*.99+dz,.14,.09,10.05,.025);
       }
-      frontRect(yokosukaPanel,1.94,0,2.49,.66,10.048,.09);
+      frontRect(yokosukaPanel,1.84,0,2.55,.65,10.048,.08);
+      frontRect(stripes[0],1.46,0,2.53,.1,10.045,.035);
     } else if(tokyu) {
-      frontRect(faceBlack,2.95,0,2.64,1.83,9.99,.15);
+
       // The traditional 5050 has an offset black emergency door, not a silver bar.
-      frontRect(cabGlass,2.91,-.62,1.06,1.14,10.023,.06);
-      frontRect(cabGlass,2.91,1.01,.36,1.14,10.023,.06);
-      frontRect(faceBlack,2.52,.32,.62,2.08,10.033,.035);
+      frontRect(cabGlass,2.84,-.62,1.08,1.27,10.023,.06);
+      frontRect(cabGlass,2.84,1.01,.36,1.27,10.023,.06);
+      frontRing(rubber,2.52,.32,.66,2.14,10.031,.025);
       frontRect(white,1.75,.32,.59,.53,10.043,.015);
       frontRing(rubber,2.52,.32,.66,2.14,10.053,.025);
-      frontRect(cabGlass,2.97,.32,.45,.94,10.064,.03);
-      frontRect(stripes[0],2.045,0,2.6,.105,10.07,.025);
+      frontRect(cabGlass,2.88,.32,.45,1.12,10.064,.03);
+      frontRect(stripes[0],1.96,0,2.6,.065,10.07,.025);
       frontRect(trim,2.24,.1,.025,.13,10.08,.01);
       frontRect(faceBlack,3.63,-.37,1.4,.29,10.025,.025);
       frontRect(display,3.63,-.37,1.26,.23,10.045,.01);
       for(const s of [-1,1]) {
-        frontRect(trim,1.64,s*.96,.48,.23,10.01,.08);
-        frontRect(rear?tailLight:light,1.64,s*1.05,.15,.13,10.035,.06);
+        frontRect(trim,1.64,s*.96,.48,.17,10.01,.065);
+        frontRect(trim,3.67,s*1.11,.21,.17,10.035,.06);
+        frontRect(rear?rubber:light,3.67,s*1.11,.14,.1,10.058,.04);
+        frontRect(rear?tailLight:rubber,1.64,s*1.05,.15,.13,10.035,.06);
         frontRect(rear?tailLight:white,1.64,s*.84,.14,.1,10.035,.035);
       }
     } else {
-      frontRect(faceBlack,2.99,0,2.59,1.72,9.985,.18);
-      frontRect(cabGlass,2.88,0,2.26,1.04,10.017,.1);
-      frontRing(trim,2.88,0,2.34,1.11,10.025,.035);
+      frontRect(cabGlass,2.85,0,2.34,1.29,10.038,.075);
+      frontRing(rubber,2.85,0,2.4,1.35,10.047,.025);
       frontRect(faceBlack,3.62,0,1.55,.31,10.025,.03);
       frontRect(display,3.62,0,1.38,.24,10.043,.01);
       frontRect(stripes[0],2.02,0,2.63,.21,10.025,.035);
@@ -381,18 +420,30 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
       }
     }
     // Cab interior, two windshield wipers, handrail, antenna and sculpted skirt.
-    box(machinery,9.4,2.39,0,.28,.2,2.15);
+    box(machinery,9.32,2.17,0,.72,.16,2.28);
+    box(machinery,8.45,2.72,0,.045,1.7,2.55);
+    box(machinery,8.95,2.4,-.72,.36,.4,.4);
+    box(trim,9.37,2.29,-.67,.25,.035,.39);
+    box(cabinLight,9.35,2.32,-.67,.12,.01,.16);
     for(const s of [-1,1]) {
-      rod(rubber,[10.07,2.43,s*.67],[10.08,2.82,s*.83],.017);
-      rod(rubber,[10.085,2.68,s*.77],[10.085,3.05,s*.85],.021);
-      frontRect(reflection,3.15,s*.6,.52,.035,10.08,.005);
+      rod(rubber,[10.077,2.21,s*.7],[10.086,2.44,s*.31],.014);
+      rod(rubber,[10.089,2.3,s*.49],[10.089,2.6,s*.08],.018);
       rod(aluminium,[10.015,1.51,s*.77],[10.015,1.76,s*.77],.018);
     }
     // Chamfered anti-climber / skirt is a tapered prism, not a square bumper.
     const skirtShape=new THREE.Shape();skirtShape.moveTo(-1.3,1.35);skirtShape.lineTo(1.3,1.35);skirtShape.lineTo(1.05,.55);skirtShape.lineTo(.38,.57);skirtShape.lineTo(.32,.88);skirtShape.lineTo(-.32,.88);skirtShape.lineTo(-.38,.57);skirtShape.lineTo(-1.05,.55);skirtShape.closePath();
+    if(tokyu){skirtShape.curves.length=0;skirtShape.moveTo(-1.3,1.35);skirtShape.lineTo(1.3,1.35);skirtShape.lineTo(1.23,1.04);skirtShape.lineTo(.35,1.04);skirtShape.lineTo(.25,.96);skirtShape.lineTo(-.25,.96);skirtShape.lineTo(-.35,1.04);skirtShape.lineTo(-1.23,1.04);skirtShape.closePath();}
     const skirtGeo=ownG(new THREE.ExtrudeGeometry(skirtShape,{depth:.23,bevelEnabled:true,bevelThickness:.035,bevelSize:.035,bevelSegments:2}));
-    add(skirtGeo,tokyu?aluminium:white,9.64,0,0,1,1,1,0,Math.PI/2);
-    box(machinery,10.04,.92,0,.44,.2,.25);box(trim,10.19,.92,0,.16,.27,.39);
+    skirtGeo.name='cab-skirt';
+    add(skirtGeo,tokyu||e235?aluminium:white,9.64,0,0,1,1,1,0,Math.PI/2);
+    box(machinery,9.95,.89,0,.44,.15,.21);
+    const couplerShape=roundedShape(.38,.29,.065),couplerGeo=ownG(new THREE.ExtrudeGeometry(couplerShape,{depth:.12,bevelEnabled:true,bevelSize:.015,bevelThickness:.015,bevelSegments:2,curveSegments:6}));
+    couplerGeo.name='coupler';
+    add(couplerGeo,aluminium,10.16,.91,0,1,1,1,0,Math.PI/2);
+    frontRect(rubber,.92,0,.23,.14,10.307,.035);frontRect(trim,.91,0,.085,.15,10.312,.018);
+    for(const z of [-.14,.14])for(const y of [.81,1.02])frontRect(trim,y,z,.028,.028,10.31,.01);
+    for(const z of [-.38,.38]){rod(rubber,[9.85,1.18,z],[10.02,.67,z],.027);rod(rubber,[10.02,.67,z],[10.16,.69,z],.026);}
+
     for(const s of [-1,1])rod(rubber,[9.78,1.1,s*.4],[9.99,.73,s*.43],.045);
     // A proper driver's side window and small separate crew door behind the face.
     for(const s of [-1,1]) {
@@ -451,7 +502,8 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   for(const {geometry,material,matrices} of batches.values()) {
     const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);
     matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.instanceMatrix.needsUpdate=true;
-    mesh.name=`train-${material===glass?'glazing':material===steel?'stainless':'detail'}`;
+    mesh.name=material===contactShadow?'train-contact-shadow':`train-${material===glass?'glazing':material===steel?'stainless':'detail'}`;
+    mesh.userData.groundEffect=material===contactShadow;
     mesh.castShadow=!material.transparent&&material!==cabinLight&&material!==display;
     mesh.receiveShadow=!material.transparent;
     mesh.computeBoundingBox();mesh.computeBoundingSphere();group.add(mesh);

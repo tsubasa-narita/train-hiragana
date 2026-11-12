@@ -9,7 +9,15 @@ export function createDepotWorld(scene, { config } = {}) {
   const resources = new Set();
   const keep = resource => { resources.add(resource); return resource; };
   const box = keep(new THREE.BoxGeometry(1, 1, 1));
-  const sphere = keep(new THREE.IcosahedronGeometry(1, 1));
+  const sphere = keep(new THREE.IcosahedronGeometry(1, 2));
+  // A single irregular crown is reused at several scales and rotations.
+  const crown=keep(sphere.clone()),crownPositions=crown.attributes.position;
+  for(let i=0;i<crownPositions.count;i++){
+    const x=crownPositions.getX(i),y=crownPositions.getY(i),z=crownPositions.getZ(i);
+    const r=1+.13*Math.sin(x*12+y*9)*Math.sin(z*9-x*4)+.06*Math.sin(y*19+z*11);
+    crownPositions.setXYZ(i,x*r,y*r,z*r);
+  }
+  crown.computeVertexNormals();
   const steel = options => keep(new THREE.MeshStandardMaterial(options));
   const basic = options => keep(new THREE.MeshBasicMaterial(options));
   let seed = 11427, disposed = false;
@@ -42,33 +50,61 @@ export function createDepotWorld(scene, { config } = {}) {
     const map=canvasMap(256,256,draw);
     map.wrapS=map.wrapT=THREE.RepeatWrapping; map.repeat.set(rx,ry); return map;
   }
-  const frameMetal=steel({color:0x384d56,metalness:.65,roughness:.48});
-  const litMetal=steel({color:0x81959c,metalness:.7,roughness:.38});
+  const frameMetal=steel({color:0x243840,metalness:.65,roughness:.48,envMapIntensity:.65});
+  const litMetal=steel({color:0x687c82,metalness:.7,roughness:.38,envMapIntensity:.8});
   const darkMetal=steel({color:0x28343c,metalness:.6,roughness:.6});
-  const concrete=steel({color:0x89918e,roughness:.94});
+  const concrete=steel({color:0x626c69,roughness:.94});
   const yellow=steel({color:0xe4ae3e,metalness:.3,roughness:.55});
   const accent=steel({color:config?.color||0x2d7897,metalness:.35,roughness:.5});
   const lampMaterial=steel({color:0xffdf9e,emissive:0xffb94e,emissiveIntensity:2.6,roughness:.35});
 
   const grassMap=repeatingMap(ctx=>{
-    ctx.fillStyle='#81915c';ctx.fillRect(0,0,256,256);
+    ctx.fillStyle='#526343';ctx.fillRect(0,0,256,256);
+    for(let i=0;i<70;i++){
+      const x=random()*256,y=random()*256,r=12+random()*65,g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,i%3?'rgba(137,132,76,.32)':'rgba(27,56,34,.45)');
+      g.addColorStop(1,'rgba(59,78,43,0)');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+    }
     for(let i=0;i<5500;i++){
-      ctx.fillStyle=random()>.5?'rgba(207,197,129,.24)':'rgba(47,80,36,.23)';
+      ctx.fillStyle=random()>.5?'rgba(166,157,99,.15)':'rgba(30,55,29,.2)';
       ctx.fillRect(random()*256,random()*256,1+random()*3,1+random()*5);
     }
-  },100,100);
+  },32,32);
   const ground=mesh(keep(new THREE.PlaneGeometry(1600,1600)),steel({map:grassMap,roughness:1}),0,-.12,0);
   ground.rotation.x=-Math.PI/2; ground.name='depot-meadow';
   const floorMap=repeatingMap(ctx=>{
-    ctx.fillStyle='#69787b';ctx.fillRect(0,0,256,256);
+    ctx.fillStyle='#414c4d';ctx.fillRect(0,0,256,256);
     for(let i=0;i<4000;i++){
-      const n=Math.floor(65+random()*80);ctx.fillStyle=`rgba(${n},${n+5},${n+8},.15)`;
+      const n=Math.floor(40+random()*65);ctx.fillStyle=`rgba(${n},${n+5},${n+8},.15)`;
       ctx.fillRect(random()*256,random()*256,random()*5+1,random()*3+1);
     }
     ctx.strokeStyle='rgba(23,37,43,.3)';ctx.lineWidth=2;
     ctx.strokeRect(1,1,254,254);
+    for(let i=0;i<18;i++){
+      const x=random()*256,y=random()*256,r=8+random()*35,g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,'rgba(10,21,24,.27)');g.addColorStop(1,'rgba(10,21,24,0)');
+      ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+    }
   },68,3);
-  mesh(box,steel({map:floorMap,roughness:.8,metalness:.12}),-135,-.12,0,270,.18,13);
+  mesh(box,steel({map:floorMap,roughness:.68,metalness:.14}),-135,-.12,0,270,.18,13);
+  // A weathered service apron anchors the shed in a working railway yard.
+  const apronMap=repeatingMap(ctx=>{
+    ctx.fillStyle='#777364';ctx.fillRect(0,0,256,256);
+    for(let i=0;i<9500;i++){
+      const v=45+Math.floor(random()*100);ctx.fillStyle=`rgba(${v+8},${v+5},${v},.16)`;
+      ctx.fillRect(random()*256,random()*256,1+random()*2,1+random()*2);
+    }
+    ctx.strokeStyle='rgba(39,43,38,.25)';ctx.lineWidth=.8;
+    ctx.beginPath();ctx.moveTo(0,128);ctx.lineTo(256,128);ctx.moveTo(128,0);ctx.lineTo(128,256);ctx.stroke();
+  },50,4);
+  const apron=mesh(keep(new THREE.PlaneGeometry(650,25)),steel({map:apronMap,roughness:.92}),40,-.105,0);
+  apron.rotation.x=-Math.PI/2;
+  const drainage=[],yardMarkings=[];
+  for(let x=-265;x<300;x+=3.6){
+    drainage.push({x,y:-.087,z:-4.55,sx:3.2,sy:.035,sz:.27});
+    if(x>5)yardMarkings.push({x,y:-.082,z:-8.2,sx:1.45,sy:.012,sz:.075});
+  }
+  batch(box,darkMetal,drainage);batch(box,steel({color:0xc3b995,roughness:.95}),yardMarkings);
   const ballastMap=repeatingMap(ctx=>{
     ctx.fillStyle='#696d68';ctx.fillRect(0,0,256,256);
     for(let i=0;i<5500;i++){
@@ -131,9 +167,21 @@ export function createDepotWorld(scene, { config } = {}) {
   }
   for(const z of [-3.05,0,3.05])steelwork.push({x:-135,y:10.14,z,sx:270,sy:.13,sz:.12});
   batch(box,frameMetal,steelwork,true);batch(box,litMetal,steelFlanges);batch(box,frameMetal,braces);
-  batch(box,steel({color:0x506771,metalness:.6,roughness:.62,side:THREE.DoubleSide}),roofPanels,true);
-  batch(box,steel({color:0xe0e9d5,emissive:0xffd599,emissiveIntensity:.38,transparent:true,opacity:.35,metalness:.1,roughness:.3,depthWrite:false}),glassPanels);
-  mesh(box,steel({color:0x4c626d,metalness:.4,roughness:.8}),-135,4.6,6.65,270,9.2,.22);
+  batch(box,steel({color:0x283e47,metalness:.45,roughness:.73,side:THREE.DoubleSide,envMapIntensity:.5}),roofPanels,true);
+  batch(box,steel({color:0x819c9c,emissive:0xffc37a,emissiveIntensity:.12,transparent:true,opacity:.47,metalness:.15,roughness:.4,depthWrite:false}),glassPanels);
+  const wallMap=repeatingMap(ctx=>{
+    ctx.fillStyle='#344b53';ctx.fillRect(0,0,256,256);
+    for(let i=0;i<3600;i++){
+      ctx.fillStyle=random()>.5?'rgba(129,148,140,.05)':'rgba(8,19,25,.09)';
+      ctx.fillRect(random()*256,random()*256,1+random()*3,2+random()*18);
+    }
+    const soot=ctx.createLinearGradient(0,0,0,256);
+    soot.addColorStop(0,'rgba(4,13,20,.65)');soot.addColorStop(.32,'rgba(8,18,23,.03)');
+    soot.addColorStop(.82,'rgba(8,18,23,.15)');soot.addColorStop(1,'rgba(11,18,22,.6)');
+    ctx.fillStyle=soot;ctx.fillRect(0,0,256,256);
+    ctx.fillStyle='rgba(178,130,64,.35)';ctx.fillRect(0,206,256,3);
+  },30,1);
+  mesh(box,steel({map:wallMap,color:0xb0babc,metalness:.25,roughness:.83,envMapIntensity:.4}),-135,4.6,6.65,270,9.2,.22);
   mesh(box,darkMetal,-270,4.7,0,.25,9.4,13.4);
   // No z=-6.5 wall: the director can pass through the open side safely.
   for(let x=-269;x<0;x+=1.5)wallRibs.push({x,y:4.7,z:6.48,sx:.065,sy:9.2,sz:.09});
@@ -209,12 +257,39 @@ export function createDepotWorld(scene, { config } = {}) {
   }
   batch(box,accent,cabinets);batch(box,litMetal,cabinetDoors);batch(box,yellow,serviceMarkings);
 
+  // Cable trays, roof ventilators, wall glazing and bench hardware share batches.
+  const fittings=[],equipment=[],clerestory=[],windowFrames=[],benchTops=[],ladder=[];
+  for(let x=-260;x<-3;x+=15){
+    fittings.push({x,y:5.15,z:6.17,sx:13.4,sy:.07,sz:.37});
+    fittings.push({x,y:5.3,z:6.32,sx:13.4,sy:.24,sz:.05});
+    equipment.push({x:x-2,y:10.5,z:4.8,sx:2.4,sy:.68,sz:1.8});
+    equipment.push({x:x-2,y:10.89,z:4.8,sx:2.8,sy:.12,sz:2.2});
+    clerestory.push({x,y:7.2,z:6.505,sx:10.8,sy:1.65,sz:.035});
+    for(const y of [6.34,8.06])windowFrames.push({x,y,z:6.45,sx:11,sy:.07,sz:.12});
+    for(let dx=-5.4;dx<5.5;dx+=1.8)windowFrames.push({x:x+dx,y:7.2,z:6.44,sx:.06,sy:1.75,sz:.12});
+    if(x%3===-2){
+      benchTops.push({x:x+3,y:1,z:5.6,sx:2.1,sy:.09,sz:.8});
+      for(const dx of [2.2,3.8])fittings.push({x:x+dx,y:.5,z:5.6,sx:.08,sy:1,sz:.6});
+    }
+  }
+  for(const x of [-61,-151]){
+    for(const dx of [-.28,.28])ladder.push({x:x+dx,y:3.9,z:6.15,sx:.05,sy:7.5,sz:.05});
+    for(let y=.25;y<7.7;y+=.32)ladder.push({x,y,z:6.12,sx:.61,sy:.035,sz:.06});
+  }
+  batch(box,darkMetal,fittings);batch(box,darkMetal,equipment);
+  batch(box,steel({color:0x567989,emissive:0x769fa9,emissiveIntensity:.18,metalness:.35,roughness:.29}),clerestory);
+  batch(box,frameMetal,windowFrames);batch(box,litMetal,ladder);
+  batch(box,steel({color:0x6e6554,roughness:.85}),benchTops);
+
   // Use explicit translucent geometry for the golden shafts, independently of shadows.
   const shaftsPosition=[],shaftsUv=[],shaftsIndex=[];
   for(const x of [-6,-22,-39,-58,-82,-113,-152,-197,-240]){
-    const i=shaftsPosition.length/3;
-    shaftsPosition.push(x-1.25,9.86,2.8,x+1.25,9.86,2.8,x-5,.15,-4.4,x-16,.15,-4.4);
-    shaftsUv.push(0,1,1,1,1,0,0,0);shaftsIndex.push(i,i+1,i+2,i,i+2,i+3);
+    // Crossed feathered ribbons read as a volume from both director angles.
+    for(let ribbon=0;ribbon<2;ribbon++){
+      const i=shaftsPosition.length/3,z=-2.1+ribbon*.8;
+      shaftsPosition.push(x-1,9.86,z,x+1,9.86,z,x-5,.34,4.4+ribbon*.5,x-13,.34,4.4+ribbon*.5);
+      shaftsUv.push(0,1,1,1,1,0,0,0);shaftsIndex.push(i,i+1,i+2,i,i+2,i+3);
+    }
   }
   const shaftGeometry=keep(new THREE.BufferGeometry());
   shaftGeometry.setAttribute('position',new THREE.Float32BufferAttribute(shaftsPosition,3));
@@ -224,9 +299,9 @@ export function createDepotWorld(scene, { config } = {}) {
     uniforms:{time:{value:0},strength:{value:.15}},
     vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`varying vec2 vUv;uniform float time;uniform float strength;
-      void main(){float edge=pow(sin(vUv.x*3.14159265),2.);
-        float fade=smoothstep(0.,.18,vUv.y)*(1.-smoothstep(.85,1.,vUv.y));
-        float dust=.9+.1*sin(vUv.y*32.+time*.42);
+      void main(){float edge=pow(max(0.,sin(vUv.x*3.14159265)),2.5);
+        float fade=smoothstep(0.,.23,vUv.y)*(1.-smoothstep(.88,1.,vUv.y));
+        float dust=.88+.08*sin(vUv.y*32.+time*.42)+.04*sin(vUv.x*65.-vUv.y*13.);
         gl_FragColor=vec4(vec3(1.,.73,.36),strength*edge*fade*dust);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -246,11 +321,26 @@ export function createDepotWorld(scene, { config } = {}) {
   }));
   const poolGeometry=keep(new THREE.PlaneGeometry(1,1));
   for(const x of [-10,-27,-44,-64,-88]){
-    const pool=mesh(poolGeometry,poolMaterial,x,.331,-2.6,18,5.1,1);pool.rotation.x=-Math.PI/2;
+    const pool=mesh(poolGeometry,poolMaterial,x,.332,3.1,12,1.32,1);pool.rotation.x=-Math.PI/2;
   }
+  const dustPositions=[];
+  for(let i=0;i<160;i++)dustPositions.push(-3-random()*95,.7+random()*8.6,-2+random()*7);
+  const dustGeometry=keep(new THREE.BufferGeometry());dustGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dustPositions,3));
+  const dustMaterial=keep(new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{time:{value:0}},
+    vertexShader:`uniform float time;varying float fade;void main(){vec3 p=position;
+      p.x+=sin(time*.16+position.y)*.17;p.y+=sin(time*.24+position.x)*.12;
+      vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      gl_PointSize=clamp(22./max(1.,-mv.z),1.,2.6);fade=.2+.8*fract(sin(position.x*13.1)*43758.5);}`,
+    fragmentShader:`varying float fade;void main(){float a=1.-smoothstep(.08,.5,length(gl_PointCoord-.5));
+      gl_FragColor=vec4(.9,.61,.25,a*fade*.22);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`}));
+  const dust=new THREE.Points(dustGeometry,dustMaterial);dust.name='sunlit-depot-dust';group.add(dust);
   // Warm exit light, cool interior fill, and a restrained warm practical.
   const exitLight=new THREE.SpotLight(0xffdb9d,1450,100,.46,.75,2);
-  exitLight.position.set(15,18,7);exitLight.target.position.set(-18,1,-2.3);
+  exitLight.position.set(15,18,-7);exitLight.target.position.set(-18,1,2.3);
   exitLight.castShadow=true;exitLight.shadow.mapSize.set(512,512);
   exitLight.shadow.camera.near=.5;exitLight.shadow.camera.far=100;
   exitLight.shadow.bias=-.00025;exitLight.shadow.normalBias=.04;
@@ -259,42 +349,61 @@ export function createDepotWorld(scene, { config } = {}) {
   group.add(exitLight,exitLight.target,coolFill,warmPractical);
 
   // The outside is a sunlit railway meadow, not another elevated viaduct.
-  const trunks=[],foliage=[],grasses=[],flowers=[],fence=[];
-  for(let i=0;i<185;i++){
-    const x=8+random()*475;
-    const z=(i%2?1:-1)*(12+random()*135);
-    const h=2.4+random()*5,s=.7+random()*1.6;
-    trunks.push({x,y:h*.43-.12,z,sx:.24*s,sy:h*.86,sz:.24*s});
-    for(let j=0;j<2;j++)foliage.push({x:x+(j-.5)*s,y:h+j*.5-.4,z,sx:2.1*s,sy:1.8*s,sz:1.8*s,color:[0x6e8f4e,0x829956,0x567d4d,0x9ba86c][i%4]});
+  const trunks=[],foliage=[],grasses=[],flowers=[],fence=[],shrubs=[];
+  const bark=steel({color:0x64523d,roughness:1}),trunkGeometry=keep(new THREE.CylinderGeometry(.55,1,1,7));
+  for(let i=0;i<240;i++){
+    const x=-30+random()*620;
+    const z=(i%2?1:-1)*(16+Math.pow(random(),1.3)*145);
+    if(x<3&&Math.abs(z)<24)continue;
+    const h=3.8+random()*7.5,s=.65+random()*1.45,lean=(random()-.5)*.09;
+    trunks.push({x,y:h*.34-.12,z,sx:.24*s,sy:h*.68,sz:.24*s,rz:lean});
+    for(let j=0;j<6;j++){
+      const angle=j*2.4+i*.63,r=j===0?0:s*(.65+random()*.65);
+      const branchY=h*(.6+random()*.2);
+      if(j>0&&j<4)trunks.push({x:x+Math.cos(angle)*s*.38,y:branchY,z:z+Math.sin(angle)*s*.38,
+        sx:.095*s,sy:1.7*s,sz:.095*s,rz:-Math.cos(angle)*.75,rx:Math.sin(angle)*.75});
+      foliage.push({x:x+Math.cos(angle)*r,y:h-(j===0?0:random()*h*.3),z:z+Math.sin(angle)*r,
+        sx:s*(1.05+random()*.6),sy:s*(1.35+random()*.7),sz:s*(.95+random()*.65),ry:angle,
+        color:[0x385a38,0x55733e,0x657d43,0x7d894e,0x486742,0x627742][(i+j)%6]});
+    }
+    if(i%2===0)shrubs.push({x:x+random()*6-3,y:.5+random()*.3,z:z+random()*6-3,sx:1.2+random()*2,sy:.7+random()*.6,sz:1+random()*2,color:[0x526841,0x6b7947,0x3d603b][i%3]});
   }
   for(let i=0;i<550;i++){
-    const x=2+random()*360,z=(i%2?1:-1)*(4.1+random()*13),h=.15+random()*.45;
-    grasses.push({x,y:h/2-.11,z,sx:.07+random()*.12,sy:h,sz:.08,rz:(random()-.5)*.6,color:[0x9eaa64,0x6f8b48,0xa4ac67][i%3]});
+    const x=2+random()*360,z=(i%2?1:-1)*(12.8+random()*10),h=.14+random()*.35;
+    grasses.push({x,y:h/2-.11,z,sx:.07+random()*.12,sy:h,sz:.08,rz:(random()-.5)*.6,color:[0x879050,0x637b42,0x99985c][i%3]});
     if(i%9===0)flowers.push({x,y:h-.03,z,sx:.09,sy:.07,sz:.09,color:i%2?0xf3d181:0xe3dfcf});
   }
-  batch(box,steel({color:0x776548,roughness:1}),trunks);
-  batch(sphere,steel({color:0xffffff,roughness:1}),foliage);
-  batch(box,steel({color:0xffffff,roughness:1,side:THREE.DoubleSide}),grasses);
+  batch(trunkGeometry,bark,trunks);
+  const leafMaterial=steel({color:0xffffff,roughness:.95});
+  batch(crown,leafMaterial,foliage,true);batch(crown,leafMaterial,shrubs);
+  const bladeGeometry=keep(new THREE.BufferGeometry());
+  bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute([-.5,-.5,0,.5,-.5,0,.12,.5,.05,0,-.5,-.5,0,-.5,.5,.03,.4,.1],3));
+  bladeGeometry.computeVertexNormals();
+  batch(bladeGeometry,steel({color:0xffffff,roughness:1,side:THREE.DoubleSide}),grasses);
   batch(sphere,steel({color:0xffffff,roughness:1}),flowers);
   for(let x=8;x<290;x+=4)fence.push({x,y:.47,z:10,sx:.08,sy:1.15,sz:.08});
   for(const y of [.37,.9])fence.push({x:148,y,z:10,sx:284,sy:.045,sz:.045});
   batch(box,litMetal,fence);
   // Distant silhouettes are low enough to keep the departure shot bright.
-  const buildings=[];
+  const buildings=[],rooflines=[];
   for(let i=0;i<35;i++){
     const h=3+random()*10;
-    buildings.push({x:40+random()*600,y:h/2-.12,z:130+random()*150,sx:7+random()*13,sy:h,sz:7+random()*15,color:[0xc0c7ba,0xd3d1bf,0xacbab6,0xd8d6c8][i%4]});
+    const x=-90+random()*760,z=150+random()*150,w=7+random()*13,d=7+random()*15;
+    buildings.push({x,y:h/2-.12,z,sx:w,sy:h,sz:d,color:[0x919d92,0xb0b0a0,0x859b96,0xb5b4a3][i%4]});
+    rooflines.push({x,y:h+.03,z,sx:w+.4,sy:.35,sz:d+.4});
+    if(i%3===0)rooflines.push({x:x+1,y:h+.6,z,sx:w*.25,sy:1.1,sz:d*.33});
   }
   batch(box,steel({color:0xffffff,roughness:.85}),buildings);
+  batch(box,steel({color:0x65766f,roughness:.9}),rooflines);
   for(let layer=0;layer<3;layer++){
     const geometry=keep(new THREE.PlaneGeometry(1800,100,80,1));
     const positions=geometry.attributes.position;
     for(let i=0;i<positions.count;i++){
       const x=positions.getX(i),top=positions.getY(i)>0;
-      positions.setY(i,top?25+layer*7+Math.sin(x*.012+layer)*13+Math.sin(x*.033)*5:-.2);
+      positions.setY(i,top?33+layer*12+Math.sin(x*.01+layer)*16+Math.sin(x*.026+layer)*8+Math.sin(x*.061)*2:-.2);
     }
     geometry.computeVertexNormals();
-    mesh(geometry,steel({color:[0x9fb5a0,0xb1c3b0,0xc7cebb][layer],roughness:1,side:THREE.DoubleSide}),0,0,340+layer*90);
+    mesh(geometry,steel({color:[0x6e927e,0x89a497,0xa6b6aa][layer],roughness:1,side:THREE.DoubleSide}),0,0,340+layer*90);
   }
   const skyMaterial=keep(new THREE.ShaderMaterial({
     side:THREE.BackSide,depthWrite:false,
@@ -305,11 +414,11 @@ export function createDepotWorld(scene, { config } = {}) {
       float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
       void main(){vec3 d=normalize(vDirection);float h=max(0.,d.y);
-        vec3 color=mix(vec3(1.,.88,.67),vec3(.34,.64,.83),pow(h,.4));
+        vec3 color=mix(vec3(.95,.69,.39),vec3(.12,.34,.57),pow(h,.38));
         vec2 p=d.xz/max(.18,d.y+.18)*2.+time*.002;
         float cloud=smoothstep(.55,.76,noise(p)+.2*noise(p*2.1));
         cloud*=smoothstep(.04,.2,h)*(1.-smoothstep(.55,.85,h));
-        color=mix(color,vec3(1.,.97,.88),cloud*.55);
+        color=mix(color,vec3(.82,.79,.66),cloud*.4);
         float sun=pow(max(0.,dot(d,normalize(vec3(.65,.36,.47)))),700.);
         color+=vec3(1.,.76,.35)*sun;
         gl_FragColor=vec4(color,1.);
@@ -336,12 +445,13 @@ export function createDepotWorld(scene, { config } = {}) {
     statusMaterial.color.set(opening>.96?0x8fcb83:0xe6a742);
     statusMaterial.emissive.copy(statusMaterial.color);
     shaftMaterial.uniforms.time.value=time;
-    shaftMaterial.uniforms.strength.value=.10+.035*opening;
+    shaftMaterial.uniforms.strength.value=.105+.055*opening;
+    dustMaterial.uniforms.time.value=time;
     poolMaterial.uniforms.strength.value=.12+.19*opening;
     exitLight.intensity=650+1000*opening;
     skyMaterial.uniforms.time.value=time;
     // Optional frame data is only used for the moving cool fill; geometry is fixed.
-    const headX=Number.isFinite(frame?.headX)?frame.headX:-14+Math.max(0,time-1.65)*20.4;
+    const headX=Number.isFinite(frame?.headX)?frame.headX:-14+109*THREE.MathUtils.clamp((time-1.65)/5.35,0,1)**2;
     coolFill.position.x=THREE.MathUtils.clamp(headX-7,-28,-6);
     coolFill.intensity=90*(1-.65*smooth(1,32,headX));
   }

@@ -5,16 +5,23 @@ import { createDepotWorld } from './reward3d-depot.js';
 import { createSkybridgeWorld, skyPose, SKY_RADIUS } from './reward3d-skybridge.js';
 import { rewardScenario } from './reward3d-scenarios.js';
 import { createTrainModel } from './reward3d-trains.js';
+import { prepareTrainModels,createBlenderTrainModel,prepareEnvironment,rewardEnvironment } from './reward3d-assets.js';
 import { createRailwayWorld, createReflectionEnvironment } from './reward3d-world.js';
 
 export const REWARD_DURATION = 7000;
 const clamp = THREE.MathUtils.clamp;
+const buildTrain=config=>createBlenderTrainModel(config)||createTrainModel(config);
+export async function prepareReward3D(config){
+  const ids=[config.id];
+  if(config.sceneId==='night')ids.push(REWARD_3D_TRAINS[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id)+1)%4].id);
+  try{await Promise.all([prepareTrainModels(ids),prepareEnvironment(config.sceneId)]);}catch(error){console.warn('Blender asset unavailable; using local geometry.',error.message);}
+}
 
 // Real geometry moves through a fixed world; the camera glides between three
 // cinematic views. Seconds, metres and wheel rotation share the same clock.
 export function createReward3D(canvas, config, { onFrame, onComplete, onError, reduced = false } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -22,39 +29,42 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   const scene = new THREE.Scene(), warm = depot;
   scene.background = new THREE.Color(warm ? 0xe3c9aa : 0xb8d3de);
   scene.fog = new THREE.Fog(night?0x0b1934:warm?0xe7c49a:0xc7e3f0, night?160:300, night?650:1200);
-  const environment = createReflectionEnvironment(renderer, warm); scene.environment = environment.texture;
-  scene.environmentIntensity = night?.42:.85;
-  renderer.toneMappingExposure=night?1.15:1.05;
-  const hemisphere = new THREE.HemisphereLight(0xe8f4ff, night?0x14213c:0x78836c, night?.5:depot?.55:1.35); scene.add(hemisphere);
-  const sun = new THREE.DirectionalLight(night?0x7aafff:warm?0xffdab0:0xffefd8, night?1.3:depot?3.2:2.7);
-  sun.castShadow = true; sun.shadow.mapSize.set(1024,1024);
-  Object.assign(sun.shadow.camera, { left:-90, right:65, top:30, bottom:-30, near:1, far:200 });
+  const environment = createReflectionEnvironment(renderer,warm,scenario,rewardEnvironment(scenario)); scene.environment = environment.texture;scene.environmentRotation.set(0,night?-1.57:depot?.9:-.4,0);
+  scene.environmentIntensity = night?.3:.65;
+  renderer.toneMappingExposure=night?1.05:.92;
+  const hemisphere = new THREE.HemisphereLight(0xe8f4ff, night?0x14213c:0x78836c, night?.45:depot?.42:.7); scene.add(hemisphere);
+  const sun = new THREE.DirectionalLight(night?0x7aafff:warm?0xffdab0:0xffefd8, night?1.1:depot?4.8:3.9);
+  sun.castShadow = true; sun.shadow.mapSize.set(globalThis.innerWidth>900?2048:1024,globalThis.innerWidth>900?2048:1024);
+  Object.assign(sun.shadow.camera, { left:-50, right:45, top:25, bottom:-25, near:1, far:200 });
   sun.shadow.bias = -.00015; sun.shadow.normalBias = .035;
   scene.add(sun, sun.target);
+  // A broad, shadow-free fill emulates station/city spill on the hero body.
+  // The key still defines the shadows; this only keeps night steel readable.
+  const heroFill=new THREE.DirectionalLight(0xd5e5fa,night?1.3:depot?.4:.3);scene.add(heroFill,heroFill.target);
   const camera = new THREE.PerspectiveCamera(44,1,.1,1300);
   const world = depot?createDepotWorld(scene,{config}):skybridge?createSkybridgeWorld(scene,{config}):createRailwayWorld(scene,{night:true});
-  const train = createTrainModel(config); scene.add(train.group);
+  const train = buildTrain(config); scene.add(train.group);
   if(skybridge)bendTrainModel(train,SKY_RADIUS);
-  const opposite=night?createTrainModel(REWARD_3D_TRAINS[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id)+1)%4]):null;
+  const opposite=night?buildTrain({...REWARD_3D_TRAINS[(REWARD_3D_TRAINS.findIndex(t=>t.id===config.id)+1)%4],sceneId:scenario}):null;
   if(opposite){opposite.group.rotation.y=Math.PI;scene.add(opposite.group);}
   const v=a=>new THREE.Vector3(...a),curve=points=>new THREE.CatmullRomCurve3(points.map(v),false,'catmullrom',.2);
   const cameraPath=curve(depot?[[20,3.2,-8],[17,2.2,-8],[18,2.4,-8],[19,2.8,-10],[21,3.5,-12]]:
-    skybridge?[[20,4,-13],[18,3,-12],[20,5,-17],[28,18,-45],[38,32,-78]]:
-    [[-6,.9,-3],[12,1.9,-5.5],[18,2.5,-8],[17,2.8,-7.5],[16,2.8,-6]]);
+    skybridge?[[20,4,-13],[18,3,-12],[20,5,-17],[22,8,-21],[23,12,-25]]:
+    [[-6,.9,-3],[16,2.8,-8],[18,2.8,-8],[17,2.8,-7.5],[16,2.8,-6]]);
   const targetPath=curve(depot?[[8,2.6,0],[8,2.5,0],[8,2.5,0],[7,2.5,0],[6,2.3,0]]:
-    skybridge?[[7,2.6,0],[8,2.3,0],[6,2.3,0],[-15,0,0],[-12,0,0]]:
+    skybridge?[[7,2.6,0],[8,2.3,0],[6,2.3,0],[6,2,0],[5,1.5,0]]:
     [[-6,.8,0],[8,2.1,0],[8,2.4,0],[8,2.5,0],[9,2.6,0]]);
   const glowTexture=(()=>{
     const c=document.createElement('canvas');c.width=c.height=64;const ctx=c.getContext('2d'),g=ctx.createRadialGradient(32,32,0,32,32,32);
     g.addColorStop(0,'rgba(255,248,218,1)');g.addColorStop(.12,'rgba(255,239,184,.8)');g.addColorStop(.4,'rgba(255,227,168,.12)');g.addColorStop(1,'rgba(255,227,168,0)');ctx.fillStyle=g;ctx.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);
   })();
   const glowMaterial=new THREE.SpriteMaterial({map:glowTexture,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:night?.7:.3});
-  for(const z of [-1,1]){const glow=new THREE.Sprite(glowMaterial);glow.position.set(10.16,config.id==='toyoko'?1.64:3.72,z);glow.scale.setScalar(night?1.1:.6);train.group.add(glow);}
+  for(const z of [-1,1]){const glow=new THREE.Sprite(glowMaterial);glow.position.set(10.16,config.id==='toyoko'?3.67:3.72,z);glow.scale.setScalar(night?.85:.48);train.group.add(glow);}
   let raf = 0, elapsed = 0, started = 0, running = false, disposed = false, completed = false;
   let frame = 0, slowFrames = 0, previous = 0, qualityReduced = false;
   const oldError = event => { event.preventDefault(); pause(); onError?.('context-lost'); };
   canvas.addEventListener('webglcontextlost',oldError);
-  canvas.dataset.renderer='webgl'; canvas.dataset.train=config.id;canvas.dataset.scenario=scenario;
+  canvas.dataset.renderer='webgl'; canvas.dataset.train=config.id;canvas.dataset.scenario=scenario;canvas.dataset.asset=train.group.userData.assetPipeline||'procedural-fallback';canvas.dataset.lighting=rewardEnvironment(scenario)?'hdr-ibl':'studio';
   function resize() {
     if (disposed) return;
     const parent = canvas.parentElement;
@@ -81,6 +91,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     position.applyAxisAngle(axis,pose.yaw).add(train.group.position);target.applyAxisAngle(axis,pose.yaw).add(train.group.position);
     camera.position.copy(position);camera.lookAt(target);camera.fov=night?48:44;camera.updateProjectionMatrix();
     sun.position.set(pose.x+(depot?55:35),55,pose.z-32);sun.target.position.set(pose.x-20,0,pose.z);
+    heroFill.position.set(pose.x+20,14,pose.z-20);heroFill.target.position.set(pose.x-10,2,pose.z);
     if(world.sky)world.sky.position.copy(camera.position);
     world.update(seconds,{headX:pose.x,headS,train});
     renderer.render(scene,camera);

@@ -121,6 +121,7 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
     clearTimeout(loadTimer);loadTimer=setTimeout(()=>{if(!closed&&version===loadVersion){loadVersion++;useFallback();}},12000);
     try{
       const module=await loadScene();if(closed||version!==loadVersion)return;
+      if(module.prepareReward3D)await module.prepareReward3D(current);if(closed||version!==loadVersion)return;
       scene=module.createReward3D(canvas,current,{
         reduced,onFrame:t=>{if(!closed)progress.style.transform=`scaleX(${t})`;},
         onComplete:finish,onError:useFallback,

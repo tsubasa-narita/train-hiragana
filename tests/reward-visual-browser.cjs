@@ -19,6 +19,8 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
       },{id,extras});
       await page.waitForFunction(()=>!!document.querySelector('.reward-canvas')?.rewardScene);
       assert.equal(await page.locator('.reward-dialog').getAttribute('data-renderer'),'webgl');
+      assert.equal(await page.locator('canvas').getAttribute('data-asset'),'blender-glb','actual Blender assets must load, not a procedural fallback');
+      assert.equal(await page.locator('canvas').getAttribute('data-lighting'),'hdr-ibl');
       assert.equal(await page.locator('.reward-review,.reward-ticket').count(),0);
     }
     async function end() {
