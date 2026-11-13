@@ -21,7 +21,10 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     const envelope = .76 + .3 * Math.pow(Math.max(0, Math.sin(Math.PI * u)), .85) - .12 * u;
     const shoulder = Math.cos(angle), elevation = Math.sin(angle);
     const offset = opening.offset + envelope * (32 + 133 * shoulder);
-    const baseY = opening.y + envelope * (-64 + 153 * elevation);
+    // A lower coastal shoulder at the entrance leaves sky behind a frontal
+    // train shot. The ridge rises inland; the bore and submerged foot stay put.
+    const ridgeHeight = 111 + 42 * THREE.MathUtils.smoothstep(u, 0, .32);
+    const baseY = opening.y + envelope * (-64 + ridgeHeight * elevation);
     // Spatially anchored outcrops cross the cap/body boundary. Angular sine
     // folds are deliberately absent: they made every ravine aim at the portal.
     const relief = Math.sin(u * 19 + offset * .034 + baseY * .012) * 4.5

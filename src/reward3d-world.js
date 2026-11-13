@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { createCityWater } from './reward3d-water.js';
 
 function seeded(seed = 4827) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
@@ -38,7 +39,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     for(let i=0;i<9500;i++) { const n=random(); ctx.fillStyle=night?`rgba(${n>.5?'83,99,109':'9,17,25'},.13)`:`rgba(${n>.5?'164,164,105':'29,55,31'},.18)`; ctx.fillRect(random()*256,random()*256,1+random()*3,1+random()*5); }
   });
   grassMap.wrapS=grassMap.wrapT=THREE.RepeatWrapping; grassMap.repeat.set(85,85);
-  const ground=mesh(keep(new THREE.PlaneGeometry(1400,1400)),material({map:grassMap,color:night?0x687787:0xffffff,roughness:night?.38:1,metalness:night?.2:0}),0,-6.6,0);
+  const ground=mesh(keep(new THREE.PlaneGeometry(1400,1400)),material({map:grassMap,color:night?0x687787:0xffffff,roughness:1,metalness:0}),0,-6.6,0);
   ground.rotation.x=-Math.PI/2; ground.receiveShadow=true;
 
   const waterMap=texture(256,256,ctx=>{
@@ -46,10 +47,13 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     for(let i=0;i<1300;i++){ctx.strokeStyle=`rgba(211,236,230,${random()*.14})`;ctx.beginPath();const x=random()*256,y=random()*256;ctx.moveTo(x,y);ctx.lineTo(x+random()*25+5,y+.5);ctx.stroke();}
   });
   waterMap.wrapS=waterMap.wrapT=THREE.RepeatWrapping;waterMap.repeat.set(3,25);
-  const river=mesh(keep(new THREE.PlaneGeometry(72,1200)),material({map:waterMap,color:night?0x102434:0x7eafbd,metalness:.5,roughness:night?.19:.28}),25,-6.4,0);
-  river.rotation.x=-Math.PI/2;
+  if(!night){
+    const river=mesh(keep(new THREE.PlaneGeometry(72,1200)),material({map:waterMap,color:0x7eafbd,metalness:.5,roughness:.28}),25,-6.4,0);
+    river.rotation.x=-Math.PI/2;
+  }
   const bank=material({color:night?0x26333c:0xaaa895,roughness:.85});
-  for(const x of [-13,63]) { const m=mesh(box(),bank,x,-6.15,0,4,1,1200);m.receiveShadow=true; }
+  if(night)mesh(box(),bank,-50,-6.15,38,1100,1,3).receiveShadow=true;
+  else for(const x of [-13,63]) { const m=mesh(box(),bank,x,-6.15,0,4,1,1200);m.receiveShadow=true; }
 
   // Concrete piers, separate deck girders, gravel, sleepers and four railheads.
   const concrete=material({color:night?0x253140:0xb5b2a6,roughness:.85}), edge=material({color:night?0x455260:0xc8c7bb,roughness:night?.4:.7});
@@ -111,7 +115,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
       else cityUv.setY(vertex,cityUv.getY(vertex)*.94);
     }
   }
-  const cityBatches=Array.from({length:4},()=>[]),roofs=[],podiums=[],mullions=[],beacons=[];
+  const cityBatches=Array.from({length:4},()=>[]),roofs=[],podiums=[],mullions=[],beacons=[],reflectionBuildings=[];
   for(let style=0;style<4;style++){
     const windows=[];
     for(let row=0;row<28;row++){
@@ -148,6 +152,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
       // Preserve the river corridor while keeping a continuous city on its banks.
       if(x>-12&&x<66)continue;
       const h=6+Math.pow(random(),1.8)*48,w=6+random()*14,d=8+random()*17;
+      reflectionBuildings.push({x,z,h,w,windows,style});
       cityBatches[style].push({x,y:-6.55+h/2,z,sx:w,sy:h,sz:d,color:['#b3bec6','#bcb5aa','#9dacba','#b1ada9'][i%4]});
       roofs.push({x,y:-6.55+h+.14,z,sx:w+.18,sy:.28,sz:d+.18});
       roofs.push({x:x+w*.16,y:-6.55+h+.8,z:z+d*.1,sx:w*.3,sy:1.1,sz:d*.32});
@@ -163,6 +168,21 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   instances(box(),material({color:night?0x30343c:0xa6a398,roughness:.8}),podiums);
   instances(box(),material({color:0x46525d,metalness:.6,roughness:.42}),mullions);
   if(beacons.length)instances(box(),material({color:0xb1473a,emissive:0xff432b,emissiveIntensity:1.2}),beacons);
+  let cityWater;
+  if(night){
+    cityWater=createCityWater(reflectionBuildings,keep);
+    const water=mesh(keep(new THREE.PlaneGeometry(1100,620)),cityWater,-50,-6.4,-273);
+    water.rotation.x=-Math.PI/2;water.name='illuminated-waterfront';
+    // A continuous promenade ties the city to the water rather than leaving
+    // isolated glowing towers floating over a flat black ground plane.
+    const columns=[],lanterns=[];
+    for(let x=-420;x<480;x+=18){
+      columns.push({x,y:-4.5,z:35.8,sx:.08,sy:3.4,sz:.08});
+      lanterns.push({x,y:-2.79,z:35.8,sx:.3,sy:.18,sz:.3});
+    }
+    instances(box(),metal,columns);
+    instances(box(),material({color:0xffd69e,emissive:0xffc57b,emissiveIntensity:1.6}),lanterns);
+  }
 
   const trunks=[],leaves=[];
   const crown=keep(new THREE.IcosahedronGeometry(1,2)),crownPosition=crown.attributes.position;
@@ -250,7 +270,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
       }
     });
     puddleMap.colorSpace=THREE.NoColorSpace;puddleMap.wrapS=puddleMap.wrapT=THREE.RepeatWrapping;puddleMap.repeat.set(40,1);
-    const wet=material({map:wetMap,color:0x94a7b7,metalness:.42,roughness:.48,roughnessMap:puddleMap,envMapIntensity:1.35});
+    const wet=material({map:wetMap,color:0x94a7b7,metalness:.16,roughness:.62,roughnessMap:puddleMap,envMapIntensity:.48});
     const laneGeometry=keep(new THREE.PlaneGeometry(750,.7));
     for(const z of [-2,2.2,6.4]){
       const lane=mesh(laneGeometry,wet,-45,.042,z);lane.rotation.x=-Math.PI/2;lane.receiveShadow=true;
@@ -284,7 +304,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   }
   return {
     group, sky,
-    update(time,frame){if(disposed)return;if(night&&rainResources[0]){rainResources[0].position.set((frame?.headX||0)-20,-(time*8)%15,0);}waterMap.offset.x=time*.012;skyMaterial.uniforms.time.value=time;},
+    update(time,frame){if(disposed)return;if(night&&rainResources[0]){rainResources[0].position.set((frame?.headX||0)-20,-(time*8)%15,0);}if(cityWater)cityWater.uniforms.time.value=time;waterMap.offset.x=time*.012;skyMaterial.uniforms.time.value=time;},
     dispose(){if(disposed)return;disposed=true;group.traverse(object=>{if(object.isInstancedMesh)object.dispose();});for(const value of resources)value.dispose?.();group.removeFromParent();group.clear();},
   };
 }

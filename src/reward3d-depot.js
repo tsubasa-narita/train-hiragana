@@ -11,19 +11,19 @@ export function createDepotWorld(scene, { config } = {}) {
   const keep = resource => { resources.add(resource); return resource; };
   const box = keep(new THREE.BoxGeometry(1, 1, 1));
   const sphere = keep(new THREE.IcosahedronGeometry(1, 2));
-  // A single irregular crown is reused at several scales and rotations.
+  // A gently irregular crown is reused at several scales and rotations.
   const crown=keep(sphere.clone()),crownPositions=crown.attributes.position;
   for(let i=0;i<crownPositions.count;i++){
     const x=crownPositions.getX(i),y=crownPositions.getY(i),z=crownPositions.getZ(i);
-    const r=1+.13*Math.sin(x*12+y*9)*Math.sin(z*9-x*4)+.06*Math.sin(y*19+z*11);
+    const r=1+.055*Math.sin(x*4.7+y*3.1+z*3.8)+.032*Math.sin(z*7.1-x*3.4+y*5.2);
     crownPositions.setXYZ(i,x*r,y*r,z*r);
   }
   const leafColors=[],leafNormal=new THREE.Vector3();
   for(let i=0;i<crownPositions.count;i++){
     const x=crownPositions.getX(i),y=crownPositions.getY(i),z=crownPositions.getZ(i);
     leafNormal.set(x,y,z).normalize();crown.attributes.normal.setXYZ(i,...leafNormal);
-    const shade=.68+.25*(y+1)/2+.07*Math.sin(x*17+z*13);
-    leafColors.push(shade*.95,shade,shade*.88);
+    const shade=.84+.12*(y+1)/2+.025*Math.sin(x*5+z*4);
+    leafColors.push(shade*.98,shade,shade*.91);
   }
   crown.setAttribute('color',new THREE.Float32BufferAttribute(leafColors,3));
   const steel = options => keep(new THREE.MeshStandardMaterial(options));
@@ -72,7 +72,7 @@ export function createDepotWorld(scene, { config } = {}) {
     for(let y=0;y<256;y++)for(let x=0;x<256;x++){
       const u=x/256*tau,v=y/256*tau;
       const n=Math.sin(u+Math.sin(v))*5+Math.sin(u*3-v*2)*3+Math.sin(u*7+v*5)*2+(random()-.5)*13;
-      image.data.set([68+n,88+n,48+n*.7,255],(y*256+x)*4);
+      image.data.set([74+n,89+n,50+n*.7,255],(y*256+x)*4);
     }
     ctx.putImageData(image,0,0);
   },110,110);
@@ -356,23 +356,46 @@ export function createDepotWorld(scene, { config } = {}) {
 
   // The outside is a sunlit railway meadow, not another elevated viaduct.
   const trunks=[],foliage=[],grasses=[],flowers=[],fence=[],shrubs=[];
+  const foliagePalette=[0x405c3c,0x4b6541,0x5b7048,0x68764b,0x536a46,0x456348,0x77784d];
+  let vegetationSeed=seed^0x9e3779b9;
+  const vegetationRandom=()=>{vegetationSeed=(1664525*vegetationSeed+1013904223)>>>0;return vegetationSeed/4294967296;};
   const bark=steel({color:0x64523d,roughness:1}),trunkGeometry=keep(new THREE.CylinderGeometry(.55,1,1,7));
   for(let i=0;i<240;i++){
-    const x=-30+random()*620;
-    const z=(i%2?1:-1)*(16+Math.pow(random(),1.3)*145);
-    if(x<3&&Math.abs(z)<24)continue;
-    const h=3.8+random()*7.5,s=.65+random()*1.45,lean=(random()-.5)*.09;
+    const x=-30+vegetationRandom()*620;
+    const z=(i%2?1:-1)*(27+Math.pow(vegetationRandom(),1.25)*125);
+    if(x<3&&Math.abs(z)<30)continue;
+    const h=4.2+vegetationRandom()*5.8,s=.7+vegetationRandom()*1.1,lean=(vegetationRandom()-.5)*.12;
     trunks.push({x,y:h*.34-.12,z,sx:.24*s,sy:h*.68,sz:.24*s,rz:lean});
-    for(let j=0;j<6;j++){
-      const angle=j*2.4+i*.63,r=j===0?0:s*(.65+random()*.65);
-      const branchY=h*(.6+random()*.2);
-      if(j>0&&j<4)trunks.push({x:x+Math.cos(angle)*s*.38,y:branchY,z:z+Math.sin(angle)*s*.38,
-        sx:.095*s,sy:1.7*s,sz:.095*s,rz:-Math.cos(angle)*.75,rx:Math.sin(angle)*.75});
-      foliage.push({x:x+Math.cos(angle)*r,y:h-(j===0?0:random()*h*.3),z:z+Math.sin(angle)*r,
-        sx:s*(1.05+random()*.6),sy:s*(1.35+random()*.7),sz:s*(.95+random()*.65),ry:angle,
-        color:[0x385a38,0x55733e,0x657d43,0x7d894e,0x486742,0x627742][(i+j)%6]});
+    const crownY=h*.73+(vegetationRandom()-.5)*s*.16,rotation=vegetationRandom()*Math.PI*2;
+    const baseColor=Math.floor(vegetationRandom()*foliagePalette.length);
+    foliage.push({x,y:crownY,z,sx:s*(1.02+vegetationRandom()*.14),sy:s*(1.02+vegetationRandom()*.16),sz:s*(.98+vegetationRandom()*.14),ry:rotation,
+      color:foliagePalette[baseColor]});
+    for(let j=0;j<4;j++){
+      const angle=rotation+j*Math.PI/2+(vegetationRandom()-.5)*.16;
+      const r=s*(.48+vegetationRandom()*.18);
+      const colorOffset=Math.floor(vegetationRandom()*3)-1;
+      const colorIndex=(baseColor+colorOffset+foliagePalette.length)%foliagePalette.length;
+      trunks.push({x:x+Math.cos(angle)*s*.3,y:h*.61,z:z+Math.sin(angle)*s*.3,
+        sx:.085*s,sy:1.45*s,sz:.085*s,rz:-Math.cos(angle)*.72,rx:Math.sin(angle)*.72});
+      foliage.push({x:x+Math.cos(angle)*r,y:crownY+s*(-.23+vegetationRandom()*.22),z:z+Math.sin(angle)*r,
+        sx:s*(.78+vegetationRandom()*.16),sy:s*(.8+vegetationRandom()*.17),sz:s*(.78+vegetationRandom()*.17),ry:angle,
+        color:foliagePalette[colorIndex]});
     }
-    if(i%2===0)shrubs.push({x:x+random()*6-3,y:.5+random()*.3,z:z+random()*6-3,sx:1.2+random()*2,sy:.7+random()*.6,sz:1+random()*2,color:[0x526841,0x6b7947,0x3d603b][i%3]});
+    if(i%3===0){
+      const angle=rotation+vegetationRandom()*Math.PI*2;
+      foliage.push({x:x+Math.cos(angle)*s*.12,y:crownY+s*.5,z:z+Math.sin(angle)*s*.12,
+        sx:s*(.58+vegetationRandom()*.1),sy:s*(.62+vegetationRandom()*.12),sz:s*(.58+vegetationRandom()*.1),ry:angle,
+        color:foliagePalette[(baseColor+1)%foliagePalette.length]});
+    }
+    if(i%2===0){
+      const shrubX=x+vegetationRandom()*6-3,shrubZ=z+vegetationRandom()*6-3,shrubSize=.8+vegetationRandom()*.75,shrubAngle=vegetationRandom()*Math.PI*2;
+      for(let j=0;j<3;j++){
+        const angle=shrubAngle+j*Math.PI*2/3;
+        shrubs.push({x:shrubX+Math.cos(angle)*shrubSize*.4,y:.38+vegetationRandom()*.15,z:shrubZ+Math.sin(angle)*shrubSize*.4,
+          sx:shrubSize*(.72+vegetationRandom()*.16),sy:shrubSize*(.56+vegetationRandom()*.15),sz:shrubSize*(.72+vegetationRandom()*.16),ry:angle,
+          color:foliagePalette[(baseColor+j+2)%foliagePalette.length]});
+      }
+    }
   }
   for(let i=0;i<550;i++){
     const x=2+random()*360,z=(i%2?1:-1)*(12.8+random()*10),h=.14+random()*.35;
@@ -409,7 +432,7 @@ export function createDepotWorld(scene, { config } = {}) {
       positions.setY(i,top?33+layer*12+Math.sin(x*.01+layer)*16+Math.sin(x*.026+layer)*8+Math.sin(x*.061)*2:-.2);
     }
     geometry.computeVertexNormals();
-    mesh(geometry,steel({color:[0x6e927e,0x89a497,0xa6b6aa][layer],roughness:1,side:THREE.DoubleSide}),0,0,340+layer*90);
+    mesh(geometry,steel({color:[0x71806a,0x909884,0xb0ae9d][layer],roughness:1,side:THREE.DoubleSide}),0,0,340+layer*90);
   }
   const skyMaterial=keep(new THREE.ShaderMaterial({
     side:THREE.BackSide,depthWrite:false,

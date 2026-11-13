@@ -99,7 +99,7 @@ const assert = require('node:assert/strict');
     await page.locator('.train-picture img').evaluate(img=>img.decode());
     const seenImage = await page.locator('.train-picture img').getAttribute('src');
     await context.setOffline(true);
-    for(const path of ['src/reward-preload.js','src/reward-timeline.js','src/reward-audio.js','src/reward3d-film.js','src/reward3d-celebration.js','src/reward3d-shinkansen.js','src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js','src/reward3d-assets.js','src/reward3d-terrain.js',...REWARD_3D_TRAINS.map(train=>`assets/reward3d/${train.id}.glb`),'assets/reward3d/environment/small_hangar_01.hdr','vendor/three/addons/libs/meshopt_decoder.module.js']){
+    for(const path of ['src/reward-preload.js','src/reward-timeline.js','src/reward-audio.js','src/reward3d-film.js','src/reward3d-water.js','src/reward3d-celebration.js','src/reward3d-shinkansen.js','src/reward3d-depot.js','src/reward3d-skybridge.js','src/reward3d-scenarios.js','src/reward3d-assets.js','src/reward3d-terrain.js',...REWARD_3D_TRAINS.map(train=>`assets/reward3d/${train.id}.glb`),'assets/reward3d/environment/small_hangar_01.hdr','vendor/three/addons/libs/meshopt_decoder.module.js']){
       assert.equal(await page.evaluate(async path=>(await fetch(path)).status,path),200,'all new reward modules are precached for installed Android use');
     }
     await page.reload(); await page.locator('.game').waitFor();

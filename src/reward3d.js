@@ -108,6 +108,15 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
       target.x=THREE.MathUtils.lerp(target.x,front*.5+.3,portrait);
       position.z*=1+.22*portrait*moment.reveal;
       if(depot){const opening=1-ramp(2.8,4.2,seconds);position.x+=4*portrait*opening;target.x+=1.2*portrait*opening;}
+      if(skybridge){
+        // A long nose shown side-on forces the tall phone camera far away.
+        // Keep the broad rainbow reveal, then foreshorten the closing hero
+        // shot so headlights and windscreen are legible on a tall display.
+        const close=ramp(6.9,9.2,seconds)*portrait;
+        position.x=THREE.MathUtils.lerp(position.x,front+17-2*moment.finale,close);
+        position.y=THREE.MathUtils.lerp(position.y,6.6-2.4*moment.finale,close);
+        position.z=THREE.MathUtils.lerp(position.z,-11+2.5*moment.finale,close);
+      }
     }
     if(depot)position.z=THREE.MathUtils.lerp(Math.max(position.z,-5),position.z,ramp(2.8,4.2,seconds));
     // The initial tunnel sightline passes through the opening, not the rock.
@@ -146,7 +155,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     elapsed=clamp(now-started,0,REWARD_DURATION);draw(elapsed);
     // Keep the same animation duration on slower phones; lower pixel cost only.
     if(previous && now-previous>55 && ++slowFrames>22 && !qualityReduced) {
-      qualityReduced=true;renderer.setPixelRatio(1);renderer.shadowMap.enabled=false;resize();
+      qualityReduced=true;film.reduceQuality();renderer.setPixelRatio(1);renderer.shadowMap.enabled=false;resize();
     }
     previous=now;
     if(elapsed>=REWARD_DURATION){running=false;completed=true;onComplete?.();return;}

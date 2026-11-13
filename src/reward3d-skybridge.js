@@ -239,13 +239,13 @@ export function createSkybridgeWorld(scene, { config } = {}) {
 
   // Actual rounded land volumes, including the horizon: no upright silhouette
   // panels with exposed straight edges when the camera climbs or turns.
-  const islandGeometry = keep(new THREE.SphereGeometry(1, 56, 24));
+  const islandGeometry = keep(new THREE.SphereGeometry(1, 80, 32));
   const ip = islandGeometry.attributes.position, islandColors = [], islandColor = new THREE.Color();
   for (let i = 0; i < ip.count; i++) {
     const x = ip.getX(i), y = ip.getY(i), z = ip.getZ(i);
-    const ridge = .67 + .2 * Math.sin(x * 13 + z * 3) + .12 * Math.sin(x * 29 - z * 8) + .06 * Math.cos(x * 47 + z * 19);
+    const ridge = .76 + .13 * Math.sin(x * 8 + z * 5) + .07 * Math.sin(x * 17 - z * 7) + .035 * Math.cos(x * 29 + z * 12);
     ip.setXYZ(i, x, y > 0 ? y * ridge : y * .3, z * (.9 + .1 * Math.sin(x * 11)));
-    islandColor.setRGB(1, 1, 1).multiplyScalar(.72 + Math.max(0, y) * .28);
+    islandColor.setRGB(1, 1, 1).multiplyScalar(.64 + Math.max(0, y) * .36);
     islandColors.push(islandColor.r, islandColor.g, islandColor.b);
   }
   islandGeometry.setAttribute('color', new THREE.Float32BufferAttribute(islandColors, 3)); islandGeometry.computeVertexNormals();
@@ -253,9 +253,11 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   for (let layer = 0; layer < 4; layer++) {
     distantRanges.push({ x: -180 + layer * 65, y: -126, z: 580 + layer * 145,
       sx: 1080 + layer * 100, sy: 112 + layer * 25, sz: 125,
-      ry: layer % 2 ? .07 : -.045, color: [0x487f96, 0x6697ad, 0x8fb5c7, 0xb1cedb][layer] });
+      ry: layer % 2 ? .07 : -.045, color: [0x748e88, 0x83999a, 0x98adb0, 0xb0c3c9][layer] });
   }
-  instances(islandGeometry, keep(new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, fog: false })), distantRanges, 'layered-rounded-coastal-ranges');
+  // Sunlit shoulders, shaded valleys and distance haze give the coast volume;
+  // the old unlit blue silhouettes looked like stacked cardboard cutouts.
+  instances(islandGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xb8c6c5, vertexColors: true, roughness: 1, envMapIntensity:.25 })), distantRanges, 'layered-rounded-coastal-ranges');
   const islands = [], shores = [], town = [], roofs = [], quays = [], boats = [], wakes = [];
   for (let i = 0; i < 13; i++) {
     const x = -620 + i * 105 + random() * 35, z = 350 + random() * 150;
