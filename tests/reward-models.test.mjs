@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
 import { createTrainModel, REWARD_3D_TRAINS } from '../src/reward3d-trains.js';
 
-const formations = { yokosuka: 11, 'shonan-shinjuku': 10, saikyo: 10, toyoko: 8, yamanote: 11, komachi: 7, hayabusa: 10 };
+const formations = { yokosuka: 11, 'shonan-shinjuku': 10, saikyo: 10, toyoko: 8, yamanote: 11, komachi: 7, hayabusa: 10, hinotori: 6, laview: 8, 'saphir-odoriko': 8 };
 const closeTo = (actual, expected, tolerance = 1e-5) =>
   assert.ok(Math.abs(actual - expected) < tolerance, `${actual} should be near ${expected}`);
 
-test('3D catalog has seven distinct commuter and Shinkansen formations', () => {
+test('3D catalog has ten distinct commuter, express and Shinkansen formations', () => {
   assert.deepEqual(REWARD_3D_TRAINS.map(train => train.id).sort(), Object.keys(formations).sort());
-  assert.equal(new Set(REWARD_3D_TRAINS.map(train => train.model)).size, 7);
+  assert.equal(new Set(REWARD_3D_TRAINS.map(train => train.model)).size, 10);
   for (const train of REWARD_3D_TRAINS) {
     assert.equal(train.cars, formations[train.id], train.id);
     assert.ok(train.stripes.length > 0);

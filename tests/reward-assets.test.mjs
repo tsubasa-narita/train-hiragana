@@ -14,9 +14,9 @@ for(const name of ['small_hangar_01','shanghai_bund','railway_bridge_02']){
   });
 }
 
-test('Blender asset catalog covers all seven reward trains',()=>{
-  assert.equal(REWARD_3D_TRAINS.length,7);
-  assert.equal(new Set(REWARD_3D_TRAINS.map(train=>train.id)).size,7);
+test('Blender asset catalog covers all ten reward trains',()=>{
+  assert.equal(REWARD_3D_TRAINS.length,10);
+  assert.equal(new Set(REWARD_3D_TRAINS.map(train=>train.id)).size,10);
 });
 
 for(const train of REWARD_3D_TRAINS){

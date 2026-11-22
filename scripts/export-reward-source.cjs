@@ -8,7 +8,8 @@ const fs=require('node:fs');
     const page=await browser.newPage({serviceWorkers:'block'});
     page.on('console',msg=>{if(msg.type()==='error')console.error(msg.text());});
     await page.goto(process.env.TEST_URL||'http://127.0.0.1:4180/');
-    for(const id of (process.argv.length>2?process.argv.slice(2):['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa'])){
+    const {REWARD_3D_TRAINS}=await import('../src/reward3d-catalog.js');
+    for(const id of (process.argv.length>2?process.argv.slice(2):REWARD_3D_TRAINS.map(train=>train.id))){
       const base64=await page.evaluate(async id=>{
         const THREE=await import('./vendor/three/three.module.js');
         const {GLTFExporter}=await import('./vendor/three/addons/exporters/GLTFExporter.js');

@@ -7,14 +7,16 @@ import {REWARD_3D_TRAINS} from './reward3d-catalog.js';
 // Only immutable CPU templates are cached. Every running scene owns its cloned
 // geometry/material/texture objects and releases its complete GPU allocation.
 const libraries=new Map(),pending=new Map();
-const hdrNames={depot:'small_hangar_01',night:'shanghai_bund',skybridge:'railway_bridge_02'},hdrs=new Map(),hdrJobs=new Map();
-export function rewardEnvironment(scenario){return hdrs.get(scenario);}
+const hdrNames={depot:'small_hangar_01',night:'shanghai_bund',skybridge:'railway_bridge_02',sakura:'railway_bridge_02',snow:'shanghai_bund'},hdrs=new Map(),hdrJobs=new Map();
+const environmentName=scenario=>hdrNames[scenario]||hdrNames.depot;
+export function rewardEnvironment(scenario){return hdrs.get(environmentName(scenario));}
 export async function prepareEnvironment(scenario){
-  if(hdrs.has(scenario))return;
-  if(!hdrJobs.has(scenario))hdrJobs.set(scenario,new HDRLoader().loadAsync(new URL(`../assets/reward3d/environment/${hdrNames[scenario]||hdrNames.depot}.hdr`,import.meta.url).href).then(texture=>{
-    texture.mapping=THREE.EquirectangularReflectionMapping;hdrs.set(scenario,texture);
-  }).catch(error=>{hdrJobs.delete(scenario);throw error;}));
-  return hdrJobs.get(scenario);
+  const name=environmentName(scenario);
+  if(hdrs.has(name))return;
+  if(!hdrJobs.has(name))hdrJobs.set(name,new HDRLoader().loadAsync(new URL(`../assets/reward3d/environment/${name}.hdr`,import.meta.url).href).then(texture=>{
+    texture.mapping=THREE.EquirectangularReflectionMapping;hdrs.set(name,texture);
+  }).catch(error=>{hdrJobs.delete(name);throw error;}));
+  return hdrJobs.get(name);
 }
 // Decode quantized attributes and bake prototype transforms just once, during
 // loading. Scene clones then need only copy ready-to-use CPU geometry.

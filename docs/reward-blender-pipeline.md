@@ -1,6 +1,6 @@
 # Blenderで仕上げるごほうび車両
 
-Blender 4.5.5 LTSで実際に加工した7編成のGLBをWebGLへ読み込む。JavaScript版の形状生成器は再制作の元データと、取得失敗時の代替として残す。
+Blender 4.5.5 LTSで加工した10編成のGLBをWebGLへ読み込む。JavaScript版の形状生成器は再制作の元データと、取得失敗時の代替に使う。
 
 ## 車体の見直し
 
@@ -44,15 +44,23 @@ npm exec --yes --package=@gltf-transform/cli@4.5.1 -- gltf-transform meshopt inp
 
 Three.js r180と同じ版のGLTFLoader・MeshoptDecoder・HDRLoaderを同梱し、外部CDNへ依存しない。glTFの量子化属性はFloat32へ展開してからノード変換を焼き込む。プロトタイプを再利用して7〜11両をInstancedMeshで構成し、車軸だけ個別に回す。パンタグラフと二階建て車両の位置も編成ごとに維持する。
 
-CPU上の原型だけを最大7編成キャッシュする。再生するシーンはジオメトリ・材質・テクスチャを所有し、終了時にGPUリソースを解放する。HDRIもCPU原型を保持し、PMREM生成に使う一時テクスチャはその場で解放する。
+CPU上の原型だけを最大10編成キャッシュする。再生するシーンはジオメトリ・材質・テクスチャを所有し、終了時にGPUリソースを解放する。HDRIもCPU原型を保持し、PMREM生成に使う一時テクスチャはその場で解放する。桜と雪山は既存のHDRIを共有する。
 
 車庫・夜景・天空の橋は、[Poly HavenのCC0 HDRI](../assets/reward3d/environment/LICENSE.md)を舞台ごとに使い分ける。実写の光を反射に使い、背景の地形・橋・雲・市街地は立体で描く。空撮の山は閉じた立体で、平らな四角い断面や浮いた面をなくした。
 
-確認：`npm test`、`npm run build`、`tests/reward-visual-browser.cjs`、`tests/android-browser.cjs`。映像テストは21通りすべてでBlenderモデルとHDRIが実際に読み込まれたことを確認する。
+確認：`npm test`、`npm run build`、`tests/reward-visual-browser.cjs`、`tests/android-browser.cjs`。映像テストは50通りすべてでBlenderモデルとHDRIが実際に読み込まれたことを確認する。
 
 技術資料：[Blender glTF](https://docs.blender.org/manual/en/latest/addons/import_export/scene_gltf2.html)、[Three.js GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html)、[glTF Transform](https://gltf-transform.dev/cli)。
 
-### 追加車両と構図の調整
+### 特急3編成の追加
+
+ひのとりは6両、ラビューとサフィール踊り子は8両。公式資料を参考に、先頭の曲面を編成ごとに作り分けた。ひのとりは赤いメタリック塗装・金帯・高い前面窓、ラビューは銀色の球面状の先頭と大型の側窓、サフィール踊り子は青い車体・前面の銀白色・天窓を表現した。中間車の窓配置や車内は軽量なゲーム用に簡略化している。
+
+- [近鉄 80000系 ひのとり](https://www.kintetsu.jp/kouhou/Train/hinotori.html)
+- [西武鉄道 001系ラビュー 実車取材と模型制作](https://www.seiburailway.jp/life/srwgoods/001_5000_HOdisplaymodel/making/)
+- [JR東日本 サフィール踊り子の車両設備と編成](https://www.jreast.co.jp/saphir/cars/)
+
+### 新幹線・山手線の追加と構図の調整
 
 山手線は11両、こまちは7両、はやぶさは10両。新幹線では車体長・車両間隔・先頭部の張り出し・1,435mm軌間を個別に扱い、夜景ですれ違う列車も同じ軌間から選ぶ。E5/E6は別々の滑らかな断面から造形し、丸い鼻先、閉じた先端、曲面に沿う運転台窓とゴム枠、前照灯、台車カバー、遮音板を備える。新幹線専用のカメラ経路で先頭形状を見せる。
 

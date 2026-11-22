@@ -77,7 +77,8 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
       assert.equal(await page.locator('dialog').count(),0);
     }
     const mobileCases=[...[[390,844],[320,667],[667,375],[320,375]].map(([w,h])=>['shonan-shinjuku',w,h,w===320?'skybridge':w===667?'night':'depot']),
-      ...['komachi','hayabusa'].flatMap(id=>REWARD_SCENARIOS.map(({id:sceneId})=>[id,390,844,sceneId]))];
+      ...['komachi','hayabusa'].flatMap(id=>REWARD_SCENARIOS.map(({id:sceneId})=>[id,390,844,sceneId])),
+      ...['hinotori','laview','saphir-odoriko'].flatMap(id=>['sakura','snow'].map(sceneId=>[id,390,844,sceneId]))];
     for(const [id,width,height,sceneId] of mobileCases) {
       await page.setViewportSize({width,height});
       await open(id,{sceneId});

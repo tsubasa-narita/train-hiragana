@@ -8,8 +8,8 @@ import * as THREE from '../vendor/three/three.module.js';
 
 const allPairs=REWARD_SCENARIOS.flatMap(scene=>REWARD_3D_TRAINS.map(train=>`${scene.id}:${train.id}`));
 
-test('all twenty-one combinations appear once per bag and survive a reload',async()=>{
-  assert.equal(allPairs.length,21);
+test('all fifty combinations appear once per bag and survive a reload',async()=>{
+  assert.equal(allPairs.length,50);
   const original=globalThis.localStorage;let stored=null;
   globalThis.localStorage={getItem:()=>stored,setItem:(_,v)=>{stored=v;}};
   try{
@@ -57,7 +57,7 @@ test('a new trip consumes the previously restored pair before refilling the bag'
   }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
 });
 
-test('a legacy four-train bag migrates to a complete seven-train cycle',async()=>{
+test('a legacy four-train bag migrates to a complete ten-train cycle',async()=>{
   const original=globalThis.localStorage;
   const legacyIds=['yokosuka','shonan-shinjuku','saikyo','toyoko'];
   const legacyBag=REWARD_SCENARIOS.flatMap(s=>legacyIds.map(id=>`${s.id}:${id}`));
@@ -72,6 +72,27 @@ test('a legacy four-train bag migrates to a complete seven-train cycle',async()=
       assert.ok(!seen.has(pair),'migration must include new families before repeating any pair');seen.add(pair);
     }
     assert.deepEqual([...seen].sort(),[...allPairs].sort());
+  }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
+});
+
+test('expansion adds every new pairing to an in-progress bag without replaying consumed movies',async()=>{
+  const original=globalThis.localStorage;
+  const remaining='night:yokosuka';
+  const storage=new Map([['train-reward-cinema-bag-v2',JSON.stringify({bag:[remaining],last:'depot:hayabusa'})]]);
+  globalThis.localStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)};
+  try{
+    const {previewRewardExperience,chooseRewardExperience}=await import('../src/reward3d-scenarios.js?seasonal-expansion');
+    const next=previewRewardExperience(undefined,()=>.6);
+    assert.equal(storage.size,1,'preview leaves existing storage untouched');
+    const claimed=chooseRewardExperience(undefined,()=>0,next);
+    assert.deepEqual(claimed,next);
+    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v3'));
+    const universe=[saved.last,...saved.bag];
+    assert.equal(universe.length,30);
+    assert.equal(new Set(universe).size,30);
+    assert.ok(universe.includes(remaining));
+    assert.ok(!universe.includes('depot:hayabusa'));
+    assert.ok(universe.includes('snow:laview')&&universe.includes('sakura:yamanote')&&universe.includes('depot:hinotori'));
   }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
 });
 for(const config of REWARD_3D_TRAINS)test(`${config.id}: curved consist retains its configured spacing and independently spinning wheels`,()=>{
