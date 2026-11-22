@@ -6,7 +6,7 @@ const assert=require('node:assert/strict');
   try{
     const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
     await context.addInitScript(()=>{
-      localStorage.setItem('train-hiragana-v1',JSON.stringify({sound:false,rows:['あ']}));
+      localStorage.setItem('train-hiragana-v1',JSON.stringify({sound:false,rows:['あ'],findCompounds:'off'}));
       localStorage.setItem('train-reward-cinema-bag-v3',JSON.stringify({bag:['sakura:laview'],last:null}));
       window.rewardContexts=0;
       const getContext=HTMLCanvasElement.prototype.getContext;

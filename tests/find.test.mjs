@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TRAINS, QUIZ_CARDS, ROWS, readProgress, makeChoices } from '../src/data.js';
+import { TRAINS, QUIZ_CARDS, ROWS, FIND_COMPOUNDS, readProgress, makeChoices, makeJourney, kanaRow, quizTarget } from '../src/data.js';
+import { ANNOUNCEMENT_FILES } from '../src/announcement-manifest.js';
+import { FIND_COMPOUND_PROMPT } from '../src/voice-lines.js';
+import { existsSync } from 'node:fs';
 import { trainFacts, trainFactText, trainFactSources, pickTrainFact } from '../src/train-facts.js';
 
 test('choice count is independent of the model, survives storage and migrates old preferences', () => {
@@ -17,6 +20,36 @@ test('choice count is independent of the model, survives storage and migrates ol
     assert.equal(choices.length,count);
     assert.equal(new Set(choices).size,count);
     assert.equal(choices.filter(c=>c===letter).length,1);
+  }
+});
+
+test('small kana frequency, row filtering and recorded compound choices', () => {
+  const read = value => readProgress({getItem:()=>JSON.stringify(value)});
+  assert.equal(read({}).findCompounds, 'normal');
+  assert.equal(read({findCompounds:'invalid'}).findCompounds, 'normal');
+  assert.equal(read({findCompounds:'off'}).findCompounds, 'off');
+  assert.equal(read({findCompounds:'more'}).findCompounds, 'more');
+  assert.ok(FIND_COMPOUNDS.includes('じゅ') && FIND_COMPOUNDS.includes('きょ'));
+  for (const sound of [...FIND_COMPOUNDS, FIND_COMPOUND_PROMPT]) {
+    assert.ok(existsSync(`assets/voice/${ANNOUNCEMENT_FILES[sound]}`), sound);
+  }
+  for (const row of [...ROWS.map(row => [row.id]), []]) {
+    const eligible = FIND_COMPOUNDS.filter(sound => !row.length || row.includes(kanaRow(sound[0])));
+    for (const count of [0,1,3]) {
+      const trip = makeJourney(undefined,row,'find',0,{},{},[],count);
+      const compounds = trip.filter(card=>card.compound);
+      assert.equal(trip.length,5);
+      assert.equal(compounds.length,Math.min(eligible.length,count));
+      assert.equal(new Set(compounds.map(card=>card.compound)).size,compounds.length);
+      for (const card of compounds) {
+        const index = card.targets[0];
+        assert.equal(card.name.slice(index,index+2),quizTarget(card,index));
+        assert.ok(eligible.includes(card.compound));
+        const choices = makeChoices(card.compound,3,row);
+        assert.equal(new Set(choices).size,3);
+        assert.ok(choices.includes(card.compound) && choices.every(option=>FIND_COMPOUNDS.includes(option)));
+      }
+    }
   }
 });
 

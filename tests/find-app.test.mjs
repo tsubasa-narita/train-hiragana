@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { trainFactText } from '../src/train-facts.js';
 import { ANNOUNCEMENT_FILES } from '../src/announcement-manifest.js';
 import { VOICE_FILES } from '../src/voice-manifest.js';
+import { quizTarget } from '../src/data.js';
 
 // Exercise the app's real event handlers with controlled audio/timers. A pending
 // recording must own the next-question timer until it ends or the user skips it.
@@ -30,7 +31,7 @@ test('find settings, narration timing, manual skip and history work together', a
   click('settings'); change('find-choices','3'); click('start-find');
   assert.equal(history.state.choices.length,3);
   assert.equal(history.state.station,0);
-  const card = history.state.journey[0], target = card.name[history.state.letterIndex];
+  const card = history.state.journey[0], target = quizTarget(card,history.state.letterIndex);
   click('answer',{letter:target});
   assert.ok(root.innerHTML.includes(history.state.currentFact));
   const clip = players.at(-1);
@@ -44,7 +45,7 @@ test('find settings, narration timing, manual skip and history work together', a
   clip.onended();await flush();t.mock.timers.tick(1);await flush();
   assert.equal(history.state.station,1);
   const second = history.state.journey[1];
-  click('answer',{letter:second.name[history.state.letterIndex]});
+  click('answer',{letter:quizTarget(second,history.state.letterIndex)});
   const skipped = players.at(-1);
   click('next'); await flush();
   assert.equal(skipped.paused,true);
@@ -59,7 +60,7 @@ test('find settings, narration timing, manual skip and history work together', a
   assert.equal(progress.findChoices,2);
   assert.equal(progress.level,'match');
   const third = history.state.journey[2];
-  click('answer',{letter:third.name[history.state.letterIndex]});
+  click('answer',{letter:quizTarget(third,history.state.letterIndex)});
   click('sound');click('sound');await flush();
   const resumed = players.at(-1);
   assert.ok(resumed.src.endsWith(factFile(history.state.currentFact)));

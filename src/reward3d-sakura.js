@@ -299,18 +299,19 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
       void main() {
         vec2 p = waterPosition.xz;
         float shortWave = p.y * 6.7 - p.x * .74 - time * 3.2;
-        float wave = sin(p.y * 3.1 + p.x * .44 - time * 2.1 + sin(p.x * .23))
-          + .52 * sin(shortWave) * (1.0 - smoothstep(.8, 2.7, fwidth(shortWave)));
+        float bend = sin(p.x * .19 + p.y * .12) + .58 * sin(p.y * .53 - p.x * .08);
+        float wave = .76 * sin(p.y * 2.6 + p.x * .44 - time * 2.1 + 2.1 * bend)
+          + .46 * sin(shortWave + bend) * (1.0 - smoothstep(.8, 2.7, fwidth(shortWave)));
         float band = sin(p.x * .22 + p.y * .105 + sin(p.y * .07) * 2.4);
         float edge = smoothstep(.17, .40, abs(across - .5));
         vec3 normal = normalize(vec3(.037 * cos(p.x + p.y), 1.0, wave * .047));
         vec3 towardEye = normalize(cameraPosition - waterPosition);
         float fresnel = pow(1.0 - max(dot(normal, towardEye), 0.0), 3.6);
         vec3 reflected = mix(skyTint, blossomTint, edge * (.38 + .31 * band));
-        vec3 color = mix(deep, shoal, edge * .72 + wave * .055 + .11 * band);
+        vec3 color = mix(deep, shoal, edge * .72 + wave * .029 + .09 * band);
         color = mix(color, reflected, fresnel * .55);
-        float crest = smoothstep(.91, 1.34, wave) * smoothstep(.06, .83, band);
-        color += glint * crest * (.045 + .18 * fresnel);
+        float crest = smoothstep(.73, 1.17, wave) * smoothstep(.22, .87, band);
+        color += glint * crest * (.032 + .10 * fresnel);
         gl_FragColor = vec4(color, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

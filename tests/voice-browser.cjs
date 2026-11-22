@@ -28,9 +28,11 @@ const assert = require('node:assert/strict');
     assert.deepEqual(await page.evaluate(() => fallbackSpeech), []);
     const decoded = await page.evaluate(async () => {
       const { VOICE_FILES } = await import('./src/voice-manifest.js');
+      const { ANNOUNCEMENT_FILES } = await import('./src/announcement-manifest.js');
       const context = new AudioContext();
       let count = 0;
-      for (const file of Object.values(VOICE_FILES)) {
+      for (const [text, fallbackFile] of Object.entries(VOICE_FILES)) {
+        const file = ANNOUNCEMENT_FILES[text] || fallbackFile;
         const response = await fetch(`./assets/voice/${file}`);
         if (!response.ok) throw new Error(file);
         const buffer = await context.decodeAudioData(await response.arrayBuffer());

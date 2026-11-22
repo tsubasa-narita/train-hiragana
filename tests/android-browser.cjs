@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
     const page = await context.newPage();
     const base = new URL(process.env.TEST_URL || 'http://127.0.0.1:4180/').href;
     await page.addInitScript(() => {
-      if (!localStorage.getItem('train-hiragana-v1')) localStorage.setItem('train-hiragana-v1',JSON.stringify({sound:false,rows:['あ']}));
+      if (!localStorage.getItem('train-hiragana-v1')) localStorage.setItem('train-hiragana-v1',JSON.stringify({sound:false,rows:['あ'],findCompounds:'off'}));
     });
     await page.goto(base);
     await page.evaluate(() => caches.open('go-home-puzzle-test').then(c=>c.put('./other-test',new Response('keep'))));

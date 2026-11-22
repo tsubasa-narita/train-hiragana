@@ -97,6 +97,29 @@ export function targetIndices(train, rows = []) {
   const selected = normalizeRows(rows);
   return [...train.name].flatMap((letter, i) => (!train.focusLetter || letter === train.focusLetter) && (!selected.length || selected.includes(kanaRow(letter))) ? [i] : []);
 }
+
+// Small ゃゅょ and vowels combine with the preceding kana in a single sound.
+// Names and original character indices stay intact for history and other modes.
+const recordedCompounds = new Set([
+  'うぃ','うぇ','きゅ','きょ','しゃ','しゅ','しょ','じゅ','じょ','ちゅ','ちょ',
+  'てぃ','でぃ','にゅ','ひゃ','びゅ','ふぁ','ふぃ','ふぉ','りゅ','りょ',
+]);
+const compoundCards = new Map();
+for (const card of QUIZ_CARDS) {
+  if (card.focusLetter) continue;
+  const seen = new Set();
+  for (const {0: sound, index} of card.name.matchAll(/[あ-ゖ][ゃゅょぁぃぅぇぉ]/g)) {
+    if (!recordedCompounds.has(sound) || seen.has(sound)) continue;
+    seen.add(sound);
+    if (!compoundCards.has(sound)) compoundCards.set(sound, []);
+    compoundCards.get(sound).push({card, index});
+  }
+}
+export const FIND_COMPOUNDS = Object.freeze([...compoundCards.keys()]);
+
+export function quizTarget(card, index) {
+  return card.compound || card.name[index];
+}
 function secureRandom() {
   if (globalThis.crypto?.getRandomValues) {
     const values = new Uint32Array(1);
@@ -142,6 +165,14 @@ export function pickQuizCard(cards, letter, recentImages = {}, imageDecks = {}, 
 }
 export function makeChoices(letter, count = 2, rows = []) {
   const selected = normalizeRows(rows);
+  if (compoundCards.has(letter)) {
+    const other = FIND_COMPOUNDS.filter(sound => sound !== letter);
+    const sameRow = other.filter(sound => kanaRow(sound[0]) === kanaRow(letter[0]));
+    const best = shuffle(sameRow.filter(sound => sound[0] === letter[0] || sound[1] === letter[1]));
+    const pool = [...best, ...shuffle(sameRow.filter(sound => !best.includes(sound))),
+      ...shuffle(other.filter(sound => !sameRow.includes(sound)))];
+    return shuffle([letter, ...pool.slice(0, count - 1)]);
+  }
   const pool = QUIZ_KANA.filter(c => !selected.length || selected.includes(kanaRow(c)));
   return shuffle([letter, ...shuffle(pool.filter(x => x !== letter)).slice(0, count - 1)]);
 }
@@ -152,18 +183,36 @@ export function orderedLetters(rows = []) {
 export function nextJourneyOffset(rows, offset = 0) {
   return normalizeRows(rows).length === 1 ? 0 : (offset + 5) % orderedLetters(rows).length;
 }
-export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, recentImages = {}, imageDecks = {}, stamps = []) {
+export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, recentImages = {}, imageDecks = {}, stamps = [], compoundCount = 0) {
   const selected = normalizeRows(rows);
   const eligible = QUIZ_CARDS.filter(t => targetIndices(t, rows).length);
   if (!eligible.length) return [];
   const journey = [], used = new Set(), recent = { ...recentImages };
   const letters = orderedLetters(selected);
   const start = selected.length === 1 ? 0 : (Number.isSafeInteger(offset) && offset >= 0 ? offset % letters.length : 0);
-  const add = (train, index) => {
+  const compounds = mode === 'find' && compoundCount > 0
+    ? shuffle(FIND_COMPOUNDS.filter(sound => !selected.length || selected.includes(kanaRow(sound[0])))).slice(0, compoundCount)
+    : [];
+  // Start with a single kana. Keep the remaining single-kana questions in
+  // their original row order around the supplemental questions.
+  const slots = compounds.length ? shuffle([1,2,3,4]) : [];
+  const compoundAt = new Map(compounds.map((sound, i) => [slots[i], sound]));
+  const add = (train, index, compound) => {
     used.add(train.quizId || train.id);
-    journey.push({ ...train, targets: mode === 'connect' && index === 0 ? targetIndices(train, rows) : [index] });
+    journey.push({ ...train, ...(compound ? {compound} : {}), targets: mode === 'connect' && index === 0 ? targetIndices(train, rows) : [index] });
   };
   while (journey.length < 5) {
+    const compound = compoundAt.get(journey.length);
+    if (compound) {
+      const entries = compoundCards.get(compound);
+      const starting = entries.filter(({index}) => index === 0);
+      const candidates = starting.length ? starting : entries;
+      const fresh = candidates.filter(({card}) => !used.has(card.quizId || card.id));
+      const train = pickQuizCard((fresh.length ? fresh : candidates).map(({card}) => card), compound, recent, imageDecks, stamps);
+      add(train, entries.find(({card}) => card === train).index, compound);
+      recent[compound] = train.image;
+      continue;
+    }
     const letter = letters[(start + journey.length) % letters.length];
     const matches = eligible.filter(t => targetIndices(t, rows).some(i => canonicalQuizKana(t.name[i]) === letter));
     const starting = matches.filter(t => canonicalQuizKana(t.name[0]) === letter);
@@ -179,19 +228,21 @@ export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, r
   return journey;
 }
 export function readProgress(storage) {
+  const isQuizKey = letter => BASIC_KANA.includes(letter) || compoundCards.has(letter);
   try {
     const value = JSON.parse(storage.getItem('train-hiragana-v1')) || {};
     return {
       stamps: [...new Set(Array.isArray(value.stamps) ? value.stamps.filter(id => TRAINS.some(t => t.id === id)) : [])],
-      recentImages: Object.fromEntries(Object.entries(value.recentImages && typeof value.recentImages === 'object' ? value.recentImages : {}).filter(([letter, image]) => BASIC_KANA.includes(letter) && QUIZ_CARDS.some(t => t.image === image))),
-      imageDecks: Object.fromEntries(Object.entries(value.imageDecks && typeof value.imageDecks === 'object' ? value.imageDecks : {}).filter(([letter, deck]) => BASIC_KANA.includes(letter) && Array.isArray(deck)).map(([letter, deck]) => [letter, deck.filter(key => typeof key === 'string').slice(0, QUIZ_CARDS.length)])),
+      recentImages: Object.fromEntries(Object.entries(value.recentImages && typeof value.recentImages === 'object' ? value.recentImages : {}).filter(([letter, image]) => isQuizKey(letter) && QUIZ_CARDS.some(t => t.image === image))),
+      imageDecks: Object.fromEntries(Object.entries(value.imageDecks && typeof value.imageDecks === 'object' ? value.imageDecks : {}).filter(([letter, deck]) => isQuizKey(letter) && Array.isArray(deck)).map(([letter, deck]) => [letter, deck.filter(key => typeof key === 'string').slice(0, QUIZ_CARDS.length)])),
       trips: Number.isSafeInteger(value.trips) && value.trips >= 0 ? value.trips : 0,
       sound: value.sound !== false,
       level: ['match', 'listen'].includes(value.level) ? value.level : 'match',
       recentFacts: Object.fromEntries(Object.entries(value.recentFacts && typeof value.recentFacts === 'object' ? value.recentFacts : {}).filter(([id,index]) => TRAINS.some(t => t.id === id) && Number.isSafeInteger(index) && index >= 0 && index < 10)),
       findChoices: [2, 3].includes(value.findChoices) ? value.findChoices : value.level === 'listen' ? 3 : 2,
+      findCompounds: ['off', 'more'].includes(value.findCompounds) ? value.findCompounds : 'normal',
       rows: normalizeRows(value.rows),
       journeyOffset: Number.isSafeInteger(value.journeyOffset) && value.journeyOffset >= 0 ? value.journeyOffset % orderedLetters(value.rows).length : 0,
     };
-  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', findChoices: 2, recentFacts: {}, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
+  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', findChoices: 2, findCompounds: 'normal', recentFacts: {}, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
 }

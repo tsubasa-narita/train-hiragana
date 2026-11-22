@@ -114,7 +114,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     glowMaterial.opacity=(night?.60:.26)*moment.headlights;
     for(const wheel of train.wheels)wheel.rotation[wheel.userData?.spinAxis||'z']=-travel/(wheel.userData?.radius||.43);
     if(opposite){opposite.group.position.set(passingX+(5.3-seconds)*42,0,4.4);for(const wheel of opposite.wheels)wheel.rotation.z=-42*seconds/.43;}
-    const {position,target}=director(seconds),aspectScale=Math.max(1,1.18/camera.aspect);
+    const {position,target}=director(seconds),aspectScale=Math.max(1,(seasonal?1.03:1.18)/camera.aspect);
     if(express){
       position.x+=3.5*moment.finale;
       position.z*=1-.26*moment.finale;

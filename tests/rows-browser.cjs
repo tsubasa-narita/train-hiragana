@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
   const browser = await chromium.launch({ headless: true, channel: process.env.BROWSER_CHANNEL || 'msedge' });
   try {
     const page = await browser.newPage({ viewport: { width: 375, height: 850 } });
-    await page.addInitScript(() => { if (!localStorage.getItem('train-hiragana-v1')) localStorage.setItem('train-hiragana-v1', JSON.stringify({ sound: false })); });
+    await page.addInitScript(() => { if (!localStorage.getItem('train-hiragana-v1')) localStorage.setItem('train-hiragana-v1', JSON.stringify({ sound: false, findCompounds:'off' })); });
     await page.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
     await page.clock.install();
     assert.equal(await page.locator('[data-action="row"]').count(), 10);

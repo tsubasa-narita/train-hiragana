@@ -2,13 +2,13 @@
 Usage: python scripts/puck-narration.py submit|collect|publish [--lines PATH]
 Credentials stay in GEMINI_API_KEY. Raw WAVs and batch jobs stay in .tools/.
 """
-import argparse,base64,concurrent.futures,hashlib,importlib.util,json,os,struct,subprocess,sys,time,shutil,urllib.request,urllib.error,wave
+import argparse,base64,concurrent.futures,hashlib,importlib.util,json,os,re,struct,subprocess,sys,time,shutil,urllib.request,urllib.error,wave
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 PROFILE=json.loads((ROOT/'scripts/puck-profile.json').read_text(encoding='utf-8'))
 KANA_STYLE=PROFILE['style']+'; Japanese hiragana pronunciation lesson. Clearly enunciate ONLY the supplied Japanese kana syllable exactly once. Treat it as a Japanese syllable, never an English word or an interjection. No laughter, chuckles, singing, extra words or repetitions. Do not whisper.'
 def delivery(line,repair=False):
-    if len(line['text'])==1:return KANA_STYLE
+    if len(line['text'])==1 or re.fullmatch(r'[あ-ゖ][ゃゅょぁぃぅぇぉ]',line['text']):return KANA_STYLE
     style=PROFILE['style']+'; Read ONLY the supplied Japanese text verbatim in Japanese. Never translate or paraphrase it. Do not drop syllables, add words, repeat or replace short kana with full words. Enunciate each word carefully.'
     if line['text'].startswith('「'):style+=' The quoted kana is one short Japanese mora. Do not elongate it or add a long vowel.'
     if line['text']=='はろーきてぃはるか':style+=' ハローキティ is Hello Kitty: pronounce キティ (ki-ti), never 来て (ki-te). Then say はるか.'
