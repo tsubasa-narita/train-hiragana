@@ -148,8 +148,10 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   }
 
   // Extra samples at the waterline and track shoulder keep both profiles crisp.
-  const meadowGreen = new THREE.Color(0x788c4a);
-  const mossGreen = new THREE.Color(0x465d3e);
+  const meadowGreen = new THREE.Color(0x9ca76c);
+  const mossGreen = new THREE.Color(0x546f55);
+  const dryGrass = new THREE.Color(0xc4b583);
+  const petalLitter = new THREE.Color(0xd0a7a1);
   const gravel = new THREE.Color(0xaba390);
   const subsoil = new THREE.Color(0x766d55);
   const xSamples = 90, zSamples = 104;
@@ -169,6 +171,11 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
       + .21 * Math.cos(z * .144 - x * .072);
     const distance = bankDistance(x, z);
     const color = mossGreen.clone().lerp(meadowGreen, patch);
+    // Broken bands follow the bank's contour and show up in the wide crossing shot.
+    const drift = .5 + .5 * Math.sin(z * .14 + x * .046 + Math.sin(z * .27));
+    const verge = 1 - smoothstep(Math.abs(distance - 8 - 4 * drift), 1, 9);
+    color.lerp(dryGrass, .36 * smoothstep(patch, .45, .93) + .47 * verge);
+    color.lerp(petalLitter, .65 * verge * smoothstep(drift, .32, .89));
     color.lerp(gravel, .85 * (1 - smoothstep(distance, 1, 6)));
     color.lerp(subsoil, .75 * (1 - smoothstep(Math.abs(z), 1.6, 5.5)) * smoothstep(distance, 5, 10));
     return color;
@@ -178,7 +185,7 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
     valleyUv.setXY(i, valleyPositions.getX(i) / 7, valleyPositions.getZ(i) / 7);
   }
   mesh('grassy-terraces-and-gravel-shores', valley,
-    lambert({ vertexColors: true, map: grain(64, 172, 255) })).receiveShadow = true;
+    lambert({ vertexColors: true, map: grain(64, 197, 255) })).receiveShadow = true;
 
   // Rail heads, webs and sleepers run continuously over the deck at the same datum.
   const trackLength = TRACK_END - TRACK_START, trackMid = (TRACK_END + TRACK_START) / 2;
@@ -377,8 +384,8 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   // A brighter low grove frames the start, a gap opens onto the river,
   // and the line enters a deeper blossom avenue at the finish.
   const bark = [], crowns = [], shadeCrowns = [], blossomTips = [], distantCrowns = [], meadowTufts = [];
-  const pinks = [0xf6b5c9, 0xeaa0bb, 0xfac7d2, 0xe993b4, 0xf8cbd0];
-  const tips = [0xffdfde, 0xffcedc, 0xffe7df, 0xf3a6c5, 0xfac0d3];
+  const pinks = [0xf7c4d1, 0xf0adbf, 0xfbe0db, 0xe7aabe, 0xf6cfd3];
+  const tips = [0xffe5df, 0xffcedc, 0xfff2e8, 0xf5c5cf, 0xfce0dd];
   const distantPinks = [0xc897ad, 0xd4a4b6, 0xddadba, 0xb995ab, 0xe0b1bd];
   const greens = [0x53734e, 0x6f8c59, 0x85a367, 0x5f835a, 0x8f9e68];
   const woods = [0x59423e, 0x725850, 0x5b5146, 0x816558];
@@ -392,22 +399,27 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   function nearTree(x, z, h) {
     const y = groundHeight(x, z) - .12;
     const leanX = range(-.56, .56), leanZ = range(-.4, .56);
-    const fork = [x + leanX, y + .5 * h, z + leanZ];
+    const fork = [x + leanX, y + .38 * h, z + leanZ];
     const color = pick(woods);
     const rotation = range(0, TAU);
     branch([x, y, z], fork, h * .05, color);
     branch(fork, [x + leanX * 1.8, y + .8 * h, z + leanZ * 1.8], h * .028, color);
     const top = z < 14 && x > -92 && x < 218 ? shadeCrowns : crowns;
-    top.push(boxAt(fork[0], y + .84 * h, fork[2], h * .31, h * .26, h * .27, pick(pinks)));
-    for (let i = 0; i < 3; i++) {
-      const angle = rotation + i * TAU / 3 + range(-.24, .24);
-      const reach = h * range(.25, .36);
+    top.push(boxAt(fork[0], y + .90 * h, fork[2], h * .28, h * .17, h * .23, pick(pinks)));
+    for (let i = 0; i < 4; i++) {
+      const angle = rotation + i * TAU / 4 + range(-.29, .29);
+      const reach = h * range(.34, .55);
       const bx = fork[0] + Math.cos(angle) * reach;
       const bz = fork[2] + Math.sin(angle) * reach;
-      const by = y + h * range(.71, .91);
-      branch(fork, [bx, by, bz], h * range(.016, .024), color);
+      const by = y + h * range(.63, .91);
+      const elbow = [lerp(fork[0], bx, .52), by - h * .21, lerp(fork[2], bz, .52)];
+      branch(fork, elbow, h * .028, color);
+      branch(elbow, [bx, by, bz], h * .016, color);
+      const upperTwig = [elbow[0] - Math.sin(angle) * .12 * h, by + .08 * h, elbow[2] + Math.cos(angle) * .12 * h];
+      branch(elbow, upperTwig, h * .012, color);
+      blossomTips.push(boxAt(...upperTwig, .15*h, .11*h, .16*h, pick(tips)));
       crowns.push({
-        ...boxAt(bx, by, bz, h * range(.22, .30), h * range(.18, .245), h * range(.20, .27), pick(pinks)),
+        ...boxAt(bx, by, bz, h * range(.23, .31), h * range(.105, .17), h * range(.19, .26), pick(pinks)),
         ry: angle
       });
       for (let j = 0; j < (reduced ? 2 : 4); j++) {
@@ -472,15 +484,34 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
     crownColors.push(shade, shade * (.965 + y * .03), shade);
   }
   crownGeometry.setAttribute('color', new THREE.Float32BufferAttribute(crownColors, 3));
-  const blossomGrain = grain(64, 185, 255);
+  // A small tile of overlapping florets resolves into soft clumps when the
+  // camera pulls back. Mipmaps keep distant banks of blossom steady in motion.
+  const blossomTile = document.createElement('canvas');
+  blossomTile.width = blossomTile.height = 128;
+  const paint = blossomTile.getContext('2d');
+  paint.fillStyle = '#ead8de';
+  paint.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 110; i++) {
+    const x = range(0, 128), y = range(0, 128), radius = range(1.7, 4.6);
+    const phase = range(0, TAU);
+    paint.fillStyle = pick(['#fff6eb', '#faeaf0', '#fff3f3', '#d5bbc6']);
+    for (let j = 0; j < 5; j++) {
+      const angle = phase + j * TAU / 5;
+      const px = x + Math.cos(angle) * radius * .65;
+      const py = y + Math.sin(angle) * radius * .65;
+      paint.beginPath();
+      paint.arc(px, py, radius * .55, 0, TAU);
+      paint.fill();
+    }
+  }
+  const blossomGrain = own(new THREE.CanvasTexture(blossomTile));
+  blossomGrain.colorSpace = THREE.SRGBColorSpace;
   const blossomMaterial = lambert({ vertexColors: true, map: blossomGrain, emissive: 0x542536, emissiveIntensity: .12 });
   instances('forked-cherry-trunks', own(new THREE.CylinderGeometry(.57, 1, 1, 6, 1, true)),
     standard({ roughness: .96 }), bark);
   instances('layered-cherry-canopies', crownGeometry, blossomMaterial, crowns);
   instances('shadow-casting-cherry-canopies', crownGeometry, blossomMaterial, shadeCrowns, { shadow: true });
-  const blossomGeometry = own(new THREE.OctahedronGeometry(1, 0));
-  instances('bright-blossom-clusters', blossomGeometry,
-    lambert({ emissive: 0x6b3547, emissiveIntensity: .16 }), blossomTips);
+  instances('bright-blossom-clusters', crownGeometry, blossomMaterial, blossomTips);
   const hillsideCanopy = own(new THREE.SphereGeometry(1, 7, 4));
   instances('distant-hillside-groves', hillsideCanopy, lambert({}), distantCrowns);
 

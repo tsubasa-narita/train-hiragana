@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { statSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { QUIZ_CARDS, KANA_ROWS, BASIC_KANA } from '../src/data.js';
 import { REWARD_TRAINS } from '../src/reward.js';
 import { VOICE_FILES } from '../src/voice-manifest.js';
@@ -33,10 +34,16 @@ test('every app phrase uses the same Puck voice profile as the audition', () => 
   const manifest = JSON.parse(readFileSync('assets/voice/puck/manifest.json', 'utf8'));
   assert.equal(manifest.model, 'gemini-3.8-flash-tts');
   assert.equal(manifest.voice,'Puck');
+  assert.deepEqual(manifest.files, ANNOUNCEMENT_FILES);
   assert.equal(manifest.style,'cheerful, friendly, encouraging, clear and slightly unhurried');
   for (const file of Object.values(ANNOUNCEMENT_FILES)) {
     assert.ok(file.startsWith('puck/') && file.endsWith('.mp3'));
     assert.ok(statSync(`assets/voice/${file}`).size > 1000, file);
+    const revision = file.match(/-([0-9a-f]{12})\.mp3$/);
+    if (revision) {
+      const digest = createHash('sha256').update(readFileSync(`assets/voice/${file}`)).digest('hex');
+      assert.equal(digest.slice(0, 12), revision[1], file);
+    }
   }
 });
 
@@ -49,7 +56,7 @@ test('recorded speech cancels older playback and falls back only for the current
     play() { this.paused = false; return new Promise((_, reject) => { fail = reject; }); }
   };
   globalThis.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
-  globalThis.speechSynthesis = { cancel() {}, getVoices: () => [], speak: u => spoken.push(u.text) };
+  globalThis.speechSynthesis = { cancel() {}, getVoices: () => [{ lang: 'ja-JP', name: 'Japanese' }], speak: u => spoken.push(u.text) };
   playVoice('は');
   const oldFail = fail;
   playVoice('こ');
@@ -73,6 +80,29 @@ test('recorded speech cancels older playback and falls back only for the current
   players[3].onerror();
   assert.equal(spoken.at(-1), 'ちいさい、ツ。');
   stopVoice();
+  speechSynthesis.getVoices = () => [{ lang: 'zh-CN', name: 'Chinese' }];
+  const missingJapanese = playVoice('とうよこせん');
+  players.at(-1).onerror();
+  assert.equal(await missingJapanese, false);
+  assert.equal(spoken.length, 2);
+
+  const registry = new EventTarget();
+  globalThis.speechSynthesis = Object.assign(registry, {
+    cancel() {}, getVoices: () => [], speak: u => { spoken.push(u.text); u.onend(); }
+  });
+  const loading = playVoice('とうよこせん');
+  players.at(-1).onerror();
+  stopVoice();
+  registry.dispatchEvent(new Event('voiceschanged'));
+  assert.equal(await loading, false);
+  assert.equal(spoken.length, 2);
+
+  const ready = playVoice('とうよこせん');
+  players.at(-1).onerror();
+  registry.getVoices = () => [{ lang: 'ja_JP', name: 'Japanese' }];
+  registry.dispatchEvent(new Event('voiceschanged'));
+  assert.equal(await ready, true);
+  assert.equal(spoken.at(-1), 'とうよこせん。');
 });
 
 test('initial cues wait for the train name and cancellation never starts a stale letter', async () => {

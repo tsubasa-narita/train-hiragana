@@ -1,6 +1,64 @@
 import * as THREE from '../vendor/three/three.module.js';
 import {ramp} from './reward-timeline.js';
 
+// Each star leaves a short curved trail. Fixed attributes let the GPU advance
+// the entire shell with one clock uniform, including when playback seeks.
+function createFirework(keep, random, color, willow) {
+  const velocities=[], sparks=[], colors=[];
+  const gold=new THREE.Color(0xffaa44), ivory=new THREE.Color(0xffedbb);
+  const rim=willow?gold:new THREE.Color(color).lerp(new THREE.Color(0x80dcff),.55);
+  const tint=new THREE.Color();
+  const stars=willow?78:62, samples=11;
+  for(let i=0;i<stars;i++){
+    const height=1-2*(i+.5)/stars;
+    const radius=Math.sqrt(1-height*height), angle=i*2.4+random()*.13;
+    const speed=(i%4===0?.55:1)*(.82+random()*.24);
+    const vx=Math.cos(angle)*radius*speed, vy=height*speed, vz=Math.sin(angle)*radius*speed;
+    const life=1.3+random()*(willow?.88:.62);
+    const size=.8+random()*.42;
+    tint.copy(i%4===0?ivory:rim).lerp(ivory,random()*.27);
+    for(let j=0;j<samples;j++){
+      const tail=j/(samples-1);
+      velocities.push(vx,vy,vz); sparks.push(tail,life,size);
+      colors.push(tint.r,tint.g,tint.b);
+    }
+  }
+  const geometry=keep(new THREE.BufferGeometry());
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(velocities,3));
+  geometry.setAttribute('spark',new THREE.Float32BufferAttribute(sparks,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  const material=keep(new THREE.ShaderMaterial({
+    vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{age:{value:0},pointScale:{value:1},droop:{value:willow?2.5:1.65}},
+    vertexShader:`
+      uniform float age, pointScale, droop;
+      attribute vec3 spark;
+      varying vec3 vLight;
+      void main(){
+        float tail=spark.x;
+        float t=max(0.,age-tail*min(.32,age*.65));
+        float travel=19.*(1.-exp(-1.45*t));
+        vec3 p=position*travel;
+        p.y-=droop*t*t;
+        float fade=smoothstep(0.,.11,age)*(1.-smoothstep(spark.y*.5,spark.y,age));
+        vLight=mix(color,vec3(1.,.9,.71),.32*(1.-tail))*fade*mix(2.3,.09,tail);
+        gl_PointSize=max(1.,pointScale*spark.z*mix(1.,.48,tail));
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
+      }`,
+    fragmentShader:`
+      varying vec3 vLight;
+      void main(){
+        vec2 uv=gl_PointCoord*2.-1.;
+        float r=dot(uv,uv);
+        gl_FragColor=vec4(vLight,exp(-3.8*r)*(1.-smoothstep(.7,1.,r)));
+      }`,
+  }));
+  const points=new THREE.Points(geometry,material);
+  points.frustumCulled=false;
+  points.visible=false;
+  return points;
+}
+
 export function createCelebration(scene,{scenario,color='#83b939',reduced=false}={}){
   const group=new THREE.Group();group.name='cinema-celebration';scene.add(group);
   const resources=new Set(),keep=x=>(resources.add(x),x);
@@ -31,24 +89,18 @@ export function createCelebration(scene,{scenario,color='#83b939',reduced=false}
   }
   const bursts=[];
   if(scenario==='night'&&!reduced){
-    const tint=new THREE.Color(color);
     for(let b=0;b<2;b++){
-      const positions=new Float32Array(96*3),colors=[],directions=[];
-      for(let i=0;i<96;i++){
-        const angle=i/96*Math.PI*2+random()*.05,elevation=(random()-.5)*.25;
-        directions.push(new THREE.Vector3(Math.cos(angle),Math.sin(angle),Math.sin(elevation)));
-        const c=b===0?new THREE.Color(0xffcf79):tint.clone().lerp(new THREE.Color(0xaeefff),.55);
-        c.multiplyScalar(3);colors.push(...c);
-      }
-      const geometry=keep(new THREE.BufferGeometry());geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
-      geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-      const material=keep(new THREE.PointsMaterial({size:1.2,map:texture,vertexColors:true,transparent:true,opacity:0,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending}));
-      const points=new THREE.Points(geometry,material);points.frustumCulled=false;group.add(points);
-      bursts.push({points,geometry,material,directions,start:7.8+b*.65,b});
+      const shell=createFirework(keep,random,color,b===0);
+      group.add(shell);bursts.push(shell);
     }
   }
+  const centre=new THREE.Vector3(),buffer=new THREE.Vector2();
+  for(const shell of bursts)shell.onBeforeRender=renderer=>{
+    renderer.getDrawingBufferSize(buffer);
+    shell.material.uniforms.pointScale.value=THREE.MathUtils.clamp(Math.min(buffer.x,buffer.y)*.011,3.8,12);
+  };
   return {
-    update(moment,pose,finalPosition,camera){
+    update(moment,pose,camera){
       if(disposed)return;
       const t=moment.seconds;
       moteMaterial.opacity=(.08+.40*moment.reveal+.22*moment.finale)*(1-ramp(9.7,10,t)*.25);
@@ -57,23 +109,18 @@ export function createCelebration(scene,{scenario,color='#83b939',reduced=false}
         m.material.opacity=.32*(1-ramp(2.2,4.8,t));
         m.sprite.position.set(-27-m.i*4,1.8+m.i*.8,m.side*(6+m.i*3+moment.reveal*20));
       }
-      for(const burst of bursts){
-        const age=t-burst.start,active=age>=0&&age<2.2;
-        burst.material.opacity=active?ramp(0,.12,age)*(1-ramp(.8,2.2,age)):.0;
-        burst.points.visible=active;
-        if(!active)continue;
-        const position=burst.geometry.attributes.position;
-        const radius=age*16/(1+age*.65);
-        for(let i=0;i<burst.directions.length;i++){
-          const d=burst.directions[i];position.setXYZ(i,d.x*radius,d.y*radius-age*age*1.4,d.z*radius);
-        }
-        position.needsUpdate=true;
-        // Compose the two distant bursts in the upper sky. They never cover
-        // the hero train, even when a phone's tall crop changes the lens.
+      for(const [index,shell] of bursts.entries()){
+        const age=t-(index===0?7.85:8.84);
+        shell.visible=age>=0&&age<2.2;
+        if(!shell.visible)continue;
+        shell.material.uniforms.age.value=age;
+        // Place the shells beyond the skyline, where buildings and wires
+        // naturally mask sparks. Leave sky at both edges on narrow phones.
         camera.updateMatrixWorld();
-        const centre=new THREE.Vector3(burst.b===0?-.46:.48,burst.b===0?.55:.62,.99).unproject(camera);
-        centre.sub(camera.position).normalize().multiplyScalar(110).add(camera.position);
-        burst.points.position.copy(centre);burst.points.quaternion.copy(camera.quaternion);burst.points.renderOrder=2;
+        centre.set(index===0?-.45:.42,index===0?.68:.57,.99).unproject(camera);
+        centre.sub(camera.position).normalize().multiplyScalar(450).add(camera.position);
+        shell.position.copy(centre);shell.quaternion.copy(camera.quaternion);
+        shell.scale.setScalar((index===0?3.05:2.7)*Math.min(1,camera.aspect));
       }
     },
     dispose(){if(disposed)return;disposed=true;for(const resource of resources)resource.dispose();group.removeFromParent();group.clear();},

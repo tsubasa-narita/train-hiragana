@@ -30,11 +30,18 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
   dialog.setAttribute('aria-labelledby','reward-title');
   dialog.innerHTML=`<header class="reward-heading"><div><span class="reward-eyebrow">ごほうびの でんしゃ</span><h2 id="reward-title"></h2><small class="reward-model-name"></small></div><button class="reward-mute" data-reward="mute"></button></header>
     <div class="reward-scene"><canvas class="reward-canvas" aria-label="線路と風景の中を走る立体の電車"></canvas>
-      <div class="reward-loading" role="status"><span class="reward-loading-ring"></span>でんしゃを よんでいるよ…</div>
+      <div class="reward-loading" role="status"><span class="reward-loading-ring" aria-hidden="true"></span>でんしゃを よんでいるよ…</div>
       <div class="reward-fallback" hidden><img alt=""><small>この端末ではイラストで表示しています</small></div>
-      <div class="reward-film-edge" aria-hidden="true"></div><div class="reward-progress" aria-hidden="true"><i></i></div>
-    </div><p class="reward-status" role="status">でんしゃが やってくるよ</p>
-    <div class="reward-controls"><button class="reward-secondary" data-reward="book" hidden>でんしゃ ずかん</button><button class="reward-secondary" data-reward="continue">おしまい →</button></div>`;
+      <div class="reward-film-edge" aria-hidden="true"></div>
+    </div>
+    <div class="reward-progress" aria-hidden="true"><i></i></div>
+    <div class="reward-footer">
+      <p class="reward-status" role="status">でんしゃが やってくるよ</p>
+      <div class="reward-controls">
+        <button class="reward-secondary" data-reward="book" hidden><span class="reward-book-icon" aria-hidden="true"></span>でんしゃ ずかん</button>
+        <button class="reward-secondary" data-reward="continue">おしまい <span class="reward-exit-arrow">→</span></button>
+      </div>
+    </div>`;
   document.body.append(dialog);
   const get=key=>dialog.querySelector(key),button=key=>get(`[data-reward="${key}"]`);
   let canvas=get('canvas');

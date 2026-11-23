@@ -65,12 +65,22 @@ def main():
         if missing:raise SystemExit(f'{len(missing)} Puck recordings missing; publication refused.')
         sys.path.insert(0,str(ROOT/'.tools/audio-python'));import imageio_ffmpeg
         ffmpeg=imageio_ffmpeg.get_ffmpeg_exe();OUT.mkdir(parents=True,exist_ok=True)
+        manifest_path=OUT/'manifest.json'
+        published=json.loads(manifest_path.read_text(encoding='utf-8'))['files'] if manifest_path.exists() else {}
         def encode(line):
-            source=RAW/(stem(line)+'.wav');target=OUT/(stem(line)+'.mp3')
+            key=stem(line)
+            source=RAW/(key+'.wav')
+            target=OUT/Path(published.get(line['text'],key+'.mp3')).name
             if not target.exists() or source.stat().st_mtime>target.stat().st_mtime:
                 if not audio.valid_audio(source):raise ValueError('Invalid source: '+line['text'])
                 tmp=target.with_suffix('.tmp.mp3')
                 subprocess.run([ffmpeg,'-nostdin','-hide_banner','-loglevel','error','-y','-i',str(source),'-codec:a','libmp3lame','-b:a','64k','-ar','24000','-ac','1',str(tmp)],check=True)
+                # Give a corrected take its own URL. Installed Android apps
+                # can keep a still-fresh HTTP cache entry for the previous MP3.
+                if target.exists():
+                    digest=hashlib.sha256(tmp.read_bytes()).digest()
+                    if digest!=hashlib.sha256(target.read_bytes()).digest():
+                        target=OUT/(key+'-'+digest.hex()[:12]+'.mp3')
                 audio.replace_file(tmp,target)
             pcm=subprocess.check_output([ffmpeg,'-nostdin','-hide_banner','-loglevel','error','-i',str(target),'-f','s16le','-ac','1','-ar','24000','pipe:1'])
             samples=struct.unpack('<'+'h'*(len(pcm)//2),pcm)

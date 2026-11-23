@@ -60,7 +60,7 @@ export const GO_HOME_TRAINS = [
   { id: 'kamome', name: 'かもめ', image: 'go-home-kamome.webp', color: '#d45c55', detail: 'ながさきへ むかう しんかんせん' },
   { id: 'doctor-s', name: 'どくたーえす', image: 'go-home-doctor-s.webp', color: '#587ca3', detail: 'せんろを しらべる しんかんせん' },
   { id: 'e10', name: 'いーじゅうしんかんせん', image: 'go-home-e10.webp', color: '#4d9078', detail: 'みらいへ はしる しんかんせん' },
-  { id: 'tokyo-metro-17000', name: 'とうきょうめとろいちななまんけい', image: 'go-home-tokyo-metro-17000.webp', color: '#b58a54', detail: 'ちゃいろの おびの とうきょうメトロ' },
+  { id: 'tokyo-metro-17000', name: 'とうきょうめとろいちまんななせんけい', image: 'go-home-tokyo-metro-17000.webp', color: '#b58a54', detail: 'ちゃいろの おびの とうきょうメトロ' },
   { id: 'keikyu-le-ciel', name: 'けいきゅうるしえる', image: 'go-home-keikyu-le-ciel.webp', color: '#689fc2', detail: 'みずいろの とびらが すてきな けいきゅう' },
 ];
 

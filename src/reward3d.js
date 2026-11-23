@@ -84,7 +84,6 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     return {position:positions[i].clone().lerp(positions[i+1],mix),target:targets[i].clone().lerp(targets[i+1],mix)};
   }
   const start=skybridge?-42:depot?-15:seasonal?-26:-45;
-  const finalDistance=rewardMoment(8200,shinkansen).distance;
   const passingX=start+rewardMoment(5300,shinkansen).distance+front+(opposite?.frontX||front);
   const glowTexture=(()=>{
     const c=document.createElement('canvas');c.width=c.height=64;const ctx=c.getContext('2d'),g=ctx.createRadialGradient(32,32,0,32,32,32);
@@ -115,30 +114,34 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     for(const wheel of train.wheels)wheel.rotation[wheel.userData?.spinAxis||'z']=-travel/(wheel.userData?.radius||.43);
     if(opposite){opposite.group.position.set(passingX+(5.3-seconds)*42,0,4.4);for(const wheel of opposite.wheels)wheel.rotation.z=-42*seconds/.43;}
     const {position,target}=director(seconds),aspectScale=Math.max(1,(seasonal?1.03:1.18)/camera.aspect);
-    if(express){
-      position.x+=3.5*moment.finale;
-      position.z*=1-.26*moment.finale;
-    }
     position.z*=aspectScale;
     const portrait=clamp((1.05-camera.aspect)/.35,0,1);
+    const crossing=ramp(3.4,5.25,seconds)*(1-ramp(6.85,8.15,seconds));
+    if(!shinkansen)target.x=THREE.MathUtils.lerp(target.x,front-3.5,portrait*crossing);
+    // Look down over both tracks during the pass so that the opposing car
+    // can be followed behind the hero, even on a narrow screen.
+    if(night)position.y+=(5+15*portrait)*crossing;
     if(shinkansen&&portrait){
       target.x=THREE.MathUtils.lerp(target.x,front*.5+.3,portrait);
       position.z*=1+.22*portrait*moment.reveal;
       if(depot){const opening=1-ramp(2.8,4.2,seconds);position.x+=4*portrait*opening;target.x+=1.2*portrait*opening;}
-      if(skybridge){
-        // A long nose shown side-on forces the tall phone camera far away.
-        // Keep the broad rainbow reveal, then foreshorten the closing hero
-        // shot so headlights and windscreen are legible on a tall display.
-        const close=ramp(6.9,9.2,seconds)*portrait;
-        position.x=THREE.MathUtils.lerp(position.x,front+17-2*moment.finale,close);
-        position.y=THREE.MathUtils.lerp(position.y,6.6-2.4*moment.finale,close);
-        position.z=THREE.MathUtils.lerp(position.z,-11+2.5*moment.finale,close);
-      }
     }
     if(depot)position.z=THREE.MathUtils.lerp(Math.max(position.z,-5),position.z,ramp(2.8,4.2,seconds));
     // The initial tunnel sightline passes through the opening, not the rock.
     if(skybridge&&seconds<2.8)position.z=THREE.MathUtils.lerp(Math.max(position.z,-3.6),position.z,ramp(1.7,2.8,seconds));
-    if(reduced){position.set(front+28,skybridge?18:9,-(skybridge?65:55)*aspectScale);target.set(0,2,0);}
+    if(reduced){
+      position.set(front+28,skybridge?18:9,-(skybridge?65:55)*aspectScale);target.set(0,2,0);
+    }else{
+      // After the wide crossing, travel ahead of the nose and look back along
+      // the consist. A tall frame needs a more frontal angle, not a longer lens.
+      const approach=ramp(6.7,9.65,seconds);
+      const lean=THREE.MathUtils.lerp(1,.73,portrait);
+      position.x=THREE.MathUtils.lerp(position.x,front+(shinkansen?12:8.2),approach);
+      position.z=THREE.MathUtils.lerp(position.z,-(shinkansen?12:9)*lean,approach);
+      position.y=THREE.MathUtils.lerp(position.y,shinkansen?5.2:3.4,approach);
+      target.x=THREE.MathUtils.lerp(target.x,front-(shinkansen?6.2:2.6),approach);
+      target.y=THREE.MathUtils.lerp(target.y,night?2.65:2.15,approach);
+    }
     const axis=new THREE.Vector3(0,1,0);
     position.applyAxisAngle(axis,pose.yaw).add(train.group.position);target.applyAxisAngle(axis,pose.yaw).add(train.group.position);
     camera.position.copy(position);camera.lookAt(target);camera.fov=44-3*moment.finale;camera.updateProjectionMatrix();
@@ -159,7 +162,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     scene.environmentIntensity=snow?.55:night?.38:depot?.65:.43+.32*moment.reveal;
     sun.position.set(pose.x+(depot?55:35),snow?30:55,pose.z-32);sun.target.position.set(pose.x-20,0,pose.z);
     heroFill.position.set(pose.x+20,14,pose.z-20);heroFill.target.position.set(pose.x-10,2,pose.z);
-    celebration.update(moment,pose,{x:start+finalDistance},camera);
+    celebration.update(moment,pose,camera);
     if(world.sky)world.sky.position.copy(camera.position);
     world.update(seconds,{headX:pose.x,headS,train,moment});
     renderStats=film.render(scene,camera,moment);

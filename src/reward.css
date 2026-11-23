@@ -1,82 +1,279 @@
-/* Ten-second railway cinema. The viewport belongs to an actual WebGL scene. */
-.reward-dialog { box-sizing: border-box; width: min(1280px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 20px); margin: auto; padding: 0; border: 1px solid #65748a; border-radius: 24px; color: #f5f5ef; background: #101c2c; box-shadow: 0 28px 100px #030a15a6; overflow: auto; }
-.reward-dialog::backdrop { background: #030b18d9; backdrop-filter: blur(8px); }
+/* The destination board and detachable ticket sit outside the picture. */
+.reward-dialog {
+  --enamel: #173d3a;
+  --ink: #193e39;
+  --paper: #fbf4df;
+  --scene-color: #efd083;
+  box-sizing: border-box;
+  width: min(1280px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 20px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #6d827a;
+  border-radius: 18px;
+  background: var(--enamel);
+  color: #f8f5e9;
+  box-shadow: 0 20px 80px #081c2080;
+}
+
+.reward-dialog::backdrop { background: #071a20df; }
 .reward-dialog[open] { display: flex; flex-direction: column; }
-.reward-heading, .reward-controls, .reward-status { flex: 0 0 auto; }
 .reward-dialog [hidden] { display: none !important; }
-.reward-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-bottom: 1px solid #ffffff14; background: linear-gradient(105deg, #1c2c40, #101a29); }
-.reward-heading h2 { color: #f7fbff; margin: 3px 0; font-size: clamp(22px, 3vw, 34px); line-height: 1.35; }
-.reward-heading > div { min-width: 0; }
-.reward-heading h2 span { display: inline-block; }
-.reward-eyebrow { color: #b6c9d6; font-size: 12px; letter-spacing: .12em; }
-.reward-model-name { color: #b4c4cf; font-size: 12px; }
-.reward-mute { flex: 0 0 auto; min-height: 48px; padding: 10px 14px; color: #d9e8ee; background: #ffffff0a; border: 1px solid #6b7c8f; border-radius: 12px; font-size: 13px; }
-.reward-scene { position: relative; flex: 1 1 auto; height: min(60dvh, 650px); min-height: 220px; isolation: isolate; background: linear-gradient(#5f91b5, #dfd2b6 65%, #79936b); overflow: hidden; }
-.reward-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
-.reward-loading { position: absolute; inset: 0; display: grid; gap: 14px; place-content: center; justify-items: center; color: #dce9ee; background: #172739; font-size: 16px; }
-.reward-loading-ring { width: 32px; height: 32px; border: 3px solid #4a6173; border-top-color: #debd77; border-radius: 50%; animation: cinema-loading 1s linear infinite; }
-@keyframes cinema-loading { to { transform: rotate(360deg); } }
-.reward-film-edge { pointer-events: none; position: absolute; inset: 0; box-shadow: inset 0 0 70px #06132928; }
-.reward-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #ffffff33; }
-.reward-progress i { display: block; height: 100%; background: #f4d391; transform-origin: left; transform: scaleX(0); }
-.reward-status { text-align: center; margin: 0; padding: 10px 12px 0; color: #bdced9; font-size: 13px; min-height: 30px; }
-.reward-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 12px 20px 20px; }
-.reward-controls button { min-height: 52px; min-width: 122px; padding: 12px 18px; border-radius: 13px; font: inherit; font-size: 15px; font-weight: 700; }
-.reward-secondary { background: #24364b; border: 1px solid #65798e; color: #e3edf2; }
-.reward-dialog button:focus-visible { outline: 3px solid #fff1be; outline-offset: 3px; }
-.reward-fallback { position: absolute; inset: 0; background: #182b3b; display: grid; grid-template-rows: 1fr auto; }
-.reward-fallback img { min-height: 0; width: 100%; height: 100%; object-fit: contain; }
-.reward-fallback small { text-align: center; color: #c1d2dc; font-size: 11px; padding: 5px; }
-@media (max-width: 600px) {
- .reward-dialog { border-radius: 20px; width: calc(100vw - 16px); }
- .reward-heading { padding: 13px 16px; }
- .reward-heading h2 { font-size: 21px; }
- .reward-heading h2.reward-long-title { font-size: 18px; }
- .reward-eyebrow { font-size: 10px; }
- .reward-mute { font-size: 11px; padding-inline: 10px; }
- .reward-model-name { font-size: 10px; }
- .reward-scene { height: min(54dvh, 500px); }
- .reward-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 12px 16px; }
- .reward-controls button { min-width: 0; font-size: 13px; padding: 10px 8px; }
- .reward-dialog[data-phase='loading'] .reward-controls, .reward-dialog[data-phase='running'] .reward-controls { display: flex; }
-}
-@media (max-height: 500px) {
- .reward-heading { padding: 7px 16px; }
- .reward-heading h2 { font-size: 20px; }
- .reward-heading > div { display: flex; gap: 12px; align-items: center; }
- .reward-eyebrow { display: none; }
- .reward-mute { min-height: 44px; padding-block: 6px; }
- .reward-scene { height: calc(100dvh - 157px); min-height: 130px; }
- .reward-controls { display: flex; gap: 7px; padding: 6px 10px 10px; }
- .reward-controls button { min-height: 48px; min-width: 0; padding: 8px 12px; font-size: 12px; }
- .reward-status { padding-top: 5px; min-height: 24px; font-size: 12px; }
-}
-@media (prefers-reduced-motion: reduce) { .reward-loading-ring { animation: none; } }
+
 .reward-cinema[data-scenario='depot'] { --scene-color: #e6b660; }
 .reward-cinema[data-scenario='night'] { --scene-color: #73c9ff; }
 .reward-cinema[data-scenario='skybridge'] { --scene-color: #7bd7c5; }
 .reward-cinema[data-scenario='sakura'] { --scene-color: #f4b1cd; }
 .reward-cinema[data-scenario='snow'] { --scene-color: #b6deff; }
-.reward-cinema .reward-progress i { background: var(--scene-color, var(--train-color)); }
-.reward-cinema .reward-model-name { color: var(--scene-color, var(--train-color)); }
-@media (max-height: 500px) and (max-width: 500px) { .reward-heading > div { display: block; min-width: 0; } .reward-model-name { display: none; } .reward-heading h2 { font-size: 17px; } }
 
-/* Keep the moving train prominent while preserving the always-available exit. */
-@media (min-height: 501px) {
- .reward-dialog.running .reward-heading { padding: 8px 18px; }
- .reward-dialog.running .reward-heading > div { display:flex; align-items:baseline; gap:12px; }
- .reward-dialog.running .reward-heading h2 { font-size:25px; margin:0; }
- .reward-dialog.running .reward-eyebrow { display:none; }
- .reward-dialog.running .reward-scene { height:min(68dvh,740px); }
- .reward-dialog.running .reward-controls { padding:7px 16px 10px; }
- .reward-dialog.running .reward-status { font-size:15px; font-weight:700; color:#e4ebed; }
+.reward-heading {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 22px;
+  border-bottom: 1px solid #779087;
+  background: linear-gradient(110deg, #234c46, var(--enamel) 70%);
 }
-@media (max-width:600px) and (min-height:501px) {
- .reward-dialog.running .reward-heading { padding:7px 12px; }
- .reward-dialog.running .reward-heading h2 { font-size:20px; }
- .reward-dialog.running .reward-heading h2.reward-long-title { font-size:16px; }
- .reward-dialog.running .reward-model-name { display:none; }
- .reward-dialog.running .reward-scene { height:min(65dvh,600px); }
+
+.reward-heading > div {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  min-width: 0;
+  padding-inline-start: 22px;
 }
-.reward-dialog[data-chapter='finale'] .reward-status { color:#ffe4a6; }
-.reward-dialog.arrived [data-reward='book'] { border-color:#cbb370; background:linear-gradient(130deg,#445b6b,#304053); color:#fff2cb; }
+
+/* A pair of station stops keys the sign to the film's route color. */
+.reward-heading > div::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  align-self: center;
+  width: 10px;
+  height: 28px;
+  color: var(--scene-color);
+  background:
+    radial-gradient(circle at 50% 5px, var(--enamel) 2px, currentColor 2.5px 4.5px, transparent 5px),
+    radial-gradient(circle at 50% 23px, var(--enamel) 2px, currentColor 2.5px 4.5px, transparent 5px),
+    linear-gradient(currentColor, currentColor) center / 2px 20px no-repeat;
+}
+
+.reward-eyebrow { flex-basis: 100%; color: #c9d9ca; font-size: 12px; letter-spacing: .08em; }
+.reward-heading h2 { margin: 0; font-size: clamp(22px, 2.2vw, 30px); line-height: 1.3; }
+.reward-heading h2 span { display: inline-block; }
+.reward-model-name { color: var(--scene-color); font-size: 13px; }
+
+.reward-mute {
+  flex: none;
+  min-height: 44px;
+  padding: 6px 13px;
+  border: 1px solid #90a69b;
+  border-radius: 9px;
+  background: #173530;
+  color: #fbf6e9;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reward-mute[aria-pressed='true'] { color: #173d35; background: #dfebd9; }
+
+.reward-scene {
+  position: relative;
+  flex: 1 1 auto;
+  height: min(68dvh, 740px);
+  min-height: 220px;
+  isolation: isolate;
+  background: #172c31;
+  overflow: hidden;
+}
+
+.reward-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+.reward-film-edge { pointer-events: none; position: absolute; inset: 0; box-shadow: inset 0 0 70px #06132928; }
+.reward-progress { flex: none; height: 3px; background: #506863; }
+.reward-progress i { display: block; height: 100%; background: var(--scene-color); transform-origin: left; transform: scaleX(0); }
+
+.reward-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: var(--paper);
+  background: radial-gradient(#49625e 1px, transparent 1px) center / 8px 8px, #1b3938;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* A punched ticket with the app's train mark, three stops and a tear-off stub. */
+.reward-loading-ring {
+  position: relative;
+  width: 156px;
+  height: 60px;
+  border-radius: 7px;
+  background:
+    url('../assets/icon.svg') 13px center / 36px 36px no-repeat,
+    repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px) right 11px center / 15px 28px no-repeat,
+    var(--paper);
+  mask:
+    radial-gradient(circle at left, transparent 4px, black 5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at right, transparent 4px, black 5px) right / 51% 100% no-repeat;
+}
+
+.reward-loading-ring::before {
+  content: "";
+  position: absolute;
+  inset: 4px 32px 4px 57px;
+  border-right: 1px dashed #a2997c;
+  background:
+    radial-gradient(circle, var(--ink) 3px, transparent 3.5px) left center / 20px 10px repeat-x,
+    linear-gradient(var(--ink), var(--ink)) 10px center / 40px 2px no-repeat;
+}
+
+.reward-loading-ring::after {
+  content: "";
+  position: absolute;
+  top: 25px;
+  left: 62px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ink);
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: #efb54b;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reward-loading-ring::after { animation: reward-station-stops 1.8s step-end infinite; }
+  @keyframes reward-station-stops {
+    33% { transform: translateX(20px); }
+    66% { transform: translateX(40px); }
+  }
+}
+
+.reward-fallback { position: absolute; inset: 0; background: #182b3b; display: grid; grid-template-rows: 1fr auto; }
+.reward-fallback img { min-height: 0; width: 100%; height: 100%; object-fit: contain; }
+.reward-fallback small { text-align: center; color: #c1d2dc; font-size: 11px; padding: 5px; }
+
+.reward-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 22px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at left, var(--enamel) 4px, transparent 5px),
+    radial-gradient(circle at right, var(--enamel) 4px, transparent 5px),
+    var(--paper);
+}
+
+.reward-status {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+.reward-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-inline-start: 20px;
+  border-inline-start: 1px dashed #a3997c;
+}
+
+.reward-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 15px;
+  border: 1px solid #8b947c;
+  border-radius: 24px;
+  background: #fffaf0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.reward-controls [data-reward='book'] {
+  border-color: #175d4e;
+  border-radius: 9px;
+  color: #fffaf0;
+  background: #176453;
+}
+
+.reward-book-icon { display: inline-flex; flex: none; gap: 2px; }
+.reward-book-icon::before, .reward-book-icon::after {
+  content: "";
+  width: 8px;
+  height: 12px;
+  border-radius: 1px 4px 0 1px;
+  background: currentColor;
+  transform: skewY(10deg);
+}
+.reward-book-icon::after { transform: scaleX(-1) skewY(10deg); }
+
+.reward-exit-arrow {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  color: #fffaf0;
+  background: var(--enamel);
+}
+
+.reward-dialog button:focus-visible { outline: 3px solid #ffe09b; outline-offset: 2px; }
+.reward-controls button:focus-visible { outline-color: #194c74; }
+
+@media (max-width: 600px) {
+  .reward-dialog { width: calc(100vw - 16px); border-radius: 14px; }
+  .reward-heading { padding: 8px 12px; gap: 8px; }
+  .reward-heading > div { display: block; padding-inline-start: 16px; }
+  .reward-heading > div::before { top: calc(50% - 14px); }
+  .reward-heading h2 { font-size: 20px; }
+  .reward-heading h2.reward-long-title { font-size: 17px; }
+  .reward-eyebrow, .reward-dialog.running .reward-model-name { display: none; }
+  .reward-model-name { display: block; font-size: 11px; }
+  .reward-mute { padding-inline: 9px; font-size: 12px; }
+  .reward-scene { height: min(65dvh, 600px); }
+  .reward-footer { gap: 8px; padding: 8px 12px; }
+  .reward-status { font-size: 14px; }
+  .reward-controls { flex: none; gap: 8px; padding-inline-start: 10px; }
+  .reward-controls button { gap: 6px; padding-inline: 10px; font-size: 14px; }
+  .reward-dialog.arrived .reward-footer { flex-direction: column; }
+  .reward-dialog.arrived .reward-controls {
+    align-self: stretch;
+    padding: 8px 0 0;
+    border: 0;
+    border-top: 1px dashed #a3997c;
+  }
+}
+
+@media (max-height: 500px) {
+  .reward-heading, .reward-footer { padding-block: 6px; }
+  .reward-heading h2 { font-size: 20px; }
+  .reward-eyebrow { display: none; }
+  .reward-scene { height: calc(100dvh - 150px); min-height: 130px; }
+}
+
+@media (max-height: 500px) and (max-width: 600px) {
+  .reward-model-name { display: none; }
+  .reward-footer { gap: 4px; }
+  .reward-dialog.arrived .reward-controls { padding-top: 5px; }
+}

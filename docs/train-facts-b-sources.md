@@ -3,12 +3,12 @@
 Updated 2026-10-26. Each assigned train has two distinct standalone kana narrations. Every fact has a `places` array of geographic tokens that appear as named places in the narration. Each source link points to official operator or railway material.
 
 ## `toyoko`
-1. `しぶやから よこはまへ はしる、とうきゅうの とうよこせんだよ。`
+1. `とうよこせんは、しぶやから よこはままで はしるよ。`
    - places: しぶや, よこはま
    - route source: [https://www.tokyu.co.jp/railway/map/](https://www.tokyu.co.jp/railway/map/)
-2. `ひよしから しんよこはまへも すすむ、とうきゅうの でんしゃだよ。`
-   - places: ひよし, しんよこはま
-   - route source: [https://www.tokyu.co.jp/railway/map/](https://www.tokyu.co.jp/railway/map/)
+2. `よこはまから、みなとみらいを とおって、もとまち・ちゅうかがいまで いく でんしゃも あるよ。`
+   - places: よこはま, みなとみらい, もとまち・ちゅうかがい
+   - route source: [横浜高速鉄道の路線図](https://www.mm21railway.co.jp/info/route_map.html)
 
 ## `hanzomon`
 1. `しぶやから おしあげまで、とうきょうを むすぶ ちかてつだよ。`

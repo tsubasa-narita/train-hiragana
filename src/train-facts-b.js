@@ -1,8 +1,8 @@
 // Researched facts for TRAINS.slice(52, 104); see docs/train-facts-b-sources.md.
 export const TRAIN_FACTS_B = {
   'toyoko': [
-    { text: 'しぶやから よこはまへ はしる、とうきゅうの とうよこせんだよ。', places: ['しぶや', 'よこはま'], source: 'https://www.tokyu.co.jp/railway/map/' },
-    { text: 'ひよしから しんよこはまへも すすむ、とうきゅうの でんしゃだよ。', places: ['ひよし', 'しんよこはま'], source: 'https://www.tokyu.co.jp/railway/map/' },
+    { text: 'とうよこせんは、しぶやから よこはままで はしるよ。', places: ['しぶや', 'よこはま'], source: 'https://www.tokyu.co.jp/railway/map/' },
+    { text: 'よこはまから、みなとみらいを とおって、もとまち・ちゅうかがいまで いく でんしゃも あるよ。', places: ['よこはま', 'みなとみらい', 'もとまち・ちゅうかがい'], source: 'https://www.mm21railway.co.jp/info/route_map.html' },
   ],
   'hanzomon': [
     { text: 'しぶやから おしあげまで、とうきょうを むすぶ ちかてつだよ。', places: ['しぶや', 'おしあげ', 'とうきょう'], source: 'https://www.tokyometro.jp/corporate/enterprise/passenger_rail/transportation/lines/index.html' },

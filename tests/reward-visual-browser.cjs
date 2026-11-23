@@ -84,6 +84,10 @@ const output = process.env.REWARD_TEST_OUTPUT || 'test-results/cinema';
       await open(id,{sceneId});
       for(const time of [3600,6500,10000]){
         await page.locator('canvas').evaluate((c,time)=>c.rewardScene.seek(time),time);
+        if(width===390&&id==='shonan-shinjuku'&&time===6500){
+          const nose=await page.locator('canvas').evaluate(c=>c.rewardScene.framing);
+          assert.ok(nose.x>.13&&nose.x<.87,'the wide portrait shot keeps the commuter cab in frame');
+        }
         if(id==='komachi'||id==='hayabusa'){
           const framing=await page.locator('canvas').evaluate(c=>c.rewardScene.framing);
           for(const point of [framing,framing.cab])assert.ok(point.x>.03&&point.x<.97&&point.y>.03&&point.y<.97,`nose and windscreen remain visible on phones: ${id}/${sceneId}/${time}: ${JSON.stringify(framing)}`);

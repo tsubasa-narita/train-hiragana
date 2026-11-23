@@ -37,10 +37,12 @@ export async function playVoiceSequence(texts) {
 function startVoice(text, current, reuse = false) {
   return new Promise(resolve => {
     let finished = false;
+    let stopWaitingForVoices;
     const finish = result => {
       if (finished) return;
       finished = true;
       clearTimeout(timeout);
+      stopWaitingForVoices?.();
       if (finishPlayback === finish) finishPlayback = null;
       resolve(result);
     };
@@ -55,15 +57,25 @@ function startVoice(text, current, reuse = false) {
       if (!globalThis.speechSynthesis) { finish(false); return; }
       usedFallback = true;
       if (player) { player.onended = null; player.pause(); }
-      const utterance = new SpeechSynthesisUtterance(VOICE_SPOKEN[text] || text);
-      utterance.lang = 'ja-JP'; utterance.rate = .9; utterance.pitch = 1;
-      const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
-      const quality = v => /natural|neural|premium|enhanced/i.test(v.name) ? 2 : /nanami|kyoko|google/i.test(v.name) ? 1 : 0;
-      voices.sort((a, b) => quality(b) - quality(a));
-      if (voices[0]) utterance.voice = voices[0];
-      utterance.onend = () => finish(true);
-      utterance.onerror = () => finish(false);
-      speechSynthesis.speak(utterance);
+      const synth = globalThis.speechSynthesis;
+      function useJapaneseVoice() {
+        if (finished || current !== sequence) return;
+        const voices = synth.getVoices().filter(v => /^ja(?:[-_]|$)/i.test(v.lang));
+        if (!voices.length) { finish(false); return; }
+        const quality = v => /natural|neural|premium|enhanced/i.test(v.name) ? 2 : /nanami|kyoko|google/i.test(v.name) ? 1 : 0;
+        const utterance = new SpeechSynthesisUtterance(VOICE_SPOKEN[text] || text);
+        utterance.voice = voices.sort((a, b) => quality(b) - quality(a))[0];
+        utterance.lang = 'ja-JP'; utterance.rate = .9; utterance.pitch = 1;
+        utterance.onend = () => finish(true);
+        utterance.onerror = () => finish(false);
+        synth.speak(utterance);
+      }
+      if (synth.getVoices().length || !synth.addEventListener) { useJapaneseVoice(); return; }
+      // Android can populate its voice list asynchronously on first use.
+      const ready = () => { stopWaitingForVoices(); useJapaneseVoice(); };
+      const wait = setTimeout(ready, 1000);
+      stopWaitingForVoices = () => { clearTimeout(wait); synth.removeEventListener('voiceschanged', ready); };
+      synth.addEventListener('voiceschanged', ready);
     };
     const file = ANNOUNCEMENT_FILES[text] || VOICE_FILES[text];
     if (!file) { fallback(); return; }
