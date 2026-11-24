@@ -1,10 +1,11 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { createCityWater } from './reward3d-water.js';
+import { branchletGeometry, branchletMaterial } from './reward3d-vegetation.js';
 
 function seeded(seed = 4827) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 }
-export function createRailwayWorld(scene, { warm = false, blossom = false, night = false, gauge = 1.067 } = {}) {
+export function createRailwayWorld(scene, { warm = false, blossom = false, night = false, gauge = 1.067, reduced = false } = {}) {
   const halfGauge=gauge/2;
   const random = seeded(), group = new THREE.Group();
   let disposed = false;
@@ -199,7 +200,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     instances(box(),material({color:0xfff1cc,emissive:0xffb354,emissiveIntensity:2.45}),deckLights);
   }
 
-  const trunks=[],leaves=[];
+  const trunks=[],leaves=[],leafSprays=[];
   const crown=keep(new THREE.IcosahedronGeometry(1,2)),crownPosition=crown.attributes.position;
   for(let i=0;i<crownPosition.count;i++){
     const x=crownPosition.getX(i),y=crownPosition.getY(i),z=crownPosition.getZ(i);
@@ -221,13 +222,18 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     trunks.push({x,y:-6.6+h*.38,z,sx:.18*s,sy:h*.76,sz:.18*s});
     for(let j=0;j<5;j++){
       const angle=j*2.4+random()*.5,r=j===0?0:s*(.6+random()*.5);
-      leaves.push({x:x+Math.cos(angle)*r,y:-6.6+h-(j===0?0:random()*h*.3),z:z+Math.sin(angle)*r,
+      const lobe={x:x+Math.cos(angle)*r,y:-6.6+h-(j===0?0:random()*h*.3),z:z+Math.sin(angle)*r,
         sx:s*(1+random()*.55),sy:s*(1.15+random()*.65),sz:s*(.9+random()*.55),ry:angle,
-        color:blossom&&i%4===0?'#d6a5b3':(night?['#203a37','#29423b','#34483c','#233d36']:['#385a3a','#526e3d','#6d7f49','#49673d'])[(i+j)%4]});
+        color:blossom&&i%4===0?'#d6a5b3':(night?['#203a37','#29423b','#34483c','#233d36']:['#385a3a','#526e3d','#6d7f49','#49673d'])[(i+j)%4]};
+      if(!reduced&&x>-115&&x<230&&z>14&&z<53){
+        leafSprays.push(lobe);
+        leaves.push({...lobe,sx:lobe.sx*.74,sy:lobe.sy*.77,sz:lobe.sz*.74});
+      }else leaves.push(lobe);
     }
   }
-  instances(box(),material({color:0x786651,roughness:1}),trunks);
+  instances(keep(new THREE.CylinderGeometry(.58,1,1,6)),material({color:0x786651,roughness:1}),trunks);
   instances(crown,material({color:0xffffff,vertexColors:true,roughness:1}),leaves);
+  if(leafSprays.length)instances(keep(branchletGeometry(false)),branchletMaterial(keep),leafSprays);
   // Distant ridges have continuous silhouettes, rather than a flat backdrop.
   for(let layer=0;layer<3;layer++){
     const geometry=keep(new THREE.PlaneGeometry(1800,260,100,8)),p=geometry.attributes.position;

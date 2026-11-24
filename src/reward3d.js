@@ -59,9 +59,9 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   let renderStats={calls:0,triangles:0};
   const world = sakura?createSakuraWorld(scene,{config,reduced}):
     snow?createSnowWorld(scene,{config,reduced}):
-    depot?createDepotWorld(scene,{config}):
-    skybridge?createSkybridgeWorld(scene,{config}):
-    createRailwayWorld(scene,{night:true,gauge:config.gauge||1.067});
+    depot?createDepotWorld(scene,{config,reduced}):
+    skybridge?createSkybridgeWorld(scene,{config,reduced}):
+    createRailwayWorld(scene,{night:true,gauge:config.gauge||1.067,reduced});
   const train = buildTrain(config); scene.add(train.group);
   if(skybridge)bendTrainModel(train,SKY_RADIUS);
   const opposite=night?buildTrain({...oppositeTrain(config),sceneId:scenario}):null;

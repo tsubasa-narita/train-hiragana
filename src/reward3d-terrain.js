@@ -1,12 +1,13 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { detailSurface } from './reward3d-surface.js';
+import { branchletGeometry, branchletMaterial } from './reward3d-vegetation.js';
 
 // A single watertight rock volume, including its traversable tunnel. The outer
 // skin rolls out from the portal, over the ridge, under the sea and back into
 // the rear opening. The return rings form the bore: there are no end caps,
 // rectangular skirts, intersecting hill sheets, or hidden black portal disks.
-export function createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap, detail }) {
-  const front = -25, length = 585, sides = 120, rings = 144, capRings = 18;
+export function createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap, detail, reduced }) {
+  const front = -25, length = 585, sides = 120, rings = 144, capRings = 24;
   const tau = Math.PI * 2;
   function aperture(angle) {
     if (angle <= Math.PI) return { offset: 3.65 * Math.cos(angle), y: 3.9 + 3.65 * Math.sin(angle) };
@@ -46,7 +47,9 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     const seam = y * .22 + offset * .063 + Math.sin(offset * .1 + y * .05) * 1.33;
     const relief = Math.sin(offset * .087 + y * .039) * 30 + Math.cos(y * .071 - offset * .033) * 18
       + Math.sin(offset * .21 - y * .14) * 7 + 4.8 * Math.sin(seam);
-    const s = THREE.MathUtils.lerp(mouthS, edge.s, bow) + t * (1 - t) * relief;
+    const jut = Math.abs(Math.sin(offset * .11 - y * .10 + 1.3 * Math.sin(y * .15))) - .58;
+    const cleavage = Math.pow(.5+.5*Math.sin(seam), 4);
+    const s = THREE.MathUtils.lerp(mouthS, edge.s, bow) + t * (1 - t) * (relief + 12*jut + 5*cleavage);
     return at(s, y, offset);
   }
   const positions = [], uv = [], indices = [];
@@ -85,21 +88,23 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
   const normal = geometry.attributes.normal;
   for (let j = 0; j < sections; j++) for (let i = 0; i < sides; i++) {
     const v = j * sides + i, p = v * 3, y = positions[p + 1], x = positions[p], z = positions[p + 2];
-    const strata = .5 + .5 * Math.sin(y * .26 + z * .053 + Math.sin(x * .031 + z * .07) * 2.8);
+    const phase = y * .26 + z * .053 + Math.sin(x * .031 + z * .07) * 2.8;
+    const strata = .5 + .5 * Math.sin(phase);
+    const darkSeam = Math.pow(.5 + .5 * Math.cos(phase * 2.0), 7);
     const mottling = Math.sin(x * .12 + z * .09) * Math.sin(y * .18 - z * .04);
     color.copy(deep).lerp(slate, THREE.MathUtils.smoothstep(y, -120, -10));
     color.lerp(limestone, (.26 + strata * .39 + mottling * .16) * THREE.MathUtils.smoothstep(y, -65, 25));
     const vegetation = THREE.MathUtils.smoothstep(normal.getY(v) + mottling * .12, .49, .84)
       * THREE.MathUtils.smoothstep(y, -5, 22) * (.8 + mottling * .2);
     color.lerp(moss, vegetation).lerp(grass, vegetation * (.22 + .18 * mottling));
-    color.multiplyScalar(.94 + strata * .09 + mottling * .045);
+    color.multiplyScalar(.94 + strata * .10 + mottling * .07 - darkSeam * .15 * (1 - vegetation));
     if (sampleRings[j].kind === 'bore') color.copy(bore).multiplyScalar(.88 + strata * .1);
     colors.push(color.r, color.g, color.b);
   }
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   const material = detailSurface(keep(new THREE.MeshStandardMaterial({ vertexColors: true, map: rockMap,
-    bumpMap: rockMap, bumpScale: .38, roughness: .98 })), detail, {
-    projection: [.55,1,1.9], scale: [34,20], strength: [.39,.64,.31], tint: 0xa3b1a0
+    bumpMap: rockMap, bumpScale: .58, roughness: .93 })), detail, {
+    projection: [.55,1,1.9], scale: [31,17], strength: [.39,.48,.44], tint: 0xa3b1a0
   });
   const mountain = mesh(geometry, material, 'sculpted-closed-tunnel-mountain');
   mountain.castShadow=true;
@@ -108,7 +113,7 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
   // The foliage follows the actual surface normal; steep escarpments stay bare.
   // Several offset crowns per tree make an interlocking canopy, with clearings
   // and dark ravines rather than evenly scattered identical green balls.
-  const crowns = [], trunks = [], flowers = [];
+  const crowns = [], branches = [], trunks = [], flowers = [];
   const palette = [0x244d3a, 0x356248, 0x476d46, 0x5f7846, 0x73834a, 0x3e6544];
   const a = new THREE.Vector3(), b = new THREE.Vector3(), n = new THREE.Vector3();
   for (let i = 0; i < 1100 && crowns.length < 1467; i++) {
@@ -126,15 +131,26 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     trunks.push({ x: p.x, y: p.y + height * .27, z: p.z, sx: .22 + height * .025, sy: height * .72, sz: .22 + height * .025 });
     for (let k = 0; k < 3; k++) {
       const phase = k * 2.4 + random(), scale = .72 + random() * .3;
-      crowns.push({ x: p.x + Math.cos(phase) * width * .22, y: p.y + height * (.58 + k * .1),
+      const lobe = { x: p.x + Math.cos(phase) * width * .22, y: p.y + height * (.58 + k * .1),
         z: p.z + Math.sin(phase) * width * .24, sx: width * .58 * scale, sy: height * (.32 + random() * .13),
-        sz: width * .52 * scale, ry: random() * tau, color: tint });
+        sz: width * .52 * scale, ry: random() * tau, color: tint };
+      if (!reduced && p.x > -285 && p.z < 103) {
+        branches.push(lobe);
+        crowns.push({ ...lobe, sx:lobe.sx*.60, sy:lobe.sy*.58, sz:lobe.sz*.60 });
+      } else crowns.push(lobe);
     }
     if (u < .25 && i % 9 === 0) flowers.push({ x: p.x, y: p.y + height * .82, z: p.z,
       sx: width * .48, sy: height * .24, sz: width * .47, color: config?.id === 'toyoko' ? 0xe9bacd : 0xe8d6bf });
   }
   const crownGeometry = keep(new THREE.IcosahedronGeometry(1, 1));
+  const leafPositions = crownGeometry.attributes.position;
+  for(let i=0;i<leafPositions.count;i++){
+    const x=leafPositions.getX(i),y=leafPositions.getY(i),z=leafPositions.getZ(i);
+    const r=1+.19*Math.sin(x*9+y*4)*Math.cos(z*9-y*4)+.11*Math.sin(x*19+z*15);
+    leafPositions.setXYZ(i,x*r,y*r,z*r);
+  }
   instances(crownGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 })), crowns, 'irregular-ridge-forest');
+  if(branches.length) instances(keep(branchletGeometry()),branchletMaterial(keep),branches,'cliff-branchlets');
   instances(keep(new THREE.CylinderGeometry(1, 1.35, 1, 5)),
     keep(new THREE.MeshStandardMaterial({ color: 0x514a38, roughness: 1 })), trunks, 'forest-trunks');
   instances(crownGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .95 })), flowers, 'portal-blossom-groves');

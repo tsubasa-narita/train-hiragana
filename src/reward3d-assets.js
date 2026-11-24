@@ -3,6 +3,7 @@ import {GLTFLoader} from '../vendor/three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from '../vendor/three/addons/libs/meshopt_decoder.module.js';
 import {HDRLoader} from '../vendor/three/addons/loaders/HDRLoader.js';
 import {REWARD_3D_TRAINS} from './reward3d-catalog.js';
+import {sceneryDetailTexture} from './reward3d-surface.js';
 
 // Only immutable CPU templates are cached. Every running scene owns its cloned
 // geometry/material/texture objects and releases its complete GPU allocation.
@@ -49,11 +50,85 @@ export async function prepareTrainModels(ids){
   }));
 }
 
+function finishTrainMaterial(material, grain, {sceneId, id}) {
+  const name=material.name;
+  const metal=/^(?:ALUMINIUM|STAINLESS|DOOR_STEEL|TRIM)/.test(name);
+  const paint=/^(?:CAB_PAINT|LIVERY_)/.test(name);
+  const glass=/^(?:CAB_GLASS|GLASS|PASSENGER_GLASS)/.test(name);
+  const runningGear=/^(?:MACHINERY|ROOF)/.test(name);
+  if(!metal&&!paint&&!glass&&!runningGear)return;
+
+  if(metal){
+    material.roughness=THREE.MathUtils.clamp(material.roughness*.86,.23,.53);
+    if(material.isMeshPhysicalMaterial){
+      material.clearcoat*=.68;
+      material.anisotropy=.29;
+    }
+  }
+  if(paint){
+    material.roughness*=.87;
+    // LaView's silver nose has a softer metallic highlight than gloss paint.
+    if(material.isMeshPhysicalMaterial){
+      material.clearcoat=id==='laview'?.55:Math.max(.64,material.clearcoat);
+      material.clearcoatRoughness=id==='laview'?.17:.12;
+    }
+  }
+  if(glass&&material.isMeshPhysicalMaterial){
+    material.clearcoat=Math.max(material.clearcoat,.64);
+    material.clearcoatRoughness=.085;
+    material.roughness=Math.max(.10,material.roughness*.9);
+  }
+  const mode=metal?1:paint?2:glass?3:4;
+  material.customProgramCacheKey=()=>`rail-finish-${mode}`;
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.trainGrain={value:grain};
+    shader.uniforms.wetFinish={value:sceneId==='night'?1:0};
+    shader.vertexShader='varying vec3 panelPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\npanelPosition = position;');
+    shader.fragmentShader=`
+      #define TRAIN_FINISH ${mode}
+      varying vec3 panelPosition;
+      uniform sampler2D trainGrain;
+      uniform float wetFinish;
+    `+shader.fragmentShader.replace('#include <roughnessmap_fragment>', `
+      #include <roughnessmap_fragment>
+      vec2 panel = vec2(panelPosition.x + panelPosition.z*.83, panelPosition.y);
+      vec2 sheet = panel * vec2(.67, 7.7);
+      float grain = texture2D(trainGrain, sheet).g - .5;
+      float unevenness = texture2D(trainGrain, panel * vec2(.27,.79)).r - .5;
+      float sill = 1. - smoothstep(.69,1.64,panelPosition.y);
+      #if TRAIN_FINISH == 1
+        // Brushed cross-grain is finer than the panel's broad satin reflection.
+        roughnessFactor += grain*.085 + unevenness*.076;
+        diffuseColor.rgb *= 1. + grain*.065 + unevenness*.032 - sill*.052;
+      #elif TRAIN_FINISH == 2
+        roughnessFactor += unevenness*.058 + sill*.052;
+        diffuseColor.rgb *= 1. + unevenness*.040 - sill*.042;
+      #elif TRAIN_FINISH == 3
+        float droplets = smoothstep(.07,.34,texture2D(trainGrain,panel*vec2(7.,14.)).b-.45);
+        roughnessFactor += wetFinish*min(.095,droplets*.16);
+      #else
+        roughnessFactor += unevenness*.24;
+        diffuseColor.rgb *= 1. + grain*.14 + unevenness*.32;
+      #endif
+      roughnessFactor = clamp(roughnessFactor,.06,1.);
+    `).replace('#include <opaque_fragment>', `
+      #if TRAIN_FINISH == 3 && !defined(OPAQUE)
+        // More reflection at a grazing angle, with the cab legible head-on.
+        float glassEdge = pow(1. - abs(dot(normal, normalize(vViewPosition))), 3.);
+        diffuseColor.a = mix(diffuseColor.a, 1., glassEdge*.18);
+      #endif
+      #include <opaque_fragment>
+    `);
+  };
+}
+
 export function createBlenderTrainModel(config){
   const library=libraries.get(config.id);if(!library)return null;
   const cfg={...REWARD_3D_TRAINS.find(t=>t.id===config.id),...config},count=cfg.cars,pitch=cfg.pitch||20.6,carLength=cfg.carLength||20,frontX=cfg.frontX||10.35;
   const group=new THREE.Group();group.name=`blender-train-${cfg.id}`;
   const geometries=new Set(),materials=new Set(),textures=new Set(),wheels=[],headlights=[];
+  const grain=sceneryDetailTexture();textures.add(grain);
   const geometryCache=new Map(),materialCache=new Map(),textureCache=new Map(),batches=new Map();
   function material(original,rear=false){
     const tail=rear&&original.name.startsWith('HEADLAMP'),key=`${original.uuid}/${tail}`;
@@ -65,6 +140,7 @@ export function createBlenderTrainModel(config){
     if(cfg.id==='yokosuka'&&original.name.startsWith('ALUMINIUM')){value.color.multiplyScalar(.64);value.roughness=Math.max(value.roughness,.4);}
     if(cfg.id==='toyoko'&&original.name.startsWith('CAB_GLASS')){value.color.set('#283f43');value.opacity=.94;value.clearcoat=.4;value.envMapIntensity=.65;}
     if(cfg.id==='toyoko'&&original.name.startsWith('CAB_MASK')){value.color.set('#071014');value.metalness=.02;value.roughness=.22;value.clearcoat=.25;value.envMapIntensity=.5;}
+    finishTrainMaterial(value,grain,cfg);
     if(tail){value.color.set('#bd263e');value.emissive.set('#ff193e');value.emissiveIntensity=1.8;}
     else if(original.name.startsWith('HEADLAMP'))headlights.push(value);
     if(original.name.startsWith('CABIN_LIGHT'))value.emissiveIntensity=cfg.sceneId==='night'?1.1:.32;

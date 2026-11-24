@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
+import { branchletGeometry, branchletMaterial, grassTuftGeometry } from './reward3d-vegetation.js';
 
 const TRACK_START = -340;
 const TRACK_END = 390;
@@ -485,7 +486,7 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   for (let i = 0; i < crownVertices.count; i++) {
     const x = crownVertices.getX(i), y = crownVertices.getY(i), z = crownVertices.getZ(i);
     const ripple = Math.sin(x * 12 + y * 5) * Math.cos(z * 10 - y * 9);
-    const scale = 1 + .087 * ripple + .07 * Math.sin(z * 7 + x * 4);
+    const scale = 1 + .14 * ripple + .095 * Math.sin(z * 7 + x * 4);
     crownVertices.setXYZ(i, x * scale, y * scale, z * scale);
     const shade = .85 + .10 * y + .07 * ripple;
     crownColors.push(shade, shade * (.965 + y * .03), shade);
@@ -514,21 +515,33 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   const blossomGrain = own(new THREE.CanvasTexture(blossomTile));
   blossomGrain.colorSpace = THREE.SRGBColorSpace;
   const blossomMaterial = lambert({ vertexColors: true, map: blossomGrain, emissive: 0x542536, emissiveIntensity: .12 });
-  instances('forked-cherry-trunks', own(new THREE.CylinderGeometry(.57, 1, 1, 6, 1, true)),
-    standard({ roughness: .96 }), bark);
+  const cherryBark = detailSurface(standard({roughness:.96}),detail,{
+    projection:[1,.74,.55],scale:[.85,1.3],strength:[.28,.36,.45],tint:0xbba49a
+  });
+  instances('forked-cherry-trunks', own(new THREE.CylinderGeometry(.57, 1, 1, 6, 1, true)), cherryBark, bark);
+  const showsSprigs = lobe => !reduced && lobe.z <= 85 && distantPinks.includes(lobe.color);
+  if (!reduced) {
+    const sprigs=[];
+    for(const lobe of [...crowns,...shadeCrowns]){
+      if(lobe.x < -150||lobe.x > 254)continue;
+      sprigs.push({...lobe,sx:lobe.sx*1.13,sy:lobe.sy*1.11,sz:lobe.sz*1.15,color:0xffe1dc});
+      lobe.sx*=.49;lobe.sy*=.59;lobe.sz*=.51;
+    }
+    const flowerMaterial=branchletMaterial(own,true);
+    const smallSprig=own(branchletGeometry(false));
+    const distantSprigs=distantCrowns.filter(showsSprigs).map(lobe=>({...lobe,sy:lobe.sy*.86}));
+    instances('individual-cherry-flowers',own(branchletGeometry()),flowerMaterial,sprigs);
+    instances('blossom-tips',smallSprig,flowerMaterial,blossomTips);
+    instances('distant-cherry-sprigs',smallSprig,flowerMaterial,distantSprigs);
+  }else{
+    instances('bright-blossom-clusters',crownGeometry,blossomMaterial,blossomTips);
+  }
   instances('layered-cherry-canopies', crownGeometry, blossomMaterial, crowns);
   instances('shadow-casting-cherry-canopies', crownGeometry, blossomMaterial, shadeCrowns, { shadow: true });
-  instances('bright-blossom-clusters', crownGeometry, blossomMaterial, blossomTips);
-  const hillsideCanopy = own(new THREE.SphereGeometry(1, 7, 4));
-  instances('distant-hillside-groves', hillsideCanopy, lambert({}), distantCrowns);
+  const hillsideCanopy=own(new THREE.SphereGeometry(1,7,4));
+  instances('distant-hillside-groves',hillsideCanopy,lambert({}),distantCrowns.filter(lobe=>!showsSprigs(lobe)));
 
-  const blade = own(new THREE.BufferGeometry());
-  blade.setAttribute('position', new THREE.Float32BufferAttribute([
-    -.18, 0, 0, .08, 0, 0, -.27, 1, .09,
-    -.08, 0, -.03, .18, 0, .03, .31, .73, -.13,
-    0, 0, -.16, 0, 0, .14, .08, .86, .24
-  ], 3));
-  blade.computeVertexNormals();
+  const blade = own(grassTuftGeometry());
   for (let i = 0; i < (reduced ? 330 : 770); i++) {
     const x = range(-132, 245);
     const z = i % 5 === 0 ? range(-15, -2.1) : range(2.45, 44);
@@ -536,7 +549,7 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
     const height = range(.22, .72);
     meadowTufts.push({ ...boxAt(x, groundHeight(x, z) - .04, z, height, height, height, pick(greens)), ry: range(0, TAU) });
   }
-  instances('spring-grass-and-river-reeds', blade, lambert({ side: THREE.DoubleSide }), meadowTufts);
+  instances('spring-grass-and-river-reeds', blade, lambert({ side: THREE.DoubleSide, vertexColors:true }), meadowTufts);
 
   // Separate ridges curve across the background so the peaks shift by depth.
   const ridges = [

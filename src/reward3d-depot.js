@@ -1,9 +1,10 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
+import { branchletGeometry, branchletMaterial, grassTuftGeometry } from './reward3d-vegetation.js';
 
 // Coordinates are metres: the exit is x=0, the single track is z=0,
 // and the railhead is y=.15. The camera-facing wall is deliberately open.
-export function createDepotWorld(scene, { config } = {}) {
+export function createDepotWorld(scene, { config, reduced = false } = {}) {
   const halfGauge=(config?.gauge||1.067)/2;
   const group = new THREE.Group();
   group.name = 'depot-hero-world';
@@ -16,7 +17,7 @@ export function createDepotWorld(scene, { config } = {}) {
   const crown=keep(sphere.clone()),crownPositions=crown.attributes.position;
   for(let i=0;i<crownPositions.count;i++){
     const x=crownPositions.getX(i),y=crownPositions.getY(i),z=crownPositions.getZ(i);
-    const r=1+.055*Math.sin(x*4.7+y*3.1+z*3.8)+.032*Math.sin(z*7.1-x*3.4+y*5.2);
+    const r=1+.115*Math.sin(x*4.7+y*3.1+z*3.8)+.075*Math.sin(z*7.1-x*3.4+y*5.2);
     crownPositions.setXYZ(i,x*r,y*r,z*r);
   }
   const leafColors=[],leafNormal=new THREE.Vector3();
@@ -228,8 +229,9 @@ export function createDepotWorld(scene, { config } = {}) {
   const hangers=[],outsidePosts=[];
   for(let x=-294;x<=280;x+=8)hangers.push({x,y:5.925,z:0,sx:.012,sy:.65,sz:.012});
   for(let x=18;x<=280;x+=36){
-    for(const z of [-5.8,5.8])outsidePosts.push({x,y:3.2,z,sx:.18,sy:6.65,sz:.18});
-    outsidePosts.push({x,y:6.5,z:0,sx:.17,sy:.16,sz:11.8});
+    // The exposed single track uses cantilevers anchored across the track.
+    outsidePosts.push({x,y:3.2,z:5.8,sx:.18,sy:6.65,sz:.18});
+    outsidePosts.push({x,y:6.5,z:2.79,sx:.17,sy:.16,sz:6.14});
     insulators.push({x,y:6.28,z:0,sx:.2,sy:.22,sz:.2});
   }
   batch(box,wireMaterial,hangers);batch(box,litMetal,outsidePosts);batch(box,ceramic,insulators);
@@ -365,15 +367,19 @@ export function createDepotWorld(scene, { config } = {}) {
   group.add(exitLight,exitLight.target,coolFill,warmPractical);
 
   // The outside is a sunlit railway meadow, not another elevated viaduct.
-  const trunks=[],foliage=[],grasses=[],flowers=[],fence=[],shrubs=[];
+  const trunks=[],foliage=[],branchlets=[],grasses=[],flowers=[],fence=[],shrubs=[];
   const foliagePalette=[0x405c3c,0x4b6541,0x5b7048,0x68764b,0x536a46,0x456348,0x77784d];
   let vegetationSeed=seed^0x9e3779b9;
   const vegetationRandom=()=>{vegetationSeed=(1664525*vegetationSeed+1013904223)>>>0;return vegetationSeed/4294967296;};
-  const bark=steel({color:0x64523d,roughness:1}),trunkGeometry=keep(new THREE.CylinderGeometry(.55,1,1,7));
+  const bark=detailSurface(steel({color:0x64523d,roughness:1}),detail,{
+    projection:[1,.74,.29],scale:[.73,3.4],strength:[.35,.37,.31],tint:0xa68b70
+  });
+  const trunkGeometry=keep(new THREE.CylinderGeometry(.46,1,1,7));
   for(let i=0;i<240;i++){
     const x=-30+vegetationRandom()*620;
     const z=(i%2?1:-1)*(27+Math.pow(vegetationRandom(),1.25)*125);
     if(x<3&&Math.abs(z)<30)continue;
+    const firstCrown=foliage.length;
     const h=4.2+vegetationRandom()*5.8,s=.7+vegetationRandom()*1.1,lean=(vegetationRandom()-.5)*.12;
     trunks.push({x,y:h*.34-.12,z,sx:.24*s,sy:h*.68,sz:.24*s,rz:lean});
     const crownY=h*.73+(vegetationRandom()-.5)*s*.16,rotation=vegetationRandom()*Math.PI*2;
@@ -406,19 +412,24 @@ export function createDepotWorld(scene, { config } = {}) {
           color:foliagePalette[(baseColor+j+2)%foliagePalette.length]});
       }
     }
+    if(!reduced&&x<235&&Math.abs(z)<61){
+      for(const lobe of foliage.slice(firstCrown)){
+        branchlets.push({...lobe,sx:lobe.sx*1.14,sy:lobe.sy*1.02,sz:lobe.sz*1.15});
+        lobe.sx*=.59;lobe.sy*=.57;lobe.sz*=.59;
+      }
+    }
   }
-  for(let i=0;i<550;i++){
-    const x=2+random()*360,z=(i%2?1:-1)*(12.8+random()*10),h=.14+random()*.35;
-    grasses.push({x,y:h/2-.11,z,sx:.07+random()*.12,sy:h,sz:.08,rz:(random()-.5)*.6,color:[0x879050,0x637b42,0x99985c][i%3]});
-    if(i%9===0)flowers.push({x,y:h-.03,z,sx:.09,sy:.07,sz:.09,color:i%2?0xf3d181:0xe3dfcf});
+  for(let i=0;i<(reduced?280:550);i++){
+    const x=2+random()*360,z=(i%2?1:-1)*(12.6+Math.pow(random(),1.6)*10),h=.15+random()*.34;
+    const spread=.22+random()*.38,ry=random()*Math.PI*2;
+    grasses.push({x,y:-.123,z,sx:spread,sy:h,sz:spread,ry,color:[0x9ba466,0x74874a,0xaab178][i%3]});
+    if(i%9===0)flowers.push({x,y:h-.14,z,sx:.037,sy:.025,sz:.037,color:i%2?0xc9ab57:0xe3dfcf});
   }
   batch(trunkGeometry,bark,trunks);
   const leafMaterial=steel({color:0xffffff,vertexColors:true,roughness:.95});
   batch(crown,leafMaterial,foliage,true);batch(crown,leafMaterial,shrubs);
-  const bladeGeometry=keep(new THREE.BufferGeometry());
-  bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute([-.5,-.5,0,.5,-.5,0,.12,.5,.05,0,-.5,-.5,0,-.5,.5,.03,.4,.1],3));
-  bladeGeometry.computeVertexNormals();
-  batch(bladeGeometry,steel({color:0xffffff,roughness:1,side:THREE.DoubleSide}),grasses);
+  if(branchlets.length)batch(keep(branchletGeometry()),branchletMaterial(keep),branchlets);
+  batch(keep(grassTuftGeometry()),keep(new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})),grasses);
   batch(keep(new THREE.IcosahedronGeometry(1,0)),steel({color:0xffffff,roughness:1}),flowers);
   for(let x=8;x<290;x+=4)fence.push({x,y:.47,z:10,sx:.08,sy:1.15,sz:.08});
   for(const y of [.37,.9])fence.push({x:148,y,z:10,sx:284,sy:.045,sz:.045});

@@ -13,7 +13,7 @@ export function skyPose(s) {
   };
 }
 
-export function createSkybridgeWorld(scene, { config } = {}) {
+export function createSkybridgeWorld(scene, { config, reduced = false } = {}) {
   const halfGauge=(config?.gauge||1.067)/2;
   const group = new THREE.Group();
   group.name = 'skybridge-world';
@@ -182,7 +182,7 @@ export function createSkybridgeWorld(scene, { config } = {}) {
     }
   });
   rockMap.wrapS = rockMap.wrapT = THREE.RepeatWrapping; rockMap.anisotropy = 4;
-  createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap, detail });
+  createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap, detail, reduced });
 
   const arch = new THREE.Shape();
   arch.moveTo(-4.75, -.25); arch.lineTo(-4.75, 3.9);

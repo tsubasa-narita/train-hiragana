@@ -120,7 +120,7 @@ function ballastGrain() {
 
 function coniferGeometry(sides, tiers, seed) {
   const random = seededRandom(seed), positions = [], colors = [], indices = [];
-  const needle = new THREE.Color(0x263f48), powder = new THREE.Color(0xcddcfa);
+  const needle = new THREE.Color(0x233f3e), powder = new THREE.Color(0xcddcfa);
   const color = new THREE.Color();
   for (let tier = 0; tier < tiers; tier++) {
     const t = tier / (tiers - 1), start = positions.length / 3;
@@ -131,9 +131,11 @@ function coniferGeometry(sides, tiers, seed) {
     for (const [offset, width] of rings) {
       for (let i = 0; i < sides; i++) {
         const angle = (i + twist) / sides * Math.PI * 2;
-        const r = radius * width * (.82 + tips[i] * .30);
-        positions.push(Math.cos(angle) * r, y + height * (offset + (tips[i] - .5) * .12), Math.sin(angle) * r);
-        const coating = smoothstep(offset + snow[i] * .60, .41, .84) * lerp(.28, .92, snow[i]);
+        const jagged = sides > 8 && i % 2 === 0 && offset < .4;
+        const r = radius * width * (.78 + tips[i] * .36 + (jagged ? .21 : 0));
+        const droop = (tips[i] - .5) * .18 - (jagged ? .12 : 0);
+        positions.push(Math.cos(angle) * r, y + height * (offset + droop), Math.sin(angle) * r);
+        const coating = smoothstep(offset + snow[i] * .61, .35, .82) * lerp(.25, .97, snow[i]);
         color.copy(needle).lerp(powder, coating).multiplyScalar(.84 + tips[i] * .22);
         colors.push(color.r, color.g, color.b);
       }
@@ -559,9 +561,12 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
   const snowball = keep(new THREE.SphereGeometry(1, 8, 4));
   batch('low-wind-packed-drifts', snowball, standard({ roughness: .93 }), drifts);
   batch('granite-showing-through-snow', keep(new THREE.DodecahedronGeometry(1)), standard({ roughness: 1 }), rocks);
-  batch('conifer-trunks', box, standard({ color: 0x504652, roughness: 1 }), trunks);
-  const needles = standard({ vertexColors: true, roughness: .94 });
-  if (denseTrees.length) batch('near-snow-laden-firs', keep(coniferGeometry(8, 4, 6953)), needles, denseTrees);
+  batch('conifer-trunks', keep(new THREE.CylinderGeometry(.63,1,1,6)),
+    standard({ color:0x514440, roughness:.97 }), trunks);
+  const needles = detailSurface(standard({ vertexColors:true, roughness:.94 }),detail,{
+    projection:[1,.73,1.1],scale:[3.5,4.2],strength:[.25,.37,.39],tint:0xc3d3dc
+  });
+  if (denseTrees.length) batch('near-snow-laden-firs', keep(coniferGeometry(14, 5, 6953)), needles, denseTrees);
   batch('far-snow-laden-firs', keep(coniferGeometry(6, 3, 20267)), needles, distantTrees);
 
   const snowfall = reduced ? null : createSnowfall(keep, mesh);
