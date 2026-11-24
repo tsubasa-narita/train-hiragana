@@ -3,19 +3,41 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BASIC_KANA } from '../src/data.js';
 import { KANA_STROKES } from '../src/kana-strokes.js';
-import { newTrace } from '../src/trace.js';
+import { KATAKANA_STROKES } from '../src/katakana-strokes.js';
+import { kanaInScript } from '../src/kana-script.js';
+import { newTrace, switchTraceScript } from '../src/trace.js';
 import { createTracker } from '../src/trace-engine.js';
 
-test('46 kana preserve the source paths in exact stroke order', () => {
-  assert.deepEqual(Object.keys(KANA_STROKES), BASIC_KANA);
-  for (const c of BASIC_KANA) {
-    const svg = readFileSync(new URL(`../vendor/kanjivg/${c.codePointAt(0).toString(16).padStart(5, '0')}.svg`, import.meta.url), 'utf8');
-    const source = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"/g)].map(m => m[1]);
-    assert.deepEqual(KANA_STROKES[c], source, c);
+test('both sets of 46 kana preserve their source paths in exact stroke order', () => {
+  for (const [script, paths] of [['hiragana', KANA_STROKES], ['katakana', KATAKANA_STROKES]]) {
+    const letters = BASIC_KANA.map(letter => kanaInScript(letter, script));
+    assert.deepEqual(Object.keys(paths), letters);
+    for (const c of letters) {
+      const svg = readFileSync(new URL(`../vendor/kanjivg/${c.codePointAt(0).toString(16).padStart(5, '0')}.svg`, import.meta.url), 'utf8');
+      const source = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"/g)].map(m => m[1]);
+      assert.deepEqual(paths[c], source, c);
+    }
   }
   assert.equal(KANA_STROKES['よ'].length, 2);
   assert.equal(KANA_STROKES['き'].length, 4);
   assert.equal(KANA_STROKES['さ'].length, 3);
+});
+
+test('switching scripts keeps unfinished strokes and credit separate for the same tracing card', () => {
+  const oldState = { ...newTrace(['や'], 'よ'), index: 32 };
+  delete oldState.script;
+  const katakana = switchTraceScript(oldState, 'katakana');
+  assert.equal(katakana.index, 0);
+  assert.equal(katakana.card, oldState.card);
+  katakana.stroke = KATAKANA_STROKES['ヨ'].length;
+  katakana.complete = true;
+  katakana.credited = true;
+  const back = switchTraceScript(katakana, 'hiragana');
+  assert.equal(back.index, 32);
+  assert.equal(back.complete, false);
+  assert.equal(back.credited, false);
+  assert.equal(switchTraceScript(back, 'katakana').stroke, 3);
+  assert.equal(switchTraceScript(back, 'katakana').credited, true);
 });
 
 test('tracing uses matching initials, varied cards, and canonical selected rows', () => {

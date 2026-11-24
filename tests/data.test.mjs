@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { TRAINS, QUIZ_CARDS, BASIC_KANA, KANA_ROWS, ROWS, orderedLetters, nextJourneyOffset, kanaRow, targetIndices, makeChoices, makeJourney, pickQuizCard, readProgress } from '../src/data.js';
+import { kanaInScript } from '../src/kana-script.js';
+
+test('the saved script changes displayed kana without changing marks or train names in data', () => {
+  assert.equal(readProgress(null).script, 'hiragana');
+  assert.equal(readProgress({getItem: () => '{"script":"bad"}'}).script, 'hiragana');
+  assert.equal(readProgress({getItem: () => '{"script":"katakana"}'}).script, 'katakana');
+  const phrase = 'E5・しんじゅく きょー ぱっ';
+  assert.equal(kanaInScript(phrase, 'hiragana'), phrase);
+  assert.equal(kanaInScript(phrase, 'katakana'), 'E5・シンジュク キョー パッ');
+});
 import { REWARD_TRAINS, chooseReward, REWARD_DURATION } from '../src/reward.js';
 import { quizImageFile } from '../src/quiz-images.js';
 const baseKana = character => character.normalize('NFD')[0];

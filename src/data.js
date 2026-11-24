@@ -7,6 +7,7 @@ import { POPULAR_TRAINS } from './popular-trains.js';
 import { NEW15_MENDEL_TRAINS } from './new15-mendel.js';
 import { NEW15_HERSCHEL_TRAINS } from './new15-herschel.js';
 import { NEW15_EINSTEIN_TRAINS } from './new15-einstein.js';
+import { normalizeKanaScript } from './kana-script.js';
 import { WORD_SHORT_TRAINS } from './word-short-trains.js';
 import { WORD_EXTRA_TRAINS } from './word-extra-trains.js';
 export const TRAINS = [
@@ -237,6 +238,7 @@ export function readProgress(storage) {
       imageDecks: Object.fromEntries(Object.entries(value.imageDecks && typeof value.imageDecks === 'object' ? value.imageDecks : {}).filter(([letter, deck]) => isQuizKey(letter) && Array.isArray(deck)).map(([letter, deck]) => [letter, deck.filter(key => typeof key === 'string').slice(0, QUIZ_CARDS.length)])),
       trips: Number.isSafeInteger(value.trips) && value.trips >= 0 ? value.trips : 0,
       sound: value.sound !== false,
+      script: normalizeKanaScript(value.script),
       level: ['match', 'listen'].includes(value.level) ? value.level : 'match',
       recentFacts: Object.fromEntries(Object.entries(value.recentFacts && typeof value.recentFacts === 'object' ? value.recentFacts : {}).filter(([id,index]) => TRAINS.some(t => t.id === id) && Number.isSafeInteger(index) && index >= 0 && index < 10)),
       findChoices: [2, 3].includes(value.findChoices) ? value.findChoices : value.level === 'listen' ? 3 : 2,
@@ -244,5 +246,5 @@ export function readProgress(storage) {
       rows: normalizeRows(value.rows),
       journeyOffset: Number.isSafeInteger(value.journeyOffset) && value.journeyOffset >= 0 ? value.journeyOffset % orderedLetters(value.rows).length : 0,
     };
-  } catch { return { stamps: [], trips: 0, sound: true, level: 'match', findChoices: 2, findCompounds: 'normal', recentFacts: {}, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
+  } catch { return { stamps: [], trips: 0, sound: true, script: 'hiragana', level: 'match', findChoices: 2, findCompounds: 'normal', recentFacts: {}, rows: [], journeyOffset: 0, recentImages: {}, imageDecks: {} }; }
 }

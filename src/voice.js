@@ -5,6 +5,12 @@ let player;
 let sequence = 0;
 let finishPlayback;
 
+export function kanaCue(text, script, alternate) {
+  // A few recorded prompts explicitly say “hiragana”. Use the existing
+  // recordings of the train and kana when the glyph on screen is katakana.
+  return script === 'katakana' && /ひらがな|ヒラガナ/.test(VOICE_SPOKEN[text] || '') ? alternate : [text];
+}
+
 export function stopVoice() {
   sequence++;
   finishPlayback?.(false);

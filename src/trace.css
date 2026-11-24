@@ -16,7 +16,7 @@
 .trace-layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:28px; align-items:start; }
 .trace-workbench { padding:18px; border-radius:25px; background:#fffef9; border:1px solid #dce4d5; box-shadow:0 9px 26px #325b4210; min-width:0; }
 .trace-instruction { display:flex; gap:9px; align-items:center; min-height:40px; margin-bottom:12px; }
-.trace-instruction p { margin:0; font-size:15px; font-weight:700; flex:1; }
+.trace-instruction p { margin:0; font-size:15px; font-weight:700; flex:1; line-height:1.45; min-height:2lh; align-content:center; }
 .trace-count { font-size:12px; color:#60796a; white-space:nowrap; }
 .trace-signal { width:10px; height:10px; background:#e6ac4a; border-radius:50%; flex-shrink:0; }
 .is-complete .trace-signal { background:#238675; }

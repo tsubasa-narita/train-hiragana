@@ -21,7 +21,7 @@ export function chooseReward(excludeId=previousId) {
   const train=pool[Math.floor(Math.random()*pool.length)];previousId=train.id;return train;
 }
 export function stopTrainReward(){activeClose?.(false);}
-export function showTrainReward({ train:requested, sound=true, speak, onDone, onBook, onPlayed, onSoundChange,
+export function showTrainReward({ train:requested, sound=true, speak, kana=text=>text, onDone, onBook, onPlayed, onSoundChange,
   loadScene=()=>import('./reward3d.js') }={}){
   stopTrainReward();unlockRewardAudio(sound);
   const current=REWARD_TRAINS.some(train=>train.id===requested?.id)?resolveRewardExperience(requested):preloader.take();
@@ -55,16 +55,16 @@ export function showTrainReward({ train:requested, sound=true, speak, onDone, on
   function labels(){
     const title=get('#reward-title');
     const parts=current.id==='shonan-shinjuku'?['しょうなん','しんじゅくらいん']:[current.name];
-    title.innerHTML=parts.map(part=>`<span>${part}</span>`).join('');
+    title.innerHTML=parts.map(part=>`<span>${kana(part)}</span>`).join('');
     title.classList.toggle('reward-long-title',parts.length>1);
     get('.reward-model-name').textContent=rewardScenario(current.sceneId).name;
     dialog.dataset.scenario=current.sceneId;
     dialog.style.setProperty('--train-color',current.color);
-    canvas.setAttribute('aria-label',`${current.name}が線路と風景の中を走る3Dアニメーション`);
+    canvas.setAttribute('aria-label',`${kana(current.name)}が線路と風景の中を走る3Dアニメーション`);
     button('mute').textContent=sound?'♪ おと あり':'♪ おと なし';
     button('mute').setAttribute('aria-pressed',String(sound));
     get('.reward-fallback img').src=`./assets/trains/${quizImageFile(current.image)}`;
-    get('.reward-fallback img').alt=`${current.name}のイラスト`;
+    get('.reward-fallback img').alt=`${kana(current.name)}のイラスト`;
   }
   function controls(next){
     phase=next;dialog.dataset.phase=next;dialog.classList.toggle('running',next==='running');dialog.classList.toggle('arrived',next==='arrived');

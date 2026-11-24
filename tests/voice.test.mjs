@@ -7,7 +7,14 @@ import { REWARD_TRAINS } from '../src/reward.js';
 import { VOICE_FILES } from '../src/voice-manifest.js';
 import { ANNOUNCEMENT_FILES } from '../src/announcement-manifest.js';
 import { questionText, hintText, praiseText, tracePromptText, VOICE_SAMPLE } from '../src/voice-lines.js';
-import { playVoice, playVoiceSequence, stopVoice } from '../src/voice.js';
+import { kanaCue, playVoice, playVoiceSequence, stopVoice } from '../src/voice.js';
+
+test('katakana activities keep the recorded sounds and skip prompts explicitly labeled hiragana', () => {
+  const hint = hintText('こ');
+  assert.deepEqual(kanaCue(hint, 'hiragana', ['こ']), [hint]);
+  assert.deepEqual(kanaCue(hint, 'katakana', ['こ']), ['こ']);
+  assert.deepEqual(kanaCue('こまち', 'katakana', ['こ']), ['こまち']);
+});
 import { trainFacts } from '../src/train-facts.js';
 
 test('all reachable narration has a generated audio file', () => {
