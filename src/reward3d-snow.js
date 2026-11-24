@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 const TRACK_START = -365;
 const TRACK_END = 415;
@@ -160,7 +161,7 @@ function coniferGeometry(sides, tiers, seed) {
 }
 
 function ridgeGeometry({ peaks, center, front, back, rock, snow, haze, phase }, reduced) {
-  const columns = reduced ? 96 : 152, rows = reduced ? 9 : 13;
+  const columns = reduced ? 96 : 176, rows = reduced ? 10 : 19;
   const random = seededRandom(17021 + phase);
   const geometry = gridGeometry(columns, rows, (col, row) => {
     const x = lerp(-1060, 660, col / columns) + (col > 0 && col < columns ? (random() - .5) * 7 : 0);
@@ -175,7 +176,8 @@ function ridgeGeometry({ peaks, center, front, back, rock, snow, haze, phase }, 
     }
     const ribs = Math.sin(foot * .18 + z * .068 + phase) * Math.cos(foot * .079 - z * .059);
     const profile = Math.pow(Math.sin(Math.PI * across), 1.48);
-    const y = -12 + profile * (crest * (.92 + .11 * ribs) + 6 * random());
+    const gullies = Math.sin(foot * .105 + phase + 1.28 * Math.sin(z * .035));
+    const y = -12 + profile * (crest * (.92 + .11 * ribs + .052 * gullies) + 4 * random());
     return [x, y, z];
   });
   const rockColor = new THREE.Color(rock), snowColor = new THREE.Color(snow), hazeColor = new THREE.Color(haze);
@@ -278,16 +280,22 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
     const x = lerp(-490, 470, col / groundColumns), z = groundRows[row];
     return [x, snowHeight(x, z), z];
   }));
-  const snowBlue = new THREE.Color(0x9db5d4), snowWhite = new THREE.Color(0xe2edfd);
+  const snowBlue = new THREE.Color(0x93accb), snowWhite = new THREE.Color(0xe2edfd);
   colorGeometry(ground, (color, x, y, z) => {
     const wind = .68 + .19 * Math.sin(x * .103 + z * .27) + .13 * Math.cos(x * .43 - z * .39);
     const roadDirt = .31 * (1 - smoothstep(Math.abs(z), 1.8, 4.6));
     const glenShade = .12 * smoothstep(z, 27, 90) * (1 - smoothstep(y, 2, 7));
     color.copy(snowBlue).lerp(snowWhite, clamp(wind - roadDirt - glenShade, 0, 1));
   });
-  mesh('wind-sculpted-snowfield', ground, standard({ vertexColors: true, roughness: .94 })).receiveShadow = true;
+  const detail = keep(sceneryDetailTexture());
+  const snowSurface = detailSurface(standard({ vertexColors:true, roughness:.84 }), detail, {
+    projection:[1,.13,0], scale:[20,11], strength:[.28,.22,.21], tint:0xc7ddfa
+  });
+  mesh('wind-sculpted-snowfield', ground, snowSurface).receiveShadow = true;
 
-  const mountainMaterial = keep(new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }));
+  const mountainMaterial = detailSurface(keep(new THREE.MeshBasicMaterial({ vertexColors:true, fog:false })),detail,{
+    projection:[1,.37,1.25], scale:[78,46], strength:[.34,.32,.18], tint:0xbfcee3
+  });
   const ridges = [
     { name: 'far-alpine-divide', center: 402, front: 249, back: 535, phase: 4,
       rock: 0x6378a2, snow: 0xa5b9dd, haze: 0x768db4,
@@ -474,9 +482,12 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
   details.push({ x: towerX, y: towerBase + 19.1, z: towerZ, sx: .12, sy: .67, sz: .12, color: 0x9d806e });
 
   const timberMaterial = standard({ roughness: .87 });
+  const sidingMaterial = detailSurface(standard({ roughness:.92 }), detail, {
+    projection:[1,.72,1.1], scale:[5.7,3.6], strength:[.15,.16,.17], tint:0xe4d9d1
+  });
   const gable = keep(profileGeometry([[0, -.5], [1, 0], [0, .5]]));
-  batch('alpine-houses-and-lodge', box, timberMaterial, walls);
-  batch('steep-timber-gables', gable, timberMaterial, gables);
+  batch('alpine-houses-and-lodge', box, sidingMaterial, walls);
+  batch('steep-timber-gables', gable, sidingMaterial, gables);
   batch('eaves-chimneys-and-clock-hands', box, timberMaterial, details);
   batch('capped-rooftops-and-stone-plinths', box, standard({ roughness: .89 }), [...roofPanels, ...plaster]);
   const windowFace = keep(new THREE.PlaneGeometry());
@@ -533,6 +544,16 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
     if (i % 4 === 0 && z > 10) {
       rocks.push({ x: x + .3, y: y + sy * .52, z, sx: between(.31, .95), sy: sy * .75,
         sz: between(.29, .64), ry: between(0, 3), color: i % 8 ? 0x566b89 : 0x445671 });
+    }
+  }
+  // Broken ploughed banks sit just beyond the ballast. Keep the camera side
+  // low enough for the bogies and rails to remain visible in close-ups.
+  for (let x = -165; x < 255; x += between(2.1, 5.2)) {
+    for (const side of [-1, 1]) {
+      const z = side * between(2.6, 3.5), sy = between(.10, side > 0 ? .33 : .20);
+      drifts.push({ x: x + between(-.5, .5), y:snowHeight(x,z) - sy*.44, z,
+        sx: between(.9,2.65), sy, sz: between(.32,.63), ry:between(-.08,.08),
+        color:side > 0 ? 0xcdddf6 : 0xbecfe7 });
     }
   }
   const snowball = keep(new THREE.SphereGeometry(1, 8, 4));

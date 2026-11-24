@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 const TRACK_START = -340;
 const TRACK_END = 390;
@@ -184,8 +185,11 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   for (let i = 0; i < valleyPositions.count; i++) {
     valleyUv.setXY(i, valleyPositions.getX(i) / 7, valleyPositions.getZ(i) / 7);
   }
-  mesh('grassy-terraces-and-gravel-shores', valley,
-    lambert({ vertexColors: true, map: grain(64, 197, 255) })).receiveShadow = true;
+  const detail = own(sceneryDetailTexture());
+  const bankSurface = detailSurface(lambert({vertexColors:true, map:grain(64, 197, 255)}), detail, {
+    projection:[1,.23,0], scale:[26,23], strength:[.40,.37,.34], tint:0xd6c4a5
+  });
+  mesh('grassy-terraces-and-gravel-shores', valley, bankSurface).receiveShadow = true;
 
   // Rail heads, webs and sleepers run continuously over the deck at the same datum.
   const trackLength = TRACK_END - TRACK_START, trackMid = (TRACK_END + TRACK_START) / 2;
@@ -307,18 +311,21 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
         vec2 p = waterPosition.xz;
         float shortWave = p.y * 6.7 - p.x * .74 - time * 3.2;
         float bend = sin(p.x * .19 + p.y * .12) + .58 * sin(p.y * .53 - p.x * .08);
-        float wave = .76 * sin(p.y * 2.6 + p.x * .44 - time * 2.1 + 2.1 * bend)
-          + .46 * sin(shortWave + bend) * (1.0 - smoothstep(.8, 2.7, fwidth(shortWave)));
+        float current = p.y * 2.6 + p.x * .44 - time * 2.1 + 2.1 * bend;
+        float crossWave = p.x * 1.9 + p.y * 2.1 + time * 1.25 + 1.7 * sin(p.y * .37);
+        float wave = .57 * sin(current) + .28 * sin(crossWave)
+          + .40 * sin(shortWave + bend) * (1.0 - smoothstep(.8, 2.7, fwidth(shortWave)));
         float band = sin(p.x * .22 + p.y * .105 + sin(p.y * .07) * 2.4);
         float edge = smoothstep(.17, .40, abs(across - .5));
         vec3 normal = normalize(vec3(.037 * cos(p.x + p.y), 1.0, wave * .047));
         vec3 towardEye = normalize(cameraPosition - waterPosition);
         float fresnel = pow(1.0 - max(dot(normal, towardEye), 0.0), 3.6);
         vec3 reflected = mix(skyTint, blossomTint, edge * (.38 + .31 * band));
-        vec3 color = mix(deep, shoal, edge * .72 + wave * .029 + .09 * band);
+        float shallows = edge * smoothstep(-.7, .75, sin(p.y*.40 + p.x*.19) + .34 * sin(p.x*.66 - p.y*.27));
+        vec3 color = mix(deep, shoal, edge * .65 + wave * .035 + .09 * band + .14 * shallows);
         color = mix(color, reflected, fresnel * .55);
         float crest = smoothstep(.73, 1.17, wave) * smoothstep(.22, .87, band);
-        color += glint * crest * (.032 + .10 * fresnel);
+        color += glint * crest * (.028 + .09 * fresnel + .115 * shallows);
         gl_FragColor = vec4(color, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -561,8 +568,10 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
       }
       return color;
     }));
-    mesh(`mountain-ridge-${index + 1}`, geometry,
-      own(new THREE.MeshBasicMaterial({ vertexColors: true })));
+    const finish = detailSurface(own(new THREE.MeshBasicMaterial({ vertexColors:true })), detail, {
+      projection:[1,.34,1.15], scale:[102,58], strength:[.35,.19,.13], tint:0xaabcca
+    });
+    mesh(`mountain-ridge-${index + 1}`, geometry, finish);
   }
 
   // This dome is the camera-centred sky interface used by the reward director.

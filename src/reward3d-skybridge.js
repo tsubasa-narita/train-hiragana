@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { createTunnelMountain } from './reward3d-terrain.js';
+import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 export const SKY_RADIUS = 600;
 
@@ -23,7 +24,12 @@ export function createSkybridgeWorld(scene, { config } = {}) {
   let seed = 73129, disposed = false;
   const random = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; };
   const box = keep(new THREE.BoxGeometry(1, 1, 1));
-  const stone = keep(new THREE.MeshStandardMaterial({ color: 0xe5d8bf, roughness: .84, emissive: 0x30251b, emissiveIntensity: .12 }));
+  const detail = keep(sceneryDetailTexture());
+  const stone = detailSurface(keep(new THREE.MeshStandardMaterial({
+    color:0xe1d2b9,roughness:.84,emissive:0x30251b,emissiveIntensity:.12
+  })), detail, {
+    projection:[.85,1,.92], scale:[21,24], strength:[.45,.28,.21], tint:0xb0aaa0
+  });
   const trim = keep(new THREE.MeshStandardMaterial({ color: 0xf2e6d2, roughness: .7 }));
   const metal = keep(new THREE.MeshStandardMaterial({ color: 0x859ca4, metalness: .65, roughness: .38 }));
   const darkMetal = keep(new THREE.MeshStandardMaterial({ color: 0x465b65, metalness: .65, roughness: .46 }));
@@ -176,7 +182,7 @@ export function createSkybridgeWorld(scene, { config } = {}) {
     }
   });
   rockMap.wrapS = rockMap.wrapT = THREE.RepeatWrapping; rockMap.anisotropy = 4;
-  createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap });
+  createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap, detail });
 
   const arch = new THREE.Shape();
   arch.moveTo(-4.75, -.25); arch.lineTo(-4.75, 3.9);

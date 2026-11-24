@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 // Coordinates are metres: the exit is x=0, the single track is z=0,
 // and the railhead is y=.15. The camera-facing wall is deliberately open.
@@ -66,17 +67,11 @@ export function createDepotWorld(scene, { config } = {}) {
   const accent=steel({color:config?.color||0x2d7897,metalness:.35,roughness:.5});
   const lampMaterial=steel({color:0xffdf9e,emissive:0xffb94e,emissiveIntensity:2.6,roughness:.35});
 
-  // Seamless multiscale turf avoids repeating square patches in the chase shot.
-  const grassMap=repeatingMap(ctx=>{
-    const image=ctx.createImageData(256,256),tau=Math.PI*2;
-    for(let y=0;y<256;y++)for(let x=0;x<256;x++){
-      const u=x/256*tau,v=y/256*tau;
-      const n=Math.sin(u+Math.sin(v))*5+Math.sin(u*3-v*2)*3+Math.sin(u*7+v*5)*2+(random()-.5)*13;
-      image.data.set([74+n,89+n,50+n*.7,255],(y*256+x)*4);
-    }
-    ctx.putImageData(image,0,0);
-  },110,110);
-  const ground=mesh(keep(new THREE.PlaneGeometry(1600,1600)),steel({map:grassMap,roughness:1}),0,-.12,0);
+  const detail = keep(sceneryDetailTexture());
+  const lawn = detailSurface(steel({color: 0x667745, roughness: 1}), detail, {
+    projection: [1,.31,0], scale: [38,31], strength: [.76,.34,.38], tint: 0xddd6a0
+  });
+  const ground=mesh(keep(new THREE.PlaneGeometry(1600,1600)),lawn,0,-.12,0);
   ground.rotation.x=-Math.PI/2; ground.name='depot-meadow';
   const floorMap=repeatingMap(ctx=>{
     ctx.fillStyle='#414c4d';ctx.fillRect(0,0,256,256);
@@ -103,14 +98,29 @@ export function createDepotWorld(scene, { config } = {}) {
     ctx.strokeStyle='rgba(39,43,38,.25)';ctx.lineWidth=.8;
     ctx.beginPath();ctx.moveTo(0,128);ctx.lineTo(256,128);ctx.moveTo(128,0);ctx.lineTo(128,256);ctx.stroke();
   },50,4);
-  const apron=mesh(keep(new THREE.PlaneGeometry(650,25)),steel({map:apronMap,roughness:.92}),40,-.105,0);
+  const apronSurface = detailSurface(steel({map:apronMap, roughness:.92}), detail, {
+    projection: [1,.18,0], scale: [28,16], strength: [.52,.32,.23], tint: 0x9a9a87
+  });
+  const apron=mesh(keep(new THREE.PlaneGeometry(650,25)),apronSurface,40,-.105,0);
   apron.rotation.x=-Math.PI/2;
   const drainage=[],yardMarkings=[];
   for(let x=-265;x<300;x+=3.6){
-    drainage.push({x,y:-.087,z:-4.55,sx:3.2,sy:.035,sz:.27});
+    drainage.push({x,y:-.087,z:-4.55,sx:3.39,sy:.035,sz:.27});
     if(x>5)yardMarkings.push({x,y:-.082,z:-8.2,sx:1.45,sy:.012,sz:.075});
   }
   batch(box,darkMetal,drainage);batch(box,steel({color:0xc3b995,roughness:.95}),yardMarkings);
+  const grating = canvasMap(128, 16, ctx => {
+    ctx.fillStyle='#212a2a';ctx.fillRect(0,0,128,16);
+    for(let i=1;i<128;i+=5){
+      ctx.fillStyle='#71776b';ctx.fillRect(i,1,2,14);
+      ctx.fillStyle='#999787';ctx.fillRect(i,1,1,14);
+    }
+    ctx.fillStyle='#5b655e';ctx.fillRect(0,0,128,1);ctx.fillRect(0,15,128,1);
+  });
+  // Grate slots share one small texture and one instanced draw.
+  const grate = keep(new THREE.PlaneGeometry(1,1));
+  const covers = drainage.map(({x,y,z,sx,sz})=>({x,y:y+.019,z,sx,sy:sz,sz:1,rx:-Math.PI/2}));
+  batch(grate,steel({map:grating,roughness:.81}),covers);
   const ballastMap=repeatingMap(ctx=>{
     ctx.fillStyle='#696d68';ctx.fillRect(0,0,256,256);
     for(let i=0;i<5500;i++){
@@ -409,7 +419,7 @@ export function createDepotWorld(scene, { config } = {}) {
   bladeGeometry.setAttribute('position',new THREE.Float32BufferAttribute([-.5,-.5,0,.5,-.5,0,.12,.5,.05,0,-.5,-.5,0,-.5,.5,.03,.4,.1],3));
   bladeGeometry.computeVertexNormals();
   batch(bladeGeometry,steel({color:0xffffff,roughness:1,side:THREE.DoubleSide}),grasses);
-  batch(sphere,steel({color:0xffffff,roughness:1}),flowers);
+  batch(keep(new THREE.IcosahedronGeometry(1,0)),steel({color:0xffffff,roughness:1}),flowers);
   for(let x=8;x<290;x+=4)fence.push({x,y:.47,z:10,sx:.08,sy:1.15,sz:.08});
   for(const y of [.37,.9])fence.push({x:148,y,z:10,sx:284,sy:.045,sz:.045});
   batch(box,litMetal,fence);
@@ -425,14 +435,19 @@ export function createDepotWorld(scene, { config } = {}) {
   batch(box,steel({color:0xffffff,roughness:.85}),buildings);
   batch(box,steel({color:0x65766f,roughness:.9}),rooflines);
   for(let layer=0;layer<3;layer++){
-    const geometry=keep(new THREE.PlaneGeometry(1800,100,80,1));
+    const geometry=keep(new THREE.PlaneGeometry(1800,100,140,8));
     const positions=geometry.attributes.position;
     for(let i=0;i<positions.count;i++){
-      const x=positions.getX(i),top=positions.getY(i)>0;
-      positions.setY(i,top?33+layer*12+Math.sin(x*.01+layer)*16+Math.sin(x*.026+layer)*8+Math.sin(x*.061)*2:-.2);
+      const x=positions.getX(i),height=(positions.getY(i)+50)/100;
+      const ridge=31+layer*13+Math.sin(x*.009+layer)*13+Math.sin(x*.025+layer)*8+3*Math.sin(x*.054+layer*2);
+      positions.setY(i, .4 + height * ridge);
+      positions.setZ(i, height*75 + 13*Math.sin(x*.016 + height*3));
     }
     geometry.computeVertexNormals();
-    mesh(geometry,steel({color:[0x71806a,0x909884,0xb0ae9d][layer],roughness:1,side:THREE.DoubleSide}),0,0,340+layer*90);
+    const hillside=detailSurface(steel({color:[0x65776a,0x89988b,0xa6abac][layer],roughness:1,side:THREE.DoubleSide}),detail,{
+      projection:[1,.25,.47],scale:[147,74],strength:[.68,.28,.2],tint:0x9babad
+    });
+    mesh(geometry,hillside,0,0,295+layer*96);
   }
   const skyMaterial=keep(new THREE.ShaderMaterial({
     side:THREE.BackSide,depthWrite:false,

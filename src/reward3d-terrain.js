@@ -1,10 +1,11 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { detailSurface } from './reward3d-surface.js';
 
 // A single watertight rock volume, including its traversable tunnel. The outer
 // skin rolls out from the portal, over the ridge, under the sea and back into
 // the rear opening. The return rings form the bore: there are no end caps,
 // rectangular skirts, intersecting hill sheets, or hidden black portal disks.
-export function createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap }) {
+export function createTunnelMountain({ at, keep, mesh, instances, random, config, rockMap, detail }) {
   const front = -25, length = 585, sides = 120, rings = 144, capRings = 18;
   const tau = Math.PI * 2;
   function aperture(angle) {
@@ -27,8 +28,9 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     const baseY = opening.y + envelope * (-64 + ridgeHeight * elevation);
     // Spatially anchored outcrops cross the cap/body boundary. Angular sine
     // folds are deliberately absent: they made every ravine aim at the portal.
-    const relief = Math.sin(u * 19 + offset * .034 + baseY * .012) * 4.5
-      + Math.sin(u * 37 - offset * .071 + baseY * .043) * 2;
+    const relief = Math.sin(u * 19 + offset * .034 + baseY * .012) * 6.5
+      + Math.sin(u * 37 - offset * .071 + baseY * .043) * 3.5
+      + Math.sin(u * 123 + offset * .27) * Math.cos(baseY * .18 - offset * .05) * 1.3;
     const y = baseY + relief * Math.max(0, elevation);
     const depth = 30 + 7 * Math.sin(offset * .024 + y * .017) + 4 * Math.cos(y * .033 - offset * .014);
     return { s: front - depth - (length - 60) * u, y, offset };
@@ -41,8 +43,9 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
     // A bowed, irregular escarpment, not a flat end plate. Extra relief is a
     // function of location on the rock face, and vanishes at its shared edges.
     const bow = t * (.45 + .55 * t);
-    const relief = Math.sin(offset * .087 + y * .039) * 22 + Math.cos(y * .071 - offset * .033) * 13
-      + Math.sin(offset * .21 - y * .14) * 5;
+    const seam = y * .22 + offset * .063 + Math.sin(offset * .1 + y * .05) * 1.33;
+    const relief = Math.sin(offset * .087 + y * .039) * 30 + Math.cos(y * .071 - offset * .033) * 18
+      + Math.sin(offset * .21 - y * .14) * 7 + 4.8 * Math.sin(seam);
     const s = THREE.MathUtils.lerp(mouthS, edge.s, bow) + t * (1 - t) * relief;
     return at(s, y, offset);
   }
@@ -77,25 +80,27 @@ export function createTunnelMountain({ at, keep, mesh, instances, random, config
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geometry.setIndex(indices); geometry.computeVertexNormals();
   const colors = [], color = new THREE.Color();
-  const deep = new THREE.Color(0x354954), slate = new THREE.Color(0x697770), limestone = new THREE.Color(0xb5b29a);
-  const moss = new THREE.Color(0x536e43), grass = new THREE.Color(0x81905b), bore = new THREE.Color(0x343c39);
+  const deep = new THREE.Color(0x344b53), slate = new THREE.Color(0x667575), limestone = new THREE.Color(0xbaaa8e);
+  const moss = new THREE.Color(0x486640), grass = new THREE.Color(0x809258), bore = new THREE.Color(0x343c39);
   const normal = geometry.attributes.normal;
   for (let j = 0; j < sections; j++) for (let i = 0; i < sides; i++) {
     const v = j * sides + i, p = v * 3, y = positions[p + 1], x = positions[p], z = positions[p + 2];
-    const strata = .5 + .5 * Math.sin(y * .27 + Math.sin(x * .031 + z * .07) * 2.8);
+    const strata = .5 + .5 * Math.sin(y * .26 + z * .053 + Math.sin(x * .031 + z * .07) * 2.8);
     const mottling = Math.sin(x * .12 + z * .09) * Math.sin(y * .18 - z * .04);
     color.copy(deep).lerp(slate, THREE.MathUtils.smoothstep(y, -120, -10));
-    color.lerp(limestone, (.24 + strata * .26 + mottling * .16) * THREE.MathUtils.smoothstep(y, -65, 25));
+    color.lerp(limestone, (.26 + strata * .39 + mottling * .16) * THREE.MathUtils.smoothstep(y, -65, 25));
     const vegetation = THREE.MathUtils.smoothstep(normal.getY(v) + mottling * .12, .49, .84)
-      * THREE.MathUtils.smoothstep(y, -5, 22);
+      * THREE.MathUtils.smoothstep(y, -5, 22) * (.8 + mottling * .2);
     color.lerp(moss, vegetation).lerp(grass, vegetation * (.22 + .18 * mottling));
     color.multiplyScalar(.94 + strata * .09 + mottling * .045);
     if (sampleRings[j].kind === 'bore') color.copy(bore).multiplyScalar(.88 + strata * .1);
     colors.push(color.r, color.g, color.b);
   }
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  const material = keep(new THREE.MeshStandardMaterial({ vertexColors: true, map: rockMap,
-    bumpMap: rockMap, bumpScale: .38, roughness: .98 }));
+  const material = detailSurface(keep(new THREE.MeshStandardMaterial({ vertexColors: true, map: rockMap,
+    bumpMap: rockMap, bumpScale: .38, roughness: .98 })), detail, {
+    projection: [.55,1,1.9], scale: [34,20], strength: [.39,.64,.31], tint: 0xa3b1a0
+  });
   const mountain = mesh(geometry, material, 'sculpted-closed-tunnel-mountain');
   mountain.castShadow=true;
   mountain.userData = { closed: true, tunnelFront: front, tunnelRear: front - length, sections, sides, capRings };

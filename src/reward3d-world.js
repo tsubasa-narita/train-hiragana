@@ -170,18 +170,33 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   if(beacons.length)instances(box(),material({color:0xb1473a,emissive:0xff432b,emissiveIntensity:1.2}),beacons);
   let cityWater;
   if(night){
-    cityWater=createCityWater(reflectionBuildings,keep);
+    const lampStart=-420,lampSpacing=18,lampZ=35.8,lampHeight=-2.79,deckLampZ=-3.09,deckLampY=-.83;
+    cityWater=createCityWater(reflectionBuildings,keep,{
+      lampStart,lampSpacing,lampZ,lampHeight,deckLampZ,deckLampY
+    });
     const water=mesh(keep(new THREE.PlaneGeometry(1100,620)),cityWater,-50,-6.4,-273);
     water.rotation.x=-Math.PI/2;water.name='illuminated-waterfront';
     // A continuous promenade ties the city to the water rather than leaving
     // isolated glowing towers floating over a flat black ground plane.
-    const columns=[],lanterns=[];
-    for(let x=-420;x<480;x+=18){
-      columns.push({x,y:-4.5,z:35.8,sx:.08,sy:3.4,sz:.08});
-      lanterns.push({x,y:-2.79,z:35.8,sx:.3,sy:.18,sz:.3});
+    const columns=[],lanterns=[],copes=[],stops=[],fascia=[],deckLights=[];
+    for(let x=lampStart;x<480;x+=lampSpacing){
+      columns.push({x,y:-4.5,z:lampZ,sx:.08,sy:3.4,sz:.08});
+      columns.push({x,y:lampHeight-.19,z:lampZ,sx:.38,sy:.07,sz:.36});
+      lanterns.push({x,y:lampHeight,z:lampZ,sx:.3,sy:.18,sz:.3});
+      copes.push({x,y:-5.91,z:36.31,sx:lampSpacing-.085,sy:.16,sz:.76});
+      for(let offset=-6;offset<=6;offset+=3)stops.push({x:x+offset,y:-5.56,z:36.31,sx:.07,sy:.64,sz:.08});
+      if(x>=-330&&x<=326){
+        fascia.push({x,y:deckLampY,z:deckLampZ+.035,sx:1.22,sy:.22,sz:.12});
+        deckLights.push({x,y:deckLampY,z:deckLampZ-.031,sx:1.05,sy:.063,sz:.032});
+      }
     }
     instances(box(),metal,columns);
+    instances(box(),material({color:0x54636f,roughness:.82}),copes);
+    instances(box(),metal,stops);
+    for(const y of [-5.56,-5.23])mesh(box(),metal,21,y,36.31,900,.045,.04);
     instances(box(),material({color:0xffd69e,emissive:0xffc57b,emissiveIntensity:1.6}),lanterns);
+    instances(box(),metal,fascia);
+    instances(box(),material({color:0xfff1cc,emissive:0xffb354,emissiveIntensity:2.45}),deckLights);
   }
 
   const trunks=[],leaves=[];
