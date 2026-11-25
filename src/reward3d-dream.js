@@ -1,5 +1,7 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { ramp } from './reward-timeline.js';
+import { buildSeaLife } from './reward3d-dream-sea.js';
+import { buildModelTown, buildModelCars, mouldedBox } from './reward3d-dream-town.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 const TRACK_LENGTH = 650;
@@ -84,6 +86,19 @@ function waterSurface(kit) {
   return material.uniforms.time;
 }
 
+function archSection(radius, thickness, width) {
+  const shape=new THREE.Shape(), angleMin=-.30, angleMax=Math.PI+.30, count=42;
+  for(const edge of [1,-1])for(let i=0;i<=count;i++){
+    const angle=THREE.MathUtils.lerp(angleMin,angleMax,(edge>0?i:count-i)/count);
+    const r=radius+edge*thickness/2;
+    shape[edge===1&&i===0?'moveTo':'lineTo'](r*Math.cos(angle),r*Math.sin(angle));
+  }
+  shape.closePath();
+  const geometry=new THREE.ExtrudeGeometry(shape,{depth:width,bevelSize:.024,bevelThickness:.023,bevelSegments:2});
+  geometry.translate(0,0,-width/2).rotateY(Math.PI/2);
+  return geometry;
+}
+
 function tunnel(kit) {
   const {own, mesh, batch, box, material, glow}=kit;
   const shell = own(new THREE.CylinderGeometry(8.6,8.6,TRACK_LENGTH,44,1,true,Math.PI*.84,Math.PI*1.32));
@@ -96,106 +111,37 @@ function tunnel(kit) {
         vec3 ray=normalize(cameraPosition-vWorld);
         float edge=pow(1.-abs(dot(ray,normalize(vNormal))),4.);
         float glint=pow(.5+.5*cos(atan(vNormal.z,vNormal.y)*9.0+1.0),16.);
-        gl_FragColor=vec4(light,.025+.18*edge+.055*glint);
+        float overhead=smoothstep(.24,.96,vNormal.y);
+        gl_FragColor=vec4(light,.021+.15*edge+.064*glint+.026*overhead);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
   }));
   mesh(shell,glass,0,3.35,0).renderOrder=7;
-  const arches=[], braces=[], lights=[];
+  const arches=[], pillars=[], ledges=[], lights=[], plates=[], fasteners=[];
   for(let x=-316;x<=316;x+=23){
-    arches.push([x,3.35,0,1,1,1,Math.PI/2]);
+    arches.push([x,3.35,0,1,1,1]);
     for(const side of [-1,1]){
-      braces.push([x,-.6,side*5.2,1.65,1.4,1.35]);
-      lights.push([x+.03,1.4,side*7.72,1.05,.115,.22]);
+      pillars.push([x,-.19,side*7.88,1.40,2.00,.85], [x,-1.16,side*6.7,.87,2.96,.61,0,-side*1.07]);
+      ledges.push([x,.73,side*8.0,1.42,.22,1.08]);
+      plates.push([x,.905,side*8.00,1.07,.15,.66]);
+      lights.push([x+.72,1.14,side*8.02,.78,.10,.13]);
+      for(const dx of [-.44,.44])fasteners.push([x+dx,1.005,side*8.1,.1,.115,.1]);
     }
   }
-  const ring=own(new THREE.TorusGeometry(8.62,.095,7,48));
-  batch(ring,material({color:0x628b99,metalness:.63,roughness:.31}),arches);
-  batch(box,material({color:0x426b7e,metalness:.34}),braces);
-  batch(box,glow(0x71defb,1.4),lights);
-}
-
-function seaLife(kit,reduced) {
-  const {own,mesh,batch,material,random}=kit;
-  const rock=own(new THREE.IcosahedronGeometry(1,1));
-  const rocks=[], coral=[], blades=[];
-  for(let i=0;i<190;i++){
-    const x=random()*670-335,z=(i%2?1:-1)*(10+random()*96),scale=1.8+random()*8;
-    rocks.push([x,-15+random()*3,z,scale,scale*.31,scale*.63,random()*6.28,0,0,[0x254669,0x376479,0x355572][i%3]]);
-    if(Math.abs(z)>56)continue;
-    for(let k=0;k<5;k++){
-      const height=.45+random()*3.15;
-      coral.push([x+(random()-.5)*3,-13.3+height*.5,z+(random()-.5)*4,.15+random()*.27,height,.19+random()*.28,
-        random()*6.28,(random()-.5)*.54,(random()-.5)*.72,[0xff806f,0xce558b,0xf2bf7d,0x575dbc][i%4]]);
-    }
-    for(let k=0;k<5;k++)blades.push([x+(random()-.5)*3,-12.5,z+(random()-.5)*4,.24,2+random()*3,.68,random()*6.28,0,.2*Math.sin(k),0x438e7f]);
+  const casing=material({color:0x487185,metalness:.45,roughness:.36});
+  const flange=material({color:0x7ea4ac,metalness:.52,roughness:.37});
+  batch(own(archSection(8.60,.18,.34)),casing,arches,true).name='tunnel-pressure-ribs';
+  batch(own(archSection(8.68,.13,.59)),flange,arches).name='tunnel-rib-flanges';
+  batch(box,casing,pillars,true);
+  batch(box,flange,[...plates,...ledges]);
+  batch(own(new THREE.CylinderGeometry(1,1,1,6)),casing,fasteners);
+  batch(box,glow(0x8ddeef,1.15),lights);
+  const muntins=[];
+  for(const angle of [-.235,.76,1.57,2.38,Math.PI+.235]){
+    muntins.push([0,3.35+8.63*Math.sin(angle),8.63*Math.cos(angle),TRACK_LENGTH,.056,.061,0,-angle]);
   }
-  batch(rock,material({color:0xffffff,roughness:.99}),rocks);
-  batch(own(new THREE.CapsuleGeometry(.5,0,2,6)),material({color:0xffffff,emissive:0x5b2c56,emissiveIntensity:.09}),coral);
-  batch(own(new THREE.SphereGeometry(.5,6,4)),material({color:0xffffff}),blades);
-
-  // One instanced school. Motion is solved from movie time, including seeks.
-  const fish=own(new THREE.BufferGeometry());
-  fish.setAttribute('position',new THREE.Float32BufferAttribute([
-    1,0,0, .08,.28,0, -.52,0,0, .06,-.24,0, -.09,0,.22, -.09,0,-.22,
-    -.42,0,0, -.91,.33,0, -.86,0,0, -.91,-.31,0,
-  ],3));
-  fish.setIndex([0,1,4,1,2,4,2,3,4,3,0,4,0,5,1,1,5,2,2,5,3,3,5,0,6,7,8,6,8,9]);fish.computeVertexNormals();
-  const time={value:0};
-  const fishMaterial=material({color:0xffffff,emissive:0x136b83,emissiveIntensity:.55, side:THREE.DoubleSide,metalness:.18,roughness:.45});
-  fishMaterial.onBeforeCompile=shader=>{
-    shader.uniforms.swimTime=time;
-    shader.vertexShader='uniform float swimTime;\n'+shader.vertexShader.replace('#include <begin_vertex>',`
-      #include <begin_vertex>
-      float phase=swimTime*5.1+instanceMatrix[3].x*.51+instanceMatrix[3].z*.26;
-      transformed.z+=sin(phase+position.x*2.7)*(.19-position.x*.15);
-      transformed.y+=sin(phase*.35)*.35;`);
-  };
-  const school=[];
-  for(let i=0;i<(reduced?65:132);i++){
-    const layer=i%3,scale=.27+random()*.88;
-    school.push([(random()-.5)*73,5.9+layer*3.2+random()*5.1,14+random()*22,scale,scale,scale,-.25,0,0,[0xfdc76b,0x8ce9f3,0xcfe8ff][layer]]);
-  }
-  const fishGroup=batch(fish,fishMaterial,school);
-
-  const ray=own(new THREE.BufferGeometry()),vertices=[],index=[];
-  const span=30,rows=32,columns=12;
-  for(let i=0;i<=rows;i++){
-    const w=i/rows*2-1,z=w*span/2,tip=Math.abs(w);
-    const front=4.7-8.4*tip**1.33,back=-4.7+.96*tip-.03*tip**2;
-    for(let j=0;j<=columns;j++){
-      const f=j/columns;
-      vertices.push(THREE.MathUtils.lerp(front,back,f),Math.sin(Math.PI*f)*.83*(1-tip**1.5),z);
-      if(i<rows&&j<columns){const a=i*(columns+1)+j;index.push(a,a+columns+1,a+1,a+1,a+columns+1,a+columns+2);}
-    }
-  }
-  ray.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));ray.setIndex(index);ray.computeVertexNormals();
-  const fins=own(new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{time},
-    vertexShader:`uniform float time;varying vec3 vFin;
-      void main(){ vec3 p=position;vFin=p;p.y+=pow(abs(p.z)/15.,1.55)*sin(time*2.5-abs(p.z)*.08)*2.75;
-        gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.); }`,
-    fragmentShader:`varying vec3 vFin;void main(){
-        float markings=pow(max(0.,sin(abs(vFin.z)*.47+vFin.x*.5)),10.);
-        vec3 dorsal=mix(vec3(.021,.095,.15),vec3(.16,.44,.53),.58*markings);
-        vec3 belly=mix(vec3(.082,.26,.34),vec3(.32,.55,.61),.36*markings);
-        gl_FragColor=vec4(gl_FrontFacing?dorsal:belly,1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-  }));
-  const manta=mesh(ray,fins);manta.name='swimming-manta';
-  const torso=mesh(own(new THREE.SphereGeometry(1,15,9)),material({color:0x235c71,emissive:0x164357,emissiveIntensity:.47}),0,0,0,5.2,.85,1.95);
-  manta.add(torso);
-  const tail=mesh(own(new THREE.CylinderGeometry(.028,.29,9,10)),material({color:0x245a70}),-8.4,-.12,0);
-  tail.rotation.z=-Math.PI/2;manta.add(tail);
-  return (seconds, headX) => {
-    const swimTime=reduced?5:seconds;
-    time.value=swimTime;
-    fishGroup.position.x=headX+swimTime*3.7-22;
-    manta.position.set(headX + 20 - swimTime * 4.8, 11 + 3.9 * Math.sin(ramp(2.5,8.7,swimTime)*Math.PI), 19 - swimTime * .93);
-    manta.rotation.set(.31-.29*ramp(3,8,swimTime),.65,-.08);
-  };
+  batch(box,material({color:0x3a758c,metalness:.35,roughness:.43}),muntins).name='longitudinal-glass-seams';
 }
 
 export function createAquariumWorld(scene,{config,reduced}) {
@@ -204,12 +150,20 @@ export function createAquariumWorld(scene,{config,reduced}) {
     projection:[.64,.2,.75],scale:[9.3,6.7],strength:[.25,.18,.20],tint:0xd3e7ea,
   });
   mesh(box,substrate,0,-15.6,0,850,4.5,400);
-  const columns=[];
-  for(let x=-300;x<=300;x+=26)columns.push([x,-7.6,0,2.3,14.8,5.2]);
-  batch(box,material({color:0x3a5970}),columns);
-  mesh(box,material({color:0x1d4059,metalness:.30}),0,-.59,0,TRACK_LENGTH,.81,7.9);
+  const columns=[],capitals=[],footings=[];
+  for(let x=-300;x<=300;x+=26){
+    for(const side of [-1,1])columns.push([x,-7.6,side*2.61,1,11.9,1,0,side*.14]);
+    capitals.push([x,-1.64,0,3.25,1.32,10.5]);
+    footings.push([x,-12.78,0,4.15,1.43,8.5]);
+  }
+  const cement=material({color:0x3b6379,roughness:.61});
+  batch(own(new THREE.CylinderGeometry(1.18,1.43,1,10)),cement,columns,true);
+  batch(box,cement,[...capitals,...footings],true);
+  const girder=material({color:0x1d4059,metalness:.30});
+  mesh(box,girder,0,-.59,0,TRACK_LENGTH,.81,9.5);
+  for(const side of [-1,1])mesh(box,girder,0,-.54,side*7.94,TRACK_LENGTH,.38,.72);
   track(kit,config.gauge,true);tunnel(kit);
-  const waveClock=waterSurface(kit),swim=seaLife(kit,reduced);
+  const waveClock=waterSurface(kit),swim=buildSeaLife(kit,reduced);
   const motes=[];
   for(let i=0;i<170;i++){
     const s=.025+random()*.105;
@@ -219,71 +173,33 @@ export function createAquariumWorld(scene,{config,reduced}) {
   return {update(time,{headX}){waveClock.value=reduced?0:time;swim(time,headX);drift.position.x=headX-time*.24;},dispose:kit.dispose};
 }
 
-function miniatureTown(kit) {
-  const {own,box,material,batch,mesh,glow,random}=kit;
-  const walls=[], roofs=[], windows=[], doors=[], chimneys=[], trees=[], trunks=[], lanes=[];
-  const roofShape=new THREE.Shape();
-  roofShape.moveTo(-.53,0);roofShape.lineTo(0,1);roofShape.lineTo(.53,0);roofShape.closePath();
-  const gable=own(new THREE.ExtrudeGeometry(roofShape,{depth:1,bevelEnabled:false}));
-  gable.translate(0,0,-.5);gable.rotateY(Math.PI/2);
-  const paint=[0xf5c786,0xf6dfae,0xe6916e,0xa3d3b7,0x9cc9df,0xe8dfc6];
-  const tiles=[0xb75d54,0x526478,0x5f8585,0x8b675e,0x8d5b63];
-  const towns=[-101,-31,39,109,179,249];
-  for(const centre of towns){
-    for(const z of [12.7,36.0])for(let i=0;i<5;i++){
-      const x=centre+(i-2)*10.8, w=6.2+random()*2, d=4.7+random()*1.3, h=4.5+random()*3.9;
-      const wall=paint[Math.floor(random()*paint.length)], tile=tiles[Math.floor(random()*tiles.length)];
-      walls.push([x,h/2-.45,z,w,h,d,0,0,0,wall]);
-      roofs.push([x,h-.46,z,w+.55,1.7+random()*1.35,d+.42,0,0,0,tile]);
-      chimneys.push([x+w*.23,h+.66,z+.33,.48,1.48,.55,0,0,0,wall]);
-      doors.push([x,.58,z-d/2-.022,.88,1.83,.075,0,0,0,0x76554c]);
-      for(const edge of [-1,1])for(let row=0;row<2;row++){
-        const y=1.25+(h-2.6)*row*.84;
-        windows.push([x+edge*w*.28,y,z-d/2-.035,1.06,1.05,.083,0,0,0,row?0xe8c87a:0x78a9b7]);
-        chimneys.push([x+edge*w*.28,y-.58,z-d/2-.07,1.26,.105,.19,0,0,0,0xf7ead8]);
-      }
-      const tx=x-w*.58,tz=z-d*.56;
-      trunks.push([tx,.50,tz,.27,1.8,.29]);
-      trees.push([tx,1.75,tz,1.04,1.28,.96,0,0,0,[0x659c77,0x86a85c,0x4c9268][i%3]]);
-    }
-    for(let i=0;i<6;i++) lanes.push([centre-4+i*1.55,-.385,23,.77,.03,6.1]);
-  }
-  batch(box,material({color:0xffffff}),walls,true);
-  batch(gable, material({color:0xffffff,roughness:.93}), roofs,true);
-  batch(box,material({color:0xffffff,roughness:.82}),[...chimneys,...doors]);
-  batch(box,material({color:0xffffff,emissive:0x458295,emissiveIntensity:.066,roughness:.27}),windows);
-  batch(box,material({color:0x785344}),trunks);
-  batch(own(new THREE.IcosahedronGeometry(1,1)),material({color:0xffffff,roughness:.96}),trees,true);
-  mesh(box,material({color:0x5a6470}),0,-.46,23,TRACK_LENGTH,.13,8.7);
-  mesh(box,material({color:0xcbc1a3}),0,-.50,23,TRACK_LENGTH,.19,10.45);
-  for(let x=-318;x<=318;x+=8)lanes.push([x,-.383,23,3.4,.022,.12]);
-  batch(box,material({color:0xeadaac}),lanes);
-
-  const platforms=[], awnings=[], posts=[], edge=[], sign=[];
-  for(const x of [-27,116]){
-    platforms.push([x,.19,4.8,38,.91,4.3]);
-    edge.push([x,.655,2.72,38,.032,.14]);
-    awnings.push([x,4.38,5.07,28.5,.20,3.14]);
-    for(let i=-12;i<=12;i+=6)posts.push([x+i,2.46,5.18,.22,3.62,.22]);
-    sign.push([x+8,3.35,3.52,2.8,.69,.15]);
-  }
-  batch(box,material({color:0xcaad8c}),platforms);
-  batch(box,material({color:0xeaba54,roughness:.84}),edge);
-  batch(box,material({color:0x336b7c,roughness:.45}),awnings,true);
-  batch(box,material({color:0x587d82}),posts);
-  batch(box,glow(0xe9edd5,.7),sign);
-}
-
 function trainController(kit) {
-  const {own,box,material,mesh,glow}=kit;
+  const {own,box,batch,material,mesh,glow}=kit;
   const stand=material({color:0x213c44,roughness:.31}), light=glow(0xeb9955,1.8);
   const dialFinish=material({color:0xcf5047,roughness:.24,metalness:.23});
   const face=own(new THREE.CylinderGeometry(1,1,1,40));
-  mesh(box,stand,-22,2.45,-25,28,6.0,17);
-  mesh(box,material({color:0x4d6161,metalness:.32}),-22,5.57,-25,28.6,.38,17.8);
+  const shell=own(mouldedBox());
+  mesh(shell,stand,-22,2.45,-25,28,6.0,17);
+  mesh(shell,material({color:0x658079,metalness:.29}),-22,5.57,-25,28.6,.38,17.8);
   mesh(face,stand,-28,6.0,-24,6.75,.8,6.75);
-  const dial=mesh(face,dialFinish,-28,7.2,-24,4.65,2.15,4.65);
+  const grip=own(new THREE.LatheGeometry([
+    new THREE.Vector2(0,-.5),new THREE.Vector2(.89,-.5),new THREE.Vector2(.99,-.37),
+    new THREE.Vector2(.98,.27),new THREE.Vector2(.93,.43),new THREE.Vector2(.84,.51),new THREE.Vector2(0,.51),
+  ],48));
+  const dial=mesh(grip,dialFinish,-28,7.2,-24,4.65,2.15,4.65);
+  dial.name='moulded-controller-dial';
   const pointer=mesh(box,glow(0xffe8bd,.9),0,.512,.62,.085,.040,.46);dial.add(pointer);
+  const marks=[],screws=[],vents=[];
+  for(let i=0;i<13;i++){
+    const angle=-2.38+i*.397;
+    marks.push([-28+5.72*Math.sin(angle),6.424,-24+5.72*Math.cos(angle),.088,.045,i%3===0?.56:.27,angle]);
+  }
+  for(const dx of [-12.80,12.80])for(const dz of [-7.28,7.28])screws.push([-22+dx,5.803,-25+dz,.36,.069,.36]);
+  for(let i=0;i<9;i++)vents.push([-15+i*.61,3.16,-16.42,.36,.15,.072]);
+  batch(box,material({color:0xd4d9bc}),marks);
+  batch(face,material({color:0x939fa0,metalness:.61}),screws);
+  batch(box,material({color:0x142c34}),vents);
+  mesh(face,stand,-15,5.98,-22.8,1.70,.52,1.70);
   mesh(face,light,-15,6.04,-22.8,1.24,.37,1.24);
   mesh(box,light,-13,2.45,2.85,.44,.44,.44);
   mesh(box,stand,-13,1.23,2.85,.15,2.60,.15);
@@ -295,7 +211,7 @@ function trainController(kit) {
 }
 
 function modelParks(kit) {
-  const {own,box,material,batch,random}=kit;
+  const {own,box,material,mesh,batch,random}=kit;
   const beds=[],paths=[],bushes=[],benchParts=[];
   for(let x=-284;x<290;x+=23){
     const near=x<-5&&x>-44?-10.2:-12.2;
@@ -314,10 +230,36 @@ function modelParks(kit) {
   batch(box,material({color:0xd9c7a1}),paths);
   batch(box,material({color:0xa25e4a}),benchParts);
   batch(own(new THREE.IcosahedronGeometry(1,1)),material({color:0xffffff,roughness:.85}),bushes,true);
+  const pondBase=own(new THREE.CylinderGeometry(1,1,1,32));
+  const pebble=own(new THREE.IcosahedronGeometry(1,0));
+  const pondWater=material({color:0x5b9c9c,metalness:.35,roughness:.22});
+  const pondEdge=material({color:0xa9ac89,roughness:.91});
+  const stones=[], boards=[], gardenFence=[];
+  for(const x of [29,94,160,225]){
+    const z=-11.9;
+    mesh(pondBase,pondEdge,x,-.24,z,4.06,.23,2.22);
+    mesh(pondBase,pondWater,x,-.10,z,3.65,.088,1.90);
+    for(let i=0;i<19;i++){
+      const a=i*Math.PI*2/19;
+      stones.push([x+3.91*Math.cos(a),-.01,z+2.06*Math.sin(a),.31,.14,.21,0,0,0,i%2?0xbebfb0:0x969c8e]);
+    }
+    for(let j=-16;j<=16;j++){
+      const arc=j*Math.PI/32,top=.02+.46*Math.cos(arc),slope=-Math.sin(arc)*.185;
+      boards.push([x+.24*j,top,z,.23,.081,1.22,0,0,slope]);
+      if(Math.abs(j)>15)continue;
+      for(const side of [-1,1]){
+        if(j%4===0)gardenFence.push([x+.24*j,top+.188,z+side*.59,.068,.38,.069]);
+        gardenFence.push([x+.24*j,top+.372,z+side*.59,.26,.064,.074,0,0,slope]);
+      }
+    }
+  }
+  batch(pebble,material({color:0xffffff}),stones);
+  batch(box,material({color:0xac7362}),boards);
+  batch(box,material({color:0xd4ae8f}),gardenFence);
 }
 
 export function createDioramaWorld(scene,{config,reduced}) {
-  const kit=scenery(scene,'model-railway-table',365149),{own,box,material,mesh,batch,random}=kit;
+  const kit=scenery(scene,'model-railway-table',365149),{own,box,material,mesh,batch}=kit;
   const grain=own(sceneryDetailTexture());
   const wood=detailSurface(material({color:0xb7804c,roughness:.63}),grain,{
     projection:[.42,.42,1],scale:[22,1.8],strength:[.38,.23,.18],tint:0xbc8b6d,
@@ -331,15 +273,21 @@ export function createDioramaWorld(scene,{config,reduced}) {
   mesh(box,material({color:0xb7a08b}),0,-14.5,26,1600,3,860);
   mesh(box,material({color:0xaeb8aa}),0,74,202,1600,185,10);
   track(kit,config.gauge,false);
-  miniatureTown(kit);
+  buildModelTown(kit,TRACK_LENGTH);
   modelParks(kit);
-  const blocks=[], windows=[];
+  const blocks=[];
   for(const x of [-99,78,236]){
     blocks.push([x,6,73,23,14,14,-.09,0,0,0xf4aa6e], [x+18,5,67,13,11,12,.2,0,0,0x77b9ab],
       [x+69,8,81,19,19,15,-.17,0,0,0x7479a9]);
-    for(let i=0;i<4;i++)windows.push([x-8+i*4.7,13.04,73,2.5,.16,10,0,0,0,0xf6bd91]);
   }
-  batch(box,material({color:0xffffff,roughness:.55}),[...blocks,...windows],true);
+  const studs=blocks.flatMap(([x,y,z,w,h,d,angle,,,tint])=>[-.35,-.116,.116,.35].flatMap(column=>[-.23,.23].map(row=>{
+    const u=column*w,v=row*d,radius=Math.min(w*.106,d*.134);
+    return [x+Math.cos(angle)*u+Math.sin(angle)*v,y+h/2+.40,z-Math.sin(angle)*u+Math.cos(angle)*v,
+      radius,.85,radius,angle,0,0,tint];
+  })));
+  const toyPlastic=material({color:0xffffff,roughness:.42});
+  batch(own(mouldedBox()),toyPlastic,blocks,true);
+  batch(own(new THREE.CylinderGeometry(.92,1,1,16)),toyPlastic,studs,true).name='toy-brick-studs';
   // Scale is apparent from the wooden ruler and its engraved divisions.
   mesh(box,wood,0,-.14,-18.2,620,.42,4.2);
   const divisions=[];
@@ -347,25 +295,10 @@ export function createDioramaWorld(scene,{config,reduced}) {
   batch(box,material({color:0x654938}),divisions);
   const setController=trainController(kit);
 
-  const hubs=material({color:0xd6bca4}), caps=material({color:0x385762,roughness:.37});
-  const wheel=own(new THREE.CylinderGeometry(.36,.36,.23,10));wheel.rotateX(Math.PI/2);
-  const carBodies=[0xd45e49,0xe4a84e,0x5a90ae,0x6ca77c].map(color=>material({color,roughness:.28}));
-  const cars=[];
-  for(let i=0;i<8;i++){
-    const car=new THREE.Group(),lower=mesh(box,carBodies[i%4],0,.27,0,3.0,.55,1.35);
-    const cap=mesh(box,caps,-.32,.70,0,1.34,.45,1.11);
-    car.add(lower,cap);
-    for(const x of [-.96,.98])for(const z of [-.67,.67])car.add(mesh(wheel,hubs,x,.11,z));
-    const direction=i%2===0?1:-1;
-    car.rotation.y=direction>0?0:Math.PI;kit.group.add(car);
-    cars.push({car,direction,z:23+direction*2.2,start:-320+i*76+random()*17});
-  }
+  const driveCars=buildModelCars(kit,reduced);
   function update(time){
     setController(time);
-    for(const {car,direction,z,start} of cars){
-      const travel=reduced?0:time*7.7*direction;
-      car.position.set(THREE.MathUtils.euclideanModulo(start+320+travel,640)-320,0,z);
-    }
+    driveCars(time);
   }
   return {update,dispose:kit.dispose};
 }

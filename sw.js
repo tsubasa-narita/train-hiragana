@@ -1,5 +1,5 @@
 const PREFIX = `train-hiragana:${new URL(self.registration.scope).pathname}:`;
-const CACHE = PREFIX + 'v44';
+const CACHE = PREFIX + 'v45';
 const base = self.registration.scope;
 const home = new URL('index.html', base).href;
 const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-facts.js', 'src/train-facts-a.js', 'src/train-facts-b.js', 'src/train-facts-c.js', 'src/train-facts-d.js', 'src/data.js', 'src/train-expansion.js', 'src/style.css',
@@ -24,7 +24,7 @@ const CORE = ['index.html', 'manifest.webmanifest', 'src/app.js', 'src/train-fac
   'src/reward3d-shinkansen.js', 'assets/reward3d/yamanote.glb', 'assets/reward3d/komachi.glb', 'assets/reward3d/hayabusa.glb',
   'src/reward3d-water.js', 'src/reward3d-surface.js', 'src/reward3d-vegetation.js',
   'src/reward3d-sakura.js', 'src/reward3d-snow.js', 'src/reward3d-express.js',
-  'src/reward3d-clouds.js', 'src/reward3d-dream.js',
+  'src/reward3d-clouds.js', 'src/reward3d-dream.js', 'src/reward3d-dream-sea.js', 'src/reward3d-dream-town.js',
   'assets/reward3d/hinotori.glb', 'assets/reward3d/laview.glb', 'assets/reward3d/saphir-odoriko.glb',
   'assets/reward3d/doctor-yellow.glb', 'assets/reward3d/rapit.glb',
   'assets/reward3d/yokosuka.glb', 'assets/reward3d/shonan-shinjuku.glb', 'assets/reward3d/saikyo.glb', 'assets/reward3d/toyoko.glb',
