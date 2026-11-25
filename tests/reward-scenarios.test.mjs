@@ -4,9 +4,24 @@ import {chooseRewardExperience,resolveRewardExperience,REWARD_SCENARIOS} from '.
 import {createTrainModel} from '../src/reward3d-trains.js';
 import {REWARD_3D_TRAINS} from '../src/reward3d-catalog.js';
 import {bendTrainModel} from '../src/reward3d-curve.js';
+import {createAquariumWorld,createDioramaWorld} from '../src/reward3d-dream.js';
 import * as THREE from '../vendor/three/three.module.js';
 
 const allPairs=REWARD_SCENARIOS.flatMap(scene=>REWARD_3D_TRAINS.map(train=>`${scene.id}:${train.id}`));
+
+test('both new worlds match explicit and legacy track gauges',()=>{
+  for(const createWorld of [createAquariumWorld,createDioramaWorld]){
+    for(const [config,gauge] of [[{},1.067],[{gauge:1.435},1.435]]){
+      const scene=new THREE.Scene(),world=createWorld(scene,{config,reduced:true});
+      try{
+        const rails=scene.getObjectByName('track-rail-sections'),matrix=new THREE.Matrix4();
+        rails.getMatrixAt(0,matrix);assert.ok(Math.abs(matrix.elements[14]+gauge/2)<1e-6);
+        rails.getMatrixAt(3,matrix);assert.ok(Math.abs(matrix.elements[14]-gauge/2)<1e-6);
+      }finally{world.dispose();}
+      assert.equal(scene.children.length,0);
+    }
+  }
+});
 
 test('all 84 combinations appear once per bag and survive a reload',async()=>{
   assert.equal(allPairs.length,84);

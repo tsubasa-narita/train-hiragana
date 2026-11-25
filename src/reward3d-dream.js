@@ -32,7 +32,7 @@ function scenery(scene, name, seed) {
   };
 }
 
-function track(kit, gauge, underwater) {
+function track(kit, gauge = 1.067, underwater) {
   const { box, mesh, batch, material, glow } = kit;
   const rail = material({ color:0xb8c7cc, metalness:.74, roughness:.27 });
   const ballast = material({ color:underwater?0x253b50:0x5a4b40, roughness:.98 });
@@ -42,7 +42,7 @@ function track(kit, gauge, underwater) {
     [0,.124,side*gauge/2,TRACK_LENGTH,.052,.071],
     [0,.070,side*gauge/2,TRACK_LENGTH,.056,.033],
     [0,.033,side*gauge/2,TRACK_LENGTH,.018,.132],
-  ]));
+  ])).name='track-rail-sections';
   const ties=[];
   for (let x=-TRACK_LENGTH/2; x<TRACK_LENGTH/2; x+=.82) ties.push([x,-.02,0,.24,.14,2.68]);
   batch(box, sleeper, ties);
