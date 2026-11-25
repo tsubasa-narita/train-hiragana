@@ -54,6 +54,10 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   // A broad, shadow-free fill emulates station/city spill on the hero body.
   // The key still defines the shadows; this only keeps night steel readable.
   const heroFill=new THREE.DirectionalLight(snow?0x9bcaff:0xd5e5fa,snow?.9:night?1.3:depot?.4:.3);scene.add(heroFill,heroFill.target);
+  // Let the headlights reveal the rails and ballast as the train advances.
+  // The small cone is unshadowed and only exists in the night scene.
+  const headlightThrow = night ? new THREE.SpotLight(0xffe5bd, 0, 34, .27, .83) : null;
+  if (headlightThrow) scene.add(headlightThrow, headlightThrow.target);
   const camera = new THREE.PerspectiveCamera(44,1,.1,1300),film=createFilmFinish(renderer);
   const celebration=createCelebration(scene,{scenario,color:config.color,reduced});
   let renderStats={calls:0,triangles:0};
@@ -111,6 +115,11 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     train.group.position.set(pose.x,pose.y+Math.sin(seconds*11)*.005,pose.z);train.group.rotation.y=pose.yaw;
     train.setHeadlights(moment.headlights);
     glowMaterial.opacity=(night?.60:.26)*moment.headlights;
+    if (headlightThrow) {
+      headlightThrow.position.set(pose.x + front + .12, shinkansen ? 2.5 : 3.15, pose.z);
+      headlightThrow.target.position.set(pose.x + front + 13, .06, pose.z + .32);
+      headlightThrow.intensity = 102 * moment.headlights;
+    }
     for(const wheel of train.wheels)wheel.rotation[wheel.userData?.spinAxis||'z']=-travel/(wheel.userData?.radius||.43);
     if(opposite){opposite.group.position.set(passingX+(5.3-seconds)*42,0,4.4);for(const wheel of opposite.wheels)wheel.rotation.z=-42*seconds/.43;}
     const {position,target}=director(seconds),aspectScale=Math.max(1,(seasonal?1.03:1.18)/camera.aspect);

@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
+import { CLOUD_RELIEF } from './reward3d-clouds.js';
 
 const TRACK_START = -365;
 const TRACK_END = 415;
@@ -250,17 +251,16 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
     fragmentShader: `
       uniform vec3 horizon, zenith, twilight, moonDirection;
       varying vec3 vDirection;
+      ${CLOUD_RELIEF}
       void main() {
         vec3 ray = normalize(vDirection);
         float elevation = max(0.0, ray.y);
-        float west = pow(max(0.0, dot(ray, normalize(vec3(-1.0, 0.0, 0.38)))), 4.0);
+        vec3 evening = normalize(vec3(.55, .17, .82));
+        float west = pow(max(0.0, dot(ray, evening)), 4.0);
         vec3 color = mix(horizon, zenith, smoothstep(-0.035, 0.54, ray.y));
-        color = mix(color, twilight, west * 0.55 * exp(-7.5 * abs(ray.y - 0.055)));
-        float ribbon = ray.y + sin(ray.x * 7.0 + ray.z * 5.0) * 0.017;
-        float threads = sin(ribbon * 83.0 + sin(ray.z * 18.0) * 0.72);
-        float wisp = smoothstep(0.52, 0.99, threads) * smoothstep(0.045, 0.14, ray.y)
-          * (1.0 - smoothstep(0.20, 0.31, ray.y)) * (0.37 + west * 0.63);
-        color = mix(color, vec3(0.41, 0.34, 0.52), wisp * 0.21);
+        color = mix(color, twilight, (.24 + west * .49) * exp(-6.3 * abs(ray.y - .065)));
+        color = seasonalClouds(color, ray, vec2(9.3, 3.07), evening,
+          vec3(.14, .17, .30), mix(vec3(.32, .40, .57), vec3(.81, .49, .50), west), .49);
         float lunar = length(ray - moonDirection);
         float disc = 1.0 - smoothstep(0.009, 0.0105, lunar);
         float halo = exp(-lunar * 38.0);
@@ -573,10 +573,12 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
 
   return {
     group, sky,
-    update(seconds, { headX = 0, moment } = {}) {
+    update(seconds, { headX = 0, train, moment } = {}) {
       if (disposed || !snowfall) return;
       snowfall.uniforms.seconds.value = seconds;
       snowfall.uniforms.headX.value = headX;
+      snowfall.uniforms.noseX.value = headX + (train?.frontX ?? 10);
+      snowfall.uniforms.speed.value = moment?.speed ?? 0;
       snowfall.uniforms.density.value = .76 + .24 * (moment?.reveal ?? 0);
     },
     dispose() {
@@ -593,37 +595,56 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
 function createSnowfall(keep, mesh) {
   const random = seededRandom(79547), offsets = [], motions = [];
   const geometry = keep(new THREE.InstancedBufferGeometry());
-  const count = 780;
-  for (let i = 0; i < count; i++) {
+  const ambientCount = 780, wakeCount = 168;
+  for (let i = 0; i < ambientCount; i++) {
     offsets.push(random() * 180, random() * 21, -24 + random() * 79);
     motions.push(.025 + random() * .062, .64 + random() * .74, random() * Math.PI * 2);
+  }
+  // Loose snow from beside the first two cars shares the drifting-flake batch.
+  for (let i = 0; i < wakeCount; i++) {
+    offsets.push(6 + random() * 30, -1, (i % 2 ? 1 : -1) * (1.2 + random() * .63));
+    motions.push(.13 + random() * .18, .70 + random() * .8, random());
   }
   geometry.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0], 3));
   geometry.setIndex([0, 1, 2, 0, 2, 3]);
   geometry.setAttribute('flakeOffset', new THREE.InstancedBufferAttribute(new Float32Array(offsets), 3));
   geometry.setAttribute('flakeMotion', new THREE.InstancedBufferAttribute(new Float32Array(motions), 3));
-  geometry.instanceCount = count;
+  geometry.instanceCount = ambientCount + wakeCount;
 
   const material = keep(new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, toneMapped: false,
-    uniforms: { seconds: { value: 0 }, headX: { value: -26 }, density: { value: .76 } },
+    uniforms: { seconds: { value: 0 }, headX: { value: -26 }, noseX: { value: -16 },
+      speed: { value: 0 }, density: { value: .76 } },
     vertexShader: `
       attribute vec3 flakeOffset, flakeMotion;
-      uniform float seconds, headX;
+      uniform float seconds, headX, noseX, speed;
       varying vec2 vCorner;
       varying float vAlpha;
       void main() {
-        float wind = sin(seconds * 1.65 + flakeMotion.z);
-        float span = mod(flakeOffset.x + seconds * 0.65 + wind * 0.56 - headX, 180.0);
-        float lift = mod(flakeOffset.y - seconds * flakeMotion.y, 21.0);
-        vec3 world = vec3(headX - 123.0 + span, lift - 0.2, flakeOffset.z + wind * 0.52);
+        vec3 world;
+        vec2 size = vec2(.83, 1.09) * flakeMotion.x;
+        if (flakeOffset.y < 0.0) {
+          float age = fract(seconds * flakeMotion.y + flakeMotion.z);
+          float moving = smoothstep(4.0, 21.0, speed);
+          float lift = pow(age, .65) * moving;
+          world = vec3(noseX - flakeOffset.x - age * speed * .47,
+            -.03 + sin(age * 2.4) * flakeMotion.x * 2.6 * moving,
+            flakeOffset.z + sign(flakeOffset.z) * lift * (1.4 + flakeMotion.y));
+          vAlpha = moving * .43 * smoothstep(0.0, .15, age) * (1.0 - smoothstep(.25, 1.0, age));
+          size *= mix(.42, 1.66, age) * vec2(1.65, .75);
+        } else {
+          float wind = sin(seconds * 1.65 + flakeMotion.z);
+          float span = mod(flakeOffset.x + seconds * .65 + wind * .56 - headX, 180.0);
+          float lift = mod(flakeOffset.y - seconds * flakeMotion.y, 21.0);
+          world = vec3(headX - 123.0 + span, lift - .2, flakeOffset.z + wind * .52);
+          vAlpha = smoothstep(0.0, 9.0, span) * (1.0 - smoothstep(170.0, 180.0, span));
+          vAlpha *= smoothstep(0.0, 1.0, lift) * (1.0 - smoothstep(19.0, 21.0, lift));
+        }
         vec4 view = modelViewMatrix * vec4(world, 1.0);
         float depth = -view.z;
-        vAlpha = smoothstep(2.4, 9.0, depth) * (1.0 - smoothstep(50.0, 100.0, depth));
-        vAlpha *= smoothstep(0.0, 9.0, span) * (1.0 - smoothstep(170.0, 180.0, span));
-        vAlpha *= smoothstep(0.0, 1.0, lift) * (1.0 - smoothstep(19.0, 21.0, lift));
+        vAlpha *= smoothstep(2.4, 9.0, depth) * (1.0 - smoothstep(50.0, 100.0, depth));
         vCorner = position.xy;
-        view.xy += position.xy * flakeMotion.x * vec2(0.83, 1.09);
+        view.xy += position.xy * size;
         gl_Position = projectionMatrix * view;
       }
     `,

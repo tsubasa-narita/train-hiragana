@@ -1,6 +1,7 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 import { branchletGeometry, branchletMaterial, grassTuftGeometry } from './reward3d-vegetation.js';
+import { CLOUD_RELIEF } from './reward3d-clouds.js';
 
 const TRACK_START = -340;
 const TRACK_END = 390;
@@ -591,9 +592,9 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   const skyMaterial = own(new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false,
     uniforms: {
-      horizon: { value: new THREE.Color(0xf2e4dd) },
-      zenith: { value: new THREE.Color(0x7fb1d2) },
-      cloud: { value: new THREE.Color(0xfff1e4) }
+      horizon: { value: new THREE.Color(0xf2e8e6) },
+      zenith: { value: new THREE.Color(0x5a9cdd) },
+      time: { value: 0 },
     },
     vertexShader: `
       varying vec3 skyDirection;
@@ -603,19 +604,20 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
       }
     `,
     fragmentShader: `
-      uniform vec3 horizon, zenith, cloud;
+      uniform vec3 horizon, zenith;
+      uniform float time;
       varying vec3 skyDirection;
+      ${CLOUD_RELIEF}
       void main() {
         vec3 d = normalize(skyDirection);
-        float height = smoothstep(-.048, .59, d.y);
-        vec3 color = mix(horizon, zenith, pow(height, .56));
-        vec2 p = d.xz / max(.19, d.y + .16);
-        float wisps = sin(p.x * 4.5 + p.y * 2.7 + sin(p.y * 3.2) * 1.6)
-          + .47 * sin(p.x * 12.5 + p.y * 6.6) + .22 * sin(p.x * 23.2 + p.y * 15.0);
-        float cloudCover = smoothstep(.41, 1.2, wisps) * smoothstep(.028, .16, d.y);
-        color = mix(color, cloud, cloudCover * .48);
-        float warmth = pow(max(0.0, dot(d, normalize(vec3(-.84, .38, .68)))), 7.0);
-        gl_FragColor = vec4(color + vec3(.13, .066, .031) * warmth, 1.0);
+        float height = smoothstep(-.042, .54, d.y);
+        vec3 color = mix(horizon, zenith, pow(height, .42));
+        vec3 sunDirection = normalize(vec3(.47, .70, -.39));
+        float warmth = pow(max(0.0, dot(d, sunDirection)), 8.0);
+        color += vec3(.16, .069, .031) * warmth;
+        color = seasonalClouds(color, d, vec2(1.8 + time * .003, 8.5), sunDirection,
+          vec3(.49, .57, .70), vec3(1.25, 1.11, .98), .46);
+        gl_FragColor = vec4(color, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
@@ -653,6 +655,7 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
     const anchor = Number.isFinite(headX) ? headX : -26;
     const reveal = moment?.reveal ?? 0;
     waterMaterial.uniforms.time.value = reduced ? time * .45 : time;
+    skyMaterial.uniforms.time.value = reduced ? 0 : time;
     for (let i = 0; i < petalData.length; i++) {
       const p = petalData[i];
       const flutter = time * p.drift + p.phase;

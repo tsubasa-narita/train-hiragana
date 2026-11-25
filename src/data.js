@@ -4,6 +4,7 @@ import { quizImageFile } from './quiz-images.js';
 import { CAPITAL_TRAINS } from './capital-trains.js';
 import { METRO_TRAINS } from './metro-trains.js';
 import { POPULAR_TRAINS } from './popular-trains.js';
+import { NOVEMBER_TRAINS } from './november-trains.js';
 import { NEW15_MENDEL_TRAINS } from './new15-mendel.js';
 import { NEW15_HERSCHEL_TRAINS } from './new15-herschel.js';
 import { NEW15_EINSTEIN_TRAINS } from './new15-einstein.js';
@@ -65,6 +66,7 @@ export const TRAINS = [
   ...CAPITAL_TRAINS,
   ...METRO_TRAINS,
   ...POPULAR_TRAINS,
+  ...NOVEMBER_TRAINS,
   ...NEW15_MENDEL_TRAINS,
   ...NEW15_HERSCHEL_TRAINS,
   ...NEW15_EINSTEIN_TRAINS,
