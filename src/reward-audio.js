@@ -46,6 +46,14 @@ const fanfare = [
 ];
 function sample(time, sceneId, shinkansen) {
   let value = 0;
+  if(sceneId==='diorama'){
+    value+=envelope(time,.77,1.04,.018,.19)*(.048*Math.sin(TAU*235*time)+.04*air(time,3121));
+    value+=envelope(time,5.9,7.0,.11,.51)*.028*Math.sin(TAU*659.25*time);
+  }
+  if(sceneId==='aquarium'){
+    const age=time-4.0;
+    value+=envelope(time,4.0,6.2,.24,1.24)*.034*Math.sin(TAU*(180*age+15*age*age));
+  }
   if (time < 1.1) {
     const phase = TAU * (196 * time + (293.6648 - 196) * time * time / 2.2);
     // Leave the first spoken Puck train name clearly in front of the score.
@@ -132,7 +140,7 @@ export function playRewardSound(enabled, { duration = 10, sceneId = 'skybridge',
       const now = audio.currentTime, end = now + count / sampleRate;
       source = own(audio.createBufferSource());source.buffer = buffer;
       const filter = own(audio.createBiquadFilter()), gain = own(audio.createGain());
-      filter.type = 'lowpass';filter.frequency.value = 1650;filter.Q.value = .55;
+      filter.type = 'lowpass';filter.frequency.value = sceneId==='aquarium'?1000:1650;filter.Q.value = .55;
       gain.gain.setValueAtTime(0, now);
       const edge = Math.min(.025, (end - now) / 3);
       gain.gain.linearRampToValueAtTime(.55, now + edge);

@@ -4,7 +4,7 @@ import {createExpressModel} from './reward3d-express.js';
 
 // Metres, railhead=.15, axle=.58. The leading cab faces +X; car centres 0,-20.6,….
 // Basic formations: Yokosuka 11, Shonan-Shinjuku 10, Saikyo 10, Toyoko 8 cars.
-import { REWARD_3D_TRAINS } from './reward3d-catalog.js';
+import { REWARD_3D_TRAINS, isShinkansen } from './reward3d-catalog.js';
 export { REWARD_3D_TRAINS };
 
 const CAR_LENGTH = 20;
@@ -105,7 +105,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const base=REWARD_3D_TRAINS.find(c=>c.id===input?.id);
   if(!base) throw new RangeError(`Unknown reward train: ${input?.id}`);
   const cfg={...base,...input};
-  if(cfg.family==='e5'||cfg.family==='e6')return createShinkansenModel(cfg);
+  if(isShinkansen(cfg))return createShinkansenModel(cfg);
   if(cfg.family==='express')return createExpressModel(cfg);
   const carCount=Math.max(2,Math.min(12,Math.round(Number(cfg.cars)||8)));
   const group=new THREE.Group();group.name=`reward-train-${cfg.id}`;

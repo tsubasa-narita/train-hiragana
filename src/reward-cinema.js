@@ -3,7 +3,7 @@ import {REWARD_DURATION,rewardMoment,chapterText} from './reward-timeline.js';
 import {unlockRewardAudio,playRewardSound} from './reward-audio.js';
 export {REWARD_DURATION,unlockRewardAudio};
 import { quizImageFile } from './quiz-images.js';
-import { REWARD_3D_TRAINS } from './reward3d-catalog.js';
+import { REWARD_3D_TRAINS, isShinkansen } from './reward3d-catalog.js';
 import {resolveRewardExperience,rewardScenario,previewRewardExperience,chooseRewardExperience} from './reward3d-scenarios.js';
 import {createRewardPreloader} from './reward-preload.js';
 const preloader=createRewardPreloader({preview:()=>previewRewardExperience(),claim:plan=>chooseRewardExperience(undefined,Math.random,plan)});
@@ -50,7 +50,7 @@ export function showTrainReward({ train:requested, sound=true, speak, kana=text=
   let scene,closed=false,loadingScene=false,runSound=()=>{},fallbackTimer,loadTimer,loadVersion=0,wasPlaying=false;
   let fallbackElapsed=0,fallbackStarted=0;
   let phase='loading',chapter='',soundVersion=0;
-  function soundAt(offset=0){return playRewardSound(sound,{duration:Math.max(.2,REWARD_DURATION/1000-offset),sceneId:current.sceneId,offset,shinkansen:current.family==='e5'||current.family==='e6'});}
+  function soundAt(offset=0){return playRewardSound(sound,{duration:Math.max(.2,REWARD_DURATION/1000-offset),sceneId:current.sceneId,offset,shinkansen:isShinkansen(current)});}
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function labels(){
     const title=get('#reward-title');

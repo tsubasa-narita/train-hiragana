@@ -8,8 +8,8 @@ import * as THREE from '../vendor/three/three.module.js';
 
 const allPairs=REWARD_SCENARIOS.flatMap(scene=>REWARD_3D_TRAINS.map(train=>`${scene.id}:${train.id}`));
 
-test('all fifty combinations appear once per bag and survive a reload',async()=>{
-  assert.equal(allPairs.length,50);
+test('all 84 combinations appear once per bag and survive a reload',async()=>{
+  assert.equal(allPairs.length,84);
   const original=globalThis.localStorage;let stored=null;
   globalThis.localStorage={getItem:()=>stored,setItem:(_,v)=>{stored=v;}};
   try{
@@ -57,7 +57,7 @@ test('a new trip consumes the previously restored pair before refilling the bag'
   }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
 });
 
-test('a legacy four-train bag migrates to a complete ten-train cycle',async()=>{
+test('a legacy four-train bag migrates to a complete current cycle',async()=>{
   const original=globalThis.localStorage;
   const legacyIds=['yokosuka','shonan-shinjuku','saikyo','toyoko'];
   const legacyBag=REWARD_SCENARIOS.flatMap(s=>legacyIds.map(id=>`${s.id}:${id}`));
@@ -86,13 +86,30 @@ test('expansion adds every new pairing to an in-progress bag without replaying c
     assert.equal(storage.size,1,'preview leaves existing storage untouched');
     const claimed=chooseRewardExperience(undefined,()=>0,next);
     assert.deepEqual(claimed,next);
-    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v3'));
+    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v4'));
     const universe=[saved.last,...saved.bag];
-    assert.equal(universe.length,30);
-    assert.equal(new Set(universe).size,30);
+    assert.equal(universe.length,64);
+    assert.equal(new Set(universe).size,64);
     assert.ok(universe.includes(remaining));
     assert.ok(!universe.includes('depot:hayabusa'));
     assert.ok(universe.includes('snow:laview')&&universe.includes('sakura:yamanote')&&universe.includes('depot:hinotori'));
+  }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
+});
+test('the previous release queues the four additions without replaying consumed scenes',async()=>{
+  const original=globalThis.localStorage;
+  const remaining='night:yokosuka';
+  const oldKey='train-reward-cinema-bag-v3';
+  const storage=new Map([[oldKey,JSON.stringify({bag:[remaining],last:'depot:hayabusa'})]]);
+  globalThis.localStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)};
+  try{
+    const {chooseRewardExperience}=await import('../src/reward3d-scenarios.js?dream-expansion');
+    chooseRewardExperience(undefined,()=>.6);
+    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v4'));
+    const universe=[saved.last,...saved.bag];
+    assert.equal(universe.length,35);
+    assert.ok(universe.includes(remaining));
+    assert.ok(universe.includes('aquarium:rapit')&&universe.includes('diorama:hayabusa')&&universe.includes('depot:doctor-yellow'));
+    assert.ok(!universe.includes('depot:hayabusa'));
   }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
 });
 for(const config of REWARD_3D_TRAINS)test(`${config.id}: curved consist retains its configured spacing and independently spinning wheels`,()=>{

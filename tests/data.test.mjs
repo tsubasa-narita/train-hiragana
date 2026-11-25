@@ -17,7 +17,7 @@ import { REWARD_TRAINS, chooseReward, REWARD_DURATION } from '../src/reward.js';
 import { quizImageFile } from '../src/quiz-images.js';
 const baseKana = character => character.normalize('NFD')[0];
 test('reward images exist and random rewards never immediately repeat', () => {
-  assert.deepEqual(REWARD_TRAINS.map(t=>t.id).sort(), ['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa','hinotori','laview','saphir-odoriko'].sort());
+  assert.deepEqual(REWARD_TRAINS.map(t=>t.id).sort(), ['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa','hinotori','laview','saphir-odoriko','doctor-yellow','rapit'].sort());
   for (const t of REWARD_TRAINS) assert.ok(existsSync(`assets/trains/${quizImageFile(t.image)}`), t.image);
   let previous;
   for (let i = 0; i < 100; i++) { const train = chooseReward(); assert.notEqual(train.id, previous); previous = train.id; }

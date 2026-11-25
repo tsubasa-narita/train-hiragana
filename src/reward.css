@@ -27,6 +27,8 @@
 .reward-cinema[data-scenario='skybridge'] { --scene-color: #7bd7c5; }
 .reward-cinema[data-scenario='sakura'] { --scene-color: #f4b1cd; }
 .reward-cinema[data-scenario='snow'] { --scene-color: #b6deff; }
+.reward-cinema[data-scenario='aquarium'] { --scene-color: #78ddea; }
+.reward-cinema[data-scenario='diorama'] { --scene-color: #ffd38d; }
 
 .reward-heading {
   flex: none;

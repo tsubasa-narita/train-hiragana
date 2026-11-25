@@ -6,11 +6,19 @@ export const REWARD_SCENARIOS = Object.freeze([
   Object.freeze({id:'skybridge',name:'くもの うえの にじの はし'}),
   Object.freeze({id:'sakura',name:'さくらまう はるの たに'}),
   Object.freeze({id:'snow',name:'ゆきあかりの やまみち'}),
+  Object.freeze({id:'aquarium',name:'おさかなと はしる かいていトンネル'}),
+  Object.freeze({id:'diorama',name:'ちいさな まちの もけいでんしゃ'}),
 ]);
-const KEY='train-reward-cinema-bag-v3', LEGACY_KEY='train-reward-cinema-bag-v2';
+const KEY='train-reward-cinema-bag-v4';
 const pairs=REWARD_SCENARIOS.flatMap(s=>REWARD_3D_TRAINS.map(t=>`${s.id}:${t.id}`));
 const legacyScenes=new Set(['depot','night','skybridge']);
 const legacyTrains=new Set(['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa']);
+const previousScenes=new Set([...legacyScenes,'sakura','snow']);
+const previousTrains=new Set([...legacyTrains,'hinotori','laview','saphir-odoriko']);
+const previousPairs=new Set(pairs.filter(pair=>{
+  const [scene,id]=pair.split(':');
+  return previousScenes.has(scene)&&previousTrains.has(id);
+}));
 const legacyPairs=new Set(pairs.filter(pair=>{
   const [scene,id]=pair.split(':');
   return legacyScenes.has(scene)&&legacyTrains.has(id);
@@ -21,10 +29,12 @@ function read(){
   try{
     const stored=JSON.parse(globalThis.localStorage?.getItem(KEY)??'null')||memory;
     if(stored)return stored;
-    const legacy=JSON.parse(globalThis.localStorage?.getItem(LEGACY_KEY)??'null');
-    if(!Array.isArray(legacy?.bag))return undefined;
-    const remaining=[...new Set(legacy.bag.filter(pair=>legacyPairs.has(pair)))];
-    return {bag:[...remaining,...pairs.filter(pair=>!legacyPairs.has(pair))],last:legacy.last};
+    for(const [key, oldPairs] of [['train-reward-cinema-bag-v3',previousPairs],['train-reward-cinema-bag-v2',legacyPairs]]){
+      const old=JSON.parse(globalThis.localStorage?.getItem(key)??'null');
+      if(!Array.isArray(old?.bag))continue;
+      const remaining=[...new Set(old.bag.filter(pair=>oldPairs.has(pair)))];
+      return {bag:[...remaining,...pairs.filter(pair=>!oldPairs.has(pair))],last:old.last};
+    }
   }catch{return memory;}
 }
 function valid(pair){return pairs.includes(pair);}

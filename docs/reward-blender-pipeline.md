@@ -1,6 +1,6 @@
 # Blenderで仕上げるごほうび車両
 
-Blender 4.5.5 LTSで加工した10編成のGLBをWebGLへ読み込む。JavaScript版の形状生成器は再制作の元データと、取得失敗時の代替に使う。
+Blender 4.5.5 LTSで加工した12編成のGLBをWebGLへ読み込む。JavaScript版の形状生成器は再制作の元データと、取得失敗時の代替に使う。
 
 ## 車体の見直し
 
@@ -44,11 +44,16 @@ npm exec --yes --package=@gltf-transform/cli@4.5.1 -- gltf-transform meshopt inp
 
 Three.js r180と同じ版のGLTFLoader・MeshoptDecoder・HDRLoaderを同梱し、外部CDNへ依存しない。glTFの量子化属性はFloat32へ展開してからノード変換を焼き込む。プロトタイプを再利用して7〜11両をInstancedMeshで構成し、車軸だけ個別に回す。パンタグラフと二階建て車両の位置も編成ごとに維持する。
 
-CPU上の原型だけを最大10編成キャッシュする。再生するシーンはジオメトリ・材質・テクスチャを所有し、終了時にGPUリソースを解放する。HDRIもCPU原型を保持し、PMREM生成に使う一時テクスチャはその場で解放する。桜と雪山は既存のHDRIを共有する。
+CPU上の原型だけを最大12編成キャッシュする。再生するシーンはジオメトリ・材質・テクスチャを所有し、終了時にGPUリソースを解放する。HDRIもCPU原型を保持し、PMREM生成に使う一時テクスチャはその場で解放する。桜・雪山・海底トンネル・鉄道模型は既存のHDRIを共有する。
 
 車庫・夜景・天空の橋は、[Poly HavenのCC0 HDRI](../assets/reward3d/environment/LICENSE.md)を舞台ごとに使い分ける。実写の光を反射に使い、背景の地形・橋・雲・市街地は立体で描く。空撮の山は閉じた立体で、平らな四角い断面や浮いた面をなくした。
 
-確認：`npm test`、`npm run build`、`tests/reward-visual-browser.cjs`、`tests/android-browser.cjs`。映像テストは50通りすべてでBlenderモデルとHDRIが実際に読み込まれたことを確認する。
+確認は `npm test`、`npm run build`、`tests/reward-visual-browser.cjs`、`tests/android-browser.cjs`。映像テストの既定は全84通り。車両を絞る場合は `REWARD_TEST_IDS` で指定できる。
+
+### ドクターイエローとラピート
+
+- ドクターイエローはJR西日本923形T5の7両編成。700系をベースとした幅広い先頭部、黄色と青の帯、検測窓を描いた。[JR西日本の車両資料](https://www.jr-odekake.net/navi/the_last_run/project-t5/)
+- ラピートは南海50000系の6両編成。青い前頭部の傾斜、頬の凹凸、縦に並ぶ丸い灯具、側面の楕円窓を描いた。[南海の車両資料](https://www.nankai.co.jp/traffic/museum/muse/ji0003.html)
 
 技術資料：[Blender glTF](https://docs.blender.org/manual/en/latest/addons/import_export/scene_gltf2.html)、[Three.js GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html)、[glTF Transform](https://gltf-transform.dev/cli)。
 

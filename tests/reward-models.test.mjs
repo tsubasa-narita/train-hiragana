@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three/three.module.js';
 import { createTrainModel, REWARD_3D_TRAINS } from '../src/reward3d-trains.js';
 
-const formations = { yokosuka: 11, 'shonan-shinjuku': 10, saikyo: 10, toyoko: 8, yamanote: 11, komachi: 7, hayabusa: 10, hinotori: 6, laview: 8, 'saphir-odoriko': 8 };
+const formations = { yokosuka: 11, 'shonan-shinjuku': 10, saikyo: 10, toyoko: 8, yamanote: 11, komachi: 7, hayabusa: 10, hinotori: 6, laview: 8, 'saphir-odoriko': 8, 'doctor-yellow': 7, rapit: 6 };
 const closeTo = (actual, expected, tolerance = 1e-5) =>
   assert.ok(Math.abs(actual - expected) < tolerance, `${actual} should be near ${expected}`);
 
-test('3D catalog has ten distinct commuter, express and Shinkansen formations', () => {
+test('3D catalog has twelve distinct commuter, express and Shinkansen formations', () => {
   assert.deepEqual(REWARD_3D_TRAINS.map(train => train.id).sort(), Object.keys(formations).sort());
-  assert.equal(new Set(REWARD_3D_TRAINS.map(train => train.model)).size, 10);
+  assert.equal(new Set(REWARD_3D_TRAINS.map(train => train.model)).size, 12);
   for (const train of REWARD_3D_TRAINS) {
     assert.equal(train.cars, formations[train.id], train.id);
     assert.ok(train.stripes.length > 0);
@@ -22,6 +22,7 @@ test('3D catalog has ten distinct commuter, express and Shinkansen formations', 
   for (const [id, family, bodyLength, pitch, frontExtra, width, frontX] of [
     ['hayabusa', 'e5', 24.5, 25, 1.5, 3.35, 13.75],
     ['komachi', 'e6', 20, 20.5, 2.575, 2.945, 12.575],
+    ['doctor-yellow', 'e923', 24.5, 25, 1.25, 3.38, 13.5],
   ]) {
     const config = byId[id];
     assert.equal(config.family, family);

@@ -8,7 +8,7 @@ import {sceneryDetailTexture} from './reward3d-surface.js';
 // Only immutable CPU templates are cached. Every running scene owns its cloned
 // geometry/material/texture objects and releases its complete GPU allocation.
 const libraries=new Map(),pending=new Map();
-const hdrNames={depot:'small_hangar_01',night:'shanghai_bund',skybridge:'railway_bridge_02',sakura:'railway_bridge_02',snow:'shanghai_bund'},hdrs=new Map(),hdrJobs=new Map();
+const hdrNames={depot:'small_hangar_01',night:'shanghai_bund',skybridge:'railway_bridge_02',sakura:'railway_bridge_02',snow:'shanghai_bund',aquarium:'shanghai_bund',diorama:'small_hangar_01'},hdrs=new Map(),hdrJobs=new Map();
 const environmentName=scenario=>hdrNames[scenario]||hdrNames.depot;
 export function rewardEnvironment(scenario){return hdrs.get(environmentName(scenario));}
 export async function prepareEnvironment(scenario){

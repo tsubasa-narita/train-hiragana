@@ -15,14 +15,14 @@ function hermite(knots,x,k){
   return (2*t*t*t-3*t*t+1)*a[k]+(t*t*t-2*t*t+t)*dx*ma+(-2*t*t*t+3*t*t)*b[k]+(t*t*t-t*t)*dx*mb;
 }
 
-// Independently shaped E5 and E6. The reference axis is the car centre, +X is
+// Independently shaped E5, E6 and 923. The reference axis is the car centre, +X is
 // the nose, Y is up. Leading car length includes its additional nose overhang.
 export function createShinkansenModel(cfg){
-  const e5=cfg.family==='e5',lengthBody=cfg.carLength,pitch=cfg.pitch,front=cfg.frontX,half=lengthBody/2,hw=cfg.width/2;
+  const e5=cfg.family==='e5',yellow=cfg.family==='e923',lengthBody=cfg.carLength,pitch=cfg.pitch,front=cfg.frontX,half=lengthBody/2,hw=cfg.width/2;
   const group=new THREE.Group();group.name=`reward-train-${cfg.id}`;
   const resources={g:new Set(),m:new Set(),t:new Set()},wheels=[],batches=new Map();
   const own=g=>(resources.g.add(g),g),mat=(name,props)=>{const m=new THREE.MeshPhysicalMaterial(props);m.name=name;resources.m.add(m);return m;};
-  const white=mat('CAB_PAINT',{color:'#e6e9e8',roughness:.23,metalness:.17,clearcoat:.75,clearcoatRoughness:.16,side:THREE.DoubleSide});
+  const white=mat('CAB_PAINT',{color:yellow?'#39444b':'#e6e9e8',roughness:.23,metalness:.17,clearcoat:.75,clearcoatRoughness:.16,side:THREE.DoubleSide});
   const paint=mat('LIVERY_0',{color:cfg.stripes[0],roughness:.22,metalness:.25,clearcoat:.85,clearcoatRoughness:.13,side:THREE.DoubleSide});
   const belt=mat('LIVERY_1',{color:cfg.stripes[1],roughness:.28,metalness:.4,clearcoat:.5,side:THREE.DoubleSide});
   const steel=mat('STAINLESS',{color:'#74858e',metalness:.83,roughness:.32});
@@ -52,8 +52,9 @@ export function createShinkansenModel(cfg){
     const key=`${geometry.uuid}/${material.uuid}`;if(!batches.has(key))batches.set(key,{geometry,material,matrices:[]});
     batches.get(key).matrices.push(new THREE.Matrix4().multiplyMatrices(carMatrix,helper.matrix));
   };
-  const root=e5?-1.25:-.425;
-  const knots=e5?[[root,hw,3.65,.65],[1,1.61,3.51,.69],[3.2,1.48,3.15,.73],[5.5,1.25,2.65,.77],[8,.98,2.13,.81],[10.5,.88,1.9,.86],[12.6,.52,1.6,.97],[13.45,.25,1.45,1.1],[front,.035,1.36,1.28]]:
+  const root=yellow?.8:e5?-1.25:-.425;
+  const knots=yellow?[[root,hw,3.65,.65],[2.5,1.67,3.52,.67],[4.15,1.60,2.91,.69],[5.8,1.61,2.54,.72],[8.7,1.58,2.02,.76],[10.8,1.43,1.78,.83],[12.3,.97,1.60,.94],[13.1,.48,1.44,1.02],[front,.035,1.27,1.16]]:
+    e5?[[root,hw,3.65,.65],[1,1.61,3.51,.69],[3.2,1.48,3.15,.73],[5.5,1.25,2.65,.77],[8,.98,2.13,.81],[10.5,.88,1.9,.86],[12.6,.52,1.6,.97],[13.45,.25,1.45,1.1],[front,.035,1.36,1.28]]:
     [[root,hw,3.65,.65],[1.4,1.425,3.43,.69],[3.1,1.28,2.96,.73],[5.8,1.015,2.36,.78],[8,.75,1.91,.82],[10,.62,1.62,.88],[11.8,.36,1.44,.98],[12.42,.16,1.33,1.13],[front,.032,1.27,1.20]];
   function section(x,cab){
     if(!cab||x<=root)return {w:hw,top:3.65,bottom:.65,exponent:.42};
@@ -64,9 +65,16 @@ export function createShinkansenModel(cfg){
     return new THREE.Vector3(x,(s.top+s.bottom)/2+(s.top-s.bottom)/2*Math.sign(c)*Math.pow(Math.abs(c),s.exponent)+lift,s.w*Math.sign(sn)*Math.pow(Math.abs(sn),s.exponent));
   }
   const cut=e5?.6:.80,upper=e5?.642:.831;
+  const bandFractions=yellow?[.18,.318,.342,.361,.410]:[cut,upper];
   const angles=Array.from({length:65},(_,i)=>i*Math.PI/32);
-  for(const f of [cut,upper]){const a=Math.acos(Math.pow(2*f-1,1/.42));angles.push(a,Math.PI*2-a);}
+  for(const f of bandFractions){const level=2*f-1,a=Math.acos(Math.sign(level)*Math.abs(level)**(1/.42));angles.push(a,Math.PI*2-a);}
   angles.sort((a,b)=>a-b);
+  function paintRegion(f,x,cab){
+    if(!yellow)return f>upper?1:f>cut?2:0;
+    const hasBelt=!cab||x<root+1.15;
+    if(hasBelt&&((f>.318&&f<.342)||(f>.361&&f<.410)))return 2;
+    return f<.18?0:1;
+  }
   function shell(cab){
     const xs=Array.from({length:13},(_,i)=>-half+(cab?root+half:lengthBody)*i/12);
     if(cab)for(let i=1;i<=80;i++)xs.push(root+(front-root)*i/80);
@@ -75,7 +83,7 @@ export function createShinkansenModel(cfg){
     for(let j=0;j<xs.length-1;j++)for(let k=0;k<stride-1;k++){
       const a=j*stride+k,n=a+1,b=a+stride,bn=b+1;
       const f=(1+Math.sign(Math.cos((angles[k]+angles[k+1])/2))*Math.pow(Math.abs(Math.cos((angles[k]+angles[k+1])/2)),.42))/2;
-      indices[f>upper?1:f>cut?2:0].push(a,n,b,n,bn,b);
+      indices[paintRegion(f,(xs[j]+xs[j+1])/2,cab)].push(a,n,b,n,bn,b);
     }
     if(cab){
       const centre=positions.length/3,tip=section(front,true);
@@ -83,7 +91,7 @@ export function createShinkansenModel(cfg){
       const last=(xs.length-1)*stride;
       for(let k=0;k<stride-1;k++){
         const f=(1+Math.sign(Math.cos((angles[k]+angles[k+1])/2))*Math.pow(Math.abs(Math.cos((angles[k]+angles[k+1])/2)),.42))/2;
-        indices[f>upper?1:f>cut?2:0].push(centre,last+k,last+k+1);
+        indices[paintRegion(f,front,true)].push(centre,last+k,last+k+1);
       }
     }
     const g=own(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
@@ -103,15 +111,16 @@ export function createShinkansenModel(cfg){
     for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const a=i*(ny+1)+j,b=a+ny+1;ix.push(a,a+1,b,a+1,b+1,b);}
     const g=own(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();g.name=name;return {g,material};
   }
-  const windowStart=e5?-1.05:-.3,windowEnd=e5?4.1:3.45;
+  const windowStart=yellow?1.25:e5?-1.05:-.3,windowEnd=yellow?4.1:e5?4.1:3.45;
   const gasket=patch(windowStart-.055,windowEnd+.055,-.675,.675,rubber,true,'cab-window-gasket',.022);
   const canopy=patch(windowStart,windowEnd,-.66,.66,cabGlass,true,'cab-window-glazing',.036);
-  const lampX=e5?3.7:3.6,lamps=[];
+  const lampX=yellow?4.9:e5?3.7:3.6,lamps=[];
   for(const side of [-1,1]){
-    const a=side*1.08;
+    const a=side*(yellow?.69:1.08);
     lamps.push(patch(lampX-.56,lampX+.56,a-.095,a+.095,rubber,true,'lamp-housing',.019));
     lamps.push(patch(lampX-.43,lampX+.43,a-.048,a+.048,headlamp,true,'nose-lamp',.035));
   }
+  const inspectionPanel=yellow?patch(6.75,8.1,-.31,.31,rubber,true,'inspection-hatch',.014):null;
   const windowGeo=own(new THREE.ShapeGeometry(rounded(e5?.83:.76,.78,.12),10));
   const frameGeo=own(new THREE.ShapeGeometry(rounded(e5?.91:.84,.86,.15),10));
   const doorGeo=own(new THREE.ShapeGeometry(rounded(.79,1.94,.11),8));
@@ -156,13 +165,18 @@ export function createShinkansenModel(cfg){
     metadata.push({index:i,centerX:-pitch*i,green:false,passengerDoorsPerSide:2});
     (cab?cabShell:standardShell).forEach((g,j)=>add(g,[white,paint,belt][j]));add(bulkhead,rubber);
     if(!cab)add(bulkhead,rubber,0,0,0,1,1,1,0,Math.PI,0);
-    const step=e5?1.56:1.38;
+    const step=yellow?1.98:e5?1.56:1.38;
     for(let x=-half+3.2;x<half-2.3;x+=step){
       if(cab&&x>root-1.2)continue;
+      if(yellow&&!cab&&Math.abs(x)<2.5)continue;
       for(const side of [-1,1]){sidePlane(frameGeo,rubber,x,2.61,side*(hw+.012));sidePlane(windowGeo,glass,x,2.61,side*(hw+.024));box(cabin,x,2.96,side*(hw-.12),.62,.025,.03);}
     }
     for(const x of cab?[-half+1.25,root-.82]:[-half+1.25,half-1.25])for(const side of [-1,1]){
-      sidePlane(doorGeo,steel,x,2.13,side*(hw+.01));sidePlane(doorInner,white,x,2.13,side*(hw+.02));sidePlane(doorGlass,glass,x,2.66,side*(hw+.03));
+      sidePlane(doorGeo,steel,x,2.13,side*(hw+.01));sidePlane(doorInner,yellow?paint:white,x,2.13,side*(hw+.02));sidePlane(doorGlass,glass,x,2.66,side*(hw+.03));
+      if(yellow){
+        box(belt,x,1.802,side*(hw+.023),.72,.143,.014);
+        box(belt,x,1.64,side*(hw+.023),.72,.064,.014);
+      }
       box(steel,x+.24,1.92,side*(hw+.045),.024,.13,.024);
     }
     const bogies=cab?cfg.cabBogieCenters:cfg.bogieCenters;
@@ -178,6 +192,7 @@ export function createShinkansenModel(cfg){
     for(const z of [-1,1])box(dark,(floorStart+floorEnd)/2,.8,z*.6,floorEnd-floorStart,.25,.5);
     if(cab){
       add(gasket.g,gasket.material);add(canopy.g,canopy.material);for(const p of lamps)add(p.g,rear&&p.material===headlamp?tail:p.material);
+      if(inspectionPanel)add(inspectionPanel.g,inspectionPanel.material);
       // Paired fine wipers lie on the sloped bubble canopy.
       for(const side of [-1,1]){
         const a=surface(2.4,side*.38,true,.06),b=surface(3.5,side*.17,true,.06);rod([...a],[...b],.014,rubber);

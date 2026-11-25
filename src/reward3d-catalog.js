@@ -10,4 +10,8 @@ export const REWARD_3D_TRAINS = [
   {id:'hinotori',name:'ひのとり',model:'近鉄80000系',color:'#b91e34',bookId:'hinotori',image:'extra-hinotori.webp',destination:'大阪難波',cars:6,family:'express',stripes:['#a7132a','#d3ae6a'],greenCars:[],pantographCars:[1,3],carLength:20.5,pitch:21,frontX:10.25,width:2.8,gauge:1.435,doorsPerSide:1},
   {id:'laview',name:'らびゅー',model:'西武001系',color:'#b9c2c9',bookId:'laview',image:'extra-laview.webp',destination:'西武秩父',cars:8,family:'express',stripes:['#bdc4c9','#283945'],greenCars:[],pantographCars:[1,3,5],carLength:20,pitch:20.5,frontX:10,width:2.85,gauge:1.067,doorsPerSide:1},
   {id:'saphir-odoriko',name:'さふぃーるおどりこ',model:'E261系',color:'#246b9b',bookId:'saphir-odoriko',image:'go-home-saphir-odoriko.webp',destination:'伊豆急下田',cars:8,family:'express',stripes:['#174d79','#d9e2e5'],greenCars:[],pantographCars:[1,4,6],carLength:20,pitch:20.5,frontX:10,width:2.95,gauge:1.067,doorsPerSide:1},
+  {id:'doctor-yellow',name:'どくたーいえろー',model:'923形 T5編成',color:'#f6c62d',bookId:'doctor-yellow',image:'go-home-doctor-yellow.webp',destination:'ドクターイエロー',cars:7,family:'e923',stripes:['#f3bf21','#174777'],greenCars:[],pantographCars:[1,5],carLength:24.5,pitch:25,frontExtra:1.25,frontX:13.5,width:3.38,gauge:1.435,doorsPerSide:2,bogieCenters:[-8.5,8.5],cabBogieCenters:[-8.5,-1.5],cabBack:1.25},
+  {id:'rapit',name:'らぴーと',model:'南海50000系',color:'#355cc8',bookId:'rapit',image:'rapit.webp',destination:'関西空港',cars:6,family:'express',stripes:['#1d3a98','#283f86'],greenCars:[],pantographCars:[1,4],carLength:20,pitch:20.5,frontX:10.9,width:2.85,gauge:1.067,doorsPerSide:1},
 ];
+
+export const isShinkansen = ({family}) => ['e5','e6','e923'].includes(family);

@@ -6,10 +6,10 @@ import {
   rewardBookId, showTrainReward, stopTrainReward,
 } from '../src/reward.js';
 
-test('ten cinematic rewards resolve only explicit valid book entries', () => {
+test('the twelve cinematic rewards resolve only explicit valid book entries', () => {
   assert.equal(REWARD_DURATION, 10000);
-  assert.deepEqual(REWARD_TRAINS.map(train => train.id).sort(), ['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa','hinotori','laview','saphir-odoriko'].sort());
-  assert.equal(Object.keys(REWARD_BOOK_IDS).length, 10);
+  assert.deepEqual(REWARD_TRAINS.map(train => train.id).sort(), ['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa','hinotori','laview','saphir-odoriko','doctor-yellow','rapit'].sort());
+  assert.equal(Object.keys(REWARD_BOOK_IDS).length, 12);
   for (const [reward, book] of Object.entries(REWARD_BOOK_IDS)) {
     assert.ok(REWARD_TRAINS.some(train => train.id === reward));
     assert.ok(TRAINS.some(train => train.id === book));

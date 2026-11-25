@@ -6,6 +6,7 @@ const designs = {
   hinotori: { roof:4.04, setback:1.52, taper:.52, profile:4.4, glass:[2.96,1.61,2.04,3.8], lamps:[.48,1.93,.84,.095], seat:'#aa5547', metal:.47 },
   laview: { roof:3.91, setback:2.58, taper:.04, profile:3.9, glass:[2.99,2.25,1.46,2.02], lamps:[.99,2.02,.26,.085], seat:'#f1bb32', metal:.76 },
   'saphir-odoriko': { roof:3.94, setback:1.36, taper:.62, profile:4.8, glass:[2.88,1.96,1.64,3.5], lamps:[.88,1.55,.39,.145], seat:'#b89664', metal:.32 },
+  rapit: { roof:4.11, setback:1.55, taper:1.75, profile:3.7, glass:[3.20,1.80,.88,4.0], lamps:[1.02,2.72,.22,.22], seat:'#80654f', metal:.28 },
 };
 
 function superellipse(angle, power) {
@@ -45,6 +46,13 @@ function panel(width, height, radius) {
   return geometry;
 }
 
+function porthole(width,height) {
+  const shape=new THREE.Shape();shape.absellipse(0,0,width/2,height/2,0,Math.PI*2,false);
+  const geometry=new THREE.ShapeGeometry(shape,24),uv=geometry.attributes.uv;
+  for(let i=0;i<uv.count;i++)uv.setXY(i,.5+uv.getX(i)/width,.5+uv.getY(i)/height);
+  return geometry;
+}
+
 function windowTexture(seat) {
   const data=new Uint8Array(64*32*4),seatColor=new THREE.Color(seat);
   seatColor.convertLinearToSRGB();
@@ -67,8 +75,8 @@ function windowTexture(seat) {
 
 export function createExpressModel(config) {
   const {id,cars,pitch,width,frontX,gauge}=config;
-  const design=designs[id],laview=id==='laview',saphir=id==='saphir-odoriko',hinotori=id==='hinotori';
-  const halfWidth=width/2,bottom=.85,standardRoof=3.81;
+  const design=designs[id],laview=id==='laview',saphir=id==='saphir-odoriko',hinotori=id==='hinotori',rapit=id==='rapit';
+  const halfWidth=width/2,bottom=rapit?.62:.85,standardRoof=3.81;
   const group=new THREE.Group();
   group.name=`reward-train-${id}`;
   const geometries=new Set(),materials=new Set(),wheels=[],batches=new Map();
@@ -108,6 +116,7 @@ export function createExpressModel(config) {
     const vertical=(y-centre)/halfHeight;
     const radius=(Math.abs(vertical)**design.profile+Math.abs(z/halfWidth)**design.profile)**(1/design.profile);
     const round=laview?1-Math.sqrt(Math.max(0,1-radius**2)):.59*radius**2+.41*radius**5;
+    if(rapit)return frontX-design.setback*round-design.taper*(vertical+.31)*.8;
     return frontX-design.setback*round-design.taper*Math.max(0,vertical)**1.25;
   }
   function bodyTube(cab) {
@@ -144,14 +153,19 @@ export function createExpressModel(config) {
   const couplerPocket=face(1.21,0,laview?.68:.80,.32,3.6,.022,'coupler-pocket');
   const [lampZ,lampY,lampWidth,lampHeight]=design.lamps;
   const lamps=[-1,1].map(side=>({
-    rim:face(lampY,side*lampZ,lampWidth+.105,lampHeight+.071,3.5,.061,'lamp-housing'),
-    lens:face(lampY,side*lampZ,lampWidth,lampHeight,3.5,.079,'nose-lamp'),
+    rim:face(lampY,side*lampZ,lampWidth+(rapit?.065:.105),lampHeight+.071,rapit?2:3.5,.061,'lamp-housing'),
+    lens:face(lampY,side*lampZ,lampWidth,lampHeight,rapit?2:3.5,.079,'nose-lamp'),
   }));
+  const markerRims=rapit?[-1,1].flatMap(side=>[2.30,3.10].map(y=>face(y,side*1.02,.21,.21,2,.06,'marker-housing'))):[];
+  const cheekFlutes=rapit?[-1,1].flatMap(side=>[2.26,2.69,3.08].map(y=>own(surface(8,4,(u,v)=>{
+    const py=y+.18*u+(v-.5)*Math.sin(Math.PI*u)*.11,pz=side*(1.095+.26*u);
+    return [noseX(py,pz)+.042+Math.sin(Math.PI*u)*.048,py,pz];
+  },'cheek-flute')))):[];
   const lengthWindow=laview?1.58:hinotori?1.64:1.72,heightWindow=laview?1.35:hinotori?1.02:1.04;
-  const windowFrame=own(panel(lengthWindow+.085,heightWindow+.085,.11));
-  const sideWindow=own(panel(lengthWindow,heightWindow,.085));
+  const windowFrame=own(rapit?porthole(.88,1.14):panel(lengthWindow+.085,heightWindow+.085,.11));
+  const sideWindow=own(rapit?porthole(.80,1.06):panel(lengthWindow,heightWindow,.085));
   const doorFrame=own(panel(.83,1.99,.075)),door=own(panel(.775,1.94,.065)),doorWindow=own(panel(.31,.74,.07));
-  const cabSide=own(panel(laview?.60:.92,laview?.78:.7,.105));
+  const cabSide=own(rapit?porthole(.51,1.01):panel(laview?.60:.92,laview?.78:.7,.105));
   const skylight=own(panel(1.62,.46,.094));
   const axleParts=[];
   for(const z of [-gauge/2,gauge/2]){
@@ -180,10 +194,14 @@ export function createExpressModel(config) {
       add(glassRim,rubber);
       add(windscreen,glass);
       for(const {rim,lens} of lamps){add(rim,rubber);add(lens,rear?tail:headlamp);}
-      add(couplerPocket,rubber);
-      const couplerX=noseX(1.19,0);
-      block(equipment,couplerX-.18,1.19,0,.52,.20,.46);
-      block(panelMetal,couplerX+.12,1.17,0,.26,.13,.28);
+      markerRims.forEach(rim=>add(rim,rubber));
+      cheekFlutes.forEach(flute=>add(flute,accent));
+      if(!rapit){
+        add(couplerPocket,rubber);
+        const couplerX=noseX(1.19,0);
+        block(equipment,couplerX-.18,1.19,0,.52,.20,.46);
+        block(panelMetal,couplerX+.12,1.17,0,.26,.13,.28);
+      }
       // Angled wipers lie on the windscreen with their pivots near the base.
       for(const side of [-1,1])add(box,rubber,noseX(glassY-.34,side*.45)+.068,glassY-.34,side*.45,.026,.58,.034,side*.40);
     }else{
@@ -195,14 +213,14 @@ export function createExpressModel(config) {
       sidePanel(door,body,doorX,2.02,side,.027);
       sidePanel(doorWindow,windows,doorX,2.53,side,.035);
       block(panelMetal,doorX+.26,1.87,side*(halfWidth+.05),.028,.15,.034);
-      for(let x=cab?-frontX+3.32:-frontX+1.65;x<(cab?(laview?4.9:5.7):doorX-1.12);x+=laview?2.06:2.21){
+      for(let x=cab?-frontX+3.32:-frontX+1.65;x<(cab?(laview?4.9:5.7):doorX-1.12);x+=rapit?1.52:laview?2.06:2.21){
         const y=laview?2.34:hinotori&&cab?2.86:2.62;
         sidePanel(windowFrame,rubber,x,y,side,.034);
         sidePanel(sideWindow,windows,x,y,side,.046);
         if(saphir)add(skylight,glass,x,3.67,side*(halfWidth-.30),1,1,1,side*-.89,side<0?Math.PI:0);
       }
       if(cab)sidePanel(cabSide,glass,laview?6.34:6.96,3.00,side,.016);
-      if(!laview){
+      if(!laview&&!rapit){
         const end=cab?frontX-design.setback-.40:frontX-.36,start=-frontX+.33;
         block(accent,(start+end)/2,hinotori?1.67:3.49,side*(halfWidth-.027),end-start,hinotori?.038:.092,.065);
       }
