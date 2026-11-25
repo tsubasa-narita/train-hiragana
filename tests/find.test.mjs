@@ -53,6 +53,17 @@ test('small kana frequency, row filtering and recorded compound choices', () => 
   }
 });
 
+test('compound questions leave room for the train selected in the book', () => {
+  const row = ['さ'];
+  const count = Math.min(3, FIND_COMPOUNDS.filter(sound => kanaRow(sound[0]) === row[0]).length);
+  for (let i = 0; i < 16; i++) {
+    const trip = makeJourney('super-hakuto', row, 'find', 0, {}, {}, [], 3);
+    assert.equal(trip[2].id, 'super-hakuto');
+    assert.equal(quizTarget(trip[2], trip[2].targets[0]), 'す');
+    assert.equal(trip.filter(card => card.compound).length, count);
+  }
+});
+
 test('each train and scene has its pictured train fact instead of generic praise', () => {
   const facts = new Set();
   for (const card of QUIZ_CARDS) {

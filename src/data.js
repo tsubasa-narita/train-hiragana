@@ -198,7 +198,11 @@ export function makeJourney(preferredId, rows = [], mode = 'find', offset = 0, r
     : [];
   // Start with a single kana. Keep the remaining single-kana questions in
   // their original row order around the supplemental questions.
-  const slots = compounds.length ? shuffle([1,2,3,4]) : [];
+  const preferredTrain = eligible.find(card => card.id === preferredId && !card.kind);
+  const preferredLetter = preferredTrain && canonicalQuizKana(preferredTrain.name[0]);
+  const availableSlots = [0,1,2,3,4];
+  const preferredSlot = availableSlots.find(slot => letters[(start + slot) % letters.length] === preferredLetter);
+  const slots = compounds.length ? shuffle(availableSlots.slice(1).filter(slot => slot !== preferredSlot)) : [];
   const compoundAt = new Map(compounds.map((sound, i) => [slots[i], sound]));
   const add = (train, index, compound) => {
     used.add(train.quizId || train.id);
