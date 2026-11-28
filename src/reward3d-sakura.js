@@ -373,7 +373,28 @@ export function createSakuraWorld(scene, { config, reduced = false } = {}) {
   instances('footbridge-deck-boards', box, standard({ roughness: .94 }), boards);
   instances('footbridge-stone-landings', box, standard({ roughness: .94 }), footings);
 
-  const stoneGeometry = own(new THREE.IcosahedronGeometry(1, 0));
+  // A riverside rest shelter sits by the far landing. Its roof is made of
+  // separate slopes and a tiled ridge, leaving the blossom canopy visible.
+  const shelterX=footXAt(.98)+5.5,shelterZ=footZ+2.6;
+  const shelterY=groundHeight(shelterX,shelterZ);
+  const shelterWood=[],shelterTiles=[],shelterStone=[];
+  for(const dx of [-2.25,2.25])for(const dz of [-1.47,1.47]){
+    shelterWood.push(boxAt(shelterX+dx,shelterY+1.24,shelterZ+dz,.169,2.51,.169,0x8f543b));
+    shelterStone.push(boxAt(shelterX+dx,shelterY+.067,shelterZ+dz,.38,.27,.38,0x978b72));
+  }
+  for(const dz of [-1.47,1.47])shelterWood.push(boxAt(shelterX,shelterY+2.48,shelterZ+dz,5.43,.21,.23,0x744938));
+  shelterWood.push(boxAt(shelterX,shelterY+.49,shelterZ+1.04,4.32,.12,.55,0x95684c));
+  for(const side of [-1,1]){
+    const rot=side*.40;
+    shelterTiles.push({...boxAt(shelterX,shelterY+2.90,shelterZ+side*.99,5.9,.18,2.25,0x526c69),rx:rot});
+    for(let i=-11;i<=11;i++)
+      shelterTiles.push({...boxAt(shelterX+i*.253,shelterY+3.0,shelterZ+side*.99,.072,.10,2.2,0x617c74),rx:rot});
+  }
+  shelterTiles.push(boxAt(shelterX,shelterY+3.40,shelterZ,6,.225,.29,0x526963));
+  instances('river-shelter-carpentry',box,standard({roughness:.82}),[...shelterWood,...shelterStone]);
+  instances('river-shelter-roof-tiles',box,standard({roughness:.73}),shelterTiles);
+
+  const stoneGeometry = own(new THREE.IcosahedronGeometry(1, 1));
   const shoreStones = [];
   for (let i = 0; i < (reduced ? 140 : 255); i++) {
     const z = range(-38, 154);

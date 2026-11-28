@@ -6,6 +6,7 @@ import { createSkybridgeWorld, skyPose, SKY_RADIUS } from './reward3d-skybridge.
 import { createSakuraWorld } from './reward3d-sakura.js';
 import { createSnowWorld } from './reward3d-snow.js';
 import { createAquariumWorld, createDioramaWorld } from './reward3d-dream.js';
+import { createPlayroomWorld } from './reward3d-playroom.js';
 import { rewardScenario } from './reward3d-scenarios.js';
 import { createTrainModel } from './reward3d-trains.js';
 import { prepareTrainModels,createBlenderTrainModel,prepareEnvironment,rewardEnvironment } from './reward3d-assets.js';
@@ -38,16 +39,17 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scenario=rewardScenario(config.sceneId).id,night=scenario==='night',depot=scenario==='depot',skybridge=scenario==='skybridge';
   const sakura=scenario==='sakura',snow=scenario==='snow',seasonal=sakura||snow;
-  const aquarium=scenario==='aquarium',diorama=scenario==='diorama',dream=aquarium||diorama;
-  const scene = new THREE.Scene(), warm = depot||sakura,shinkansen=isShinkansen(config),express=config.family==='express';
-  scene.background = new THREE.Color(aquarium?0x185779:diorama?0xbcc2a8:snow?0x829bc3:warm?0xe3c9aa:0xb8d3de);
-  const fogColor=aquarium?0x185779:diorama?0xbcc2a8:snow?0x829bc3:sakura?0xd9cbd1:night?0x0b1934:warm?0xe7c49a:0xc7e3f0;
-  scene.fog = new THREE.Fog(fogColor,aquarium?42:night?160:seasonal?120:300,aquarium?350:night?650:seasonal?680:1200);
+  const aquarium=scenario==='aquarium',diorama=scenario==='diorama',playroom=scenario==='playroom',dream=aquarium||diorama||playroom;
+  const scene = new THREE.Scene(), warm = depot||sakura||playroom,shinkansen=isShinkansen(config);
+  const roomColor=0xf6ddb6;
+  scene.background = new THREE.Color(aquarium?0x185779:diorama?0xbcc2a8:playroom?roomColor:snow?0x829bc3:warm?0xe3c9aa:0xb8d3de);
+  const fogColor=aquarium?0x185779:diorama?0xbcc2a8:playroom?roomColor:snow?0x829bc3:sakura?0xd9cbd1:night?0x0b1934:warm?0xe7c49a:0xc7e3f0;
+  scene.fog = new THREE.Fog(fogColor,aquarium?42:playroom?88:night?160:seasonal?120:300,aquarium?350:playroom?290:night?650:seasonal?680:1200);
   const environment = createReflectionEnvironment(renderer,warm,scenario,rewardEnvironment(scenario)); scene.environment = environment.texture;scene.environmentRotation.set(0,night?-1.57:depot?.9:-.4,0);
   scene.environmentIntensity = night?.3:.65;
   renderer.toneMappingExposure=night?1.05:.92;
-  const hemisphere = new THREE.HemisphereLight(aquarium?0xb5e5ff:snow?0xb3d8ff:0xe8f4ff,aquarium?0x274a81:snow?0x657ba8:night?0x14213c:0x78836c,aquarium?1.14:diorama?.8:snow?1.05:night?.45:depot?.42:.7); scene.add(hemisphere);
-  const sun = new THREE.DirectionalLight(aquarium?0xc7edff:diorama?0xffe6bb:snow?0xffd4b5:night?0x7aafff:warm?0xffdab0:0xffefd8,aquarium?2.45:diorama?3.0:snow?2.1:sakura?3.15:night?1.1:depot?4.8:3.9);
+  const hemisphere = new THREE.HemisphereLight(aquarium?0xb5e5ff:snow?0xb3d8ff:0xe8f4ff,aquarium?0x274a81:snow?0x657ba8:night?0x14213c:0x78836c,aquarium?1.14:playroom?1.18:diorama?.8:snow?1.05:night?.45:depot?.42:.7); scene.add(hemisphere);
+  const sun = new THREE.DirectionalLight(aquarium?0xc7edff:playroom||diorama?0xffe6bb:snow?0xffd4b5:night?0x7aafff:warm?0xffdab0:0xffefd8,aquarium?2.45:playroom?2.8:diorama?3.0:snow?2.1:sakura?3.15:night?1.1:depot?4.8:3.9);
   sun.castShadow = true; sun.shadow.mapSize.set(globalThis.innerWidth>900?2048:1024,globalThis.innerWidth>900?2048:1024);
   Object.assign(sun.shadow.camera, { left:-50, right:45, top:25, bottom:-25, near:1, far:200 });
   sun.shadow.bias = -.00015; sun.shadow.normalBias = .035;
@@ -63,13 +65,15 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   const celebration=createCelebration(scene,{scenario,color:config.color,reduced});
   let renderStats={calls:0,triangles:0};
   const world = aquarium?createAquariumWorld(scene,{config,reduced}):
+    playroom?createPlayroomWorld(scene,{config,reduced}):
     diorama?createDioramaWorld(scene,{config,reduced}):
     sakura?createSakuraWorld(scene,{config,reduced}):
     snow?createSnowWorld(scene,{config,reduced}):
     depot?createDepotWorld(scene,{config,reduced}):
     skybridge?createSkybridgeWorld(scene,{config,reduced}):
     createRailwayWorld(scene,{night:true,gauge:config.gauge||1.067,reduced});
-  const train = buildTrain(config); scene.add(train.group);
+  const consist=playroom?{...config,cars:4,greenCars:config.greenCars?.length?[2]:[],pantographCars:[1]}:config;
+  const train = buildTrain(consist); scene.add(train.group);
   if(skybridge)bendTrainModel(train,SKY_RADIUS);
   const opposite=night?buildTrain({...oppositeTrain(config),sceneId:scenario}):null;
   if(opposite){opposite.group.rotation.y=Math.PI;scene.add(opposite.group);}
@@ -81,15 +85,17 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   const times=[0,1.1,3.2,6.7,8.4,10];
   const positions=(aquarium?
     [[front+15,3.85,-4.6],[front+12,3.55,-6],[front+8,4.1,-13],[front-2,7.2,-27],[front+7,5.3,-18],[front+7,4.1,-13]]:
+    playroom?[[front+12,5.7,-9.4],[front+11,4.7,-9.8],[front+9,7.2,-14],[front+6,31,-25],[front+11,8.7,-15],[front+9,4.2,-10]]:
     diorama?[[front+16,18,-32],[front+15,14,-23],[front+7,20,-18],[front-12,61,-15],[front+9,17,-19],[front+8,7,-14]]:
     skybridge?
     [[front+13,2.7,-3.4],[front+12,2.5,-4.5],[front+7,2.5,-10],[front+13,9,-27],[front+8,5,-19],[front+7,3.6,-16]]:
-    depot?[[front+13,2.9,-3],[front+12,2.6,-4],[front+8,2.4,-9],[front+9,4,-14],[front+7,3.5,-14],[front+6,3.1,-13]]:
+    depot?[[front+(shinkansen?4.2:7.35),3.8,-8.9],[front+(shinkansen?4.4:7.4),3.5,-8.4],[front+8,2.4,-9],[front+9,4,-14],[front+7,3.5,-14],[front+6,3.1,-13]]:
     sakura?[[front+12,3.1,-6],[front+11,2.85,-7],[front+7,2.8,-10],[front+13,10.5,-25],[front+10,5.8,-17],[front+8,4,-12]]:
     snow?[[front+12,3.4,-8],[front+12,2.9,-8],[front+9,2.55,-12],[front+18,8,-26],[front+12,5.3,-16],[front+9,3.45,-12]]:
     [[front+10,2.6,-5],[front+9,2.2,-6],[front+7,2.4,-10],[front+8,3.7,-15],[front+7,3.5,-14],[front+6,3,-13]]).map(v=>new THREE.Vector3(...v));
   const targets=(aquarium?
     [[focus,2.8,0],[focus,2.9,0],[focus-2,3.6,2],[front-10,6.1,7],[focus-2,3.4,1],[focus,2.35,0]]:
+    playroom?[[focus,3.1,1],[focus,3.05,1],[focus-2,3.0,2],[front-16,1.6,1],[focus-3,3.3,2],[focus-1,2.50,0]]:
     diorama?[[focus-4,1.2,-5],[focus,2.4,1],[focus-1,2,3],[front-15,1.1,9],[focus-2,2.2,1],[focus,2.25,0]]:
     [[focus,2.25,0],[focus,2.15,0],[focus-1,2.05,0],[shinkansen?-3:1,1.8,0],[focus-1,2.05,0],[focus,2.2,0]]).map(v=>new THREE.Vector3(...v));
   function director(seconds){
@@ -97,15 +103,23 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     const mix=ramp(times[i],times[i+1],seconds);
     return {position:positions[i].clone().lerp(positions[i+1],mix),target:targets[i].clone().lerp(targets[i+1],mix)};
   }
-  const start=skybridge?-42:depot?-15:diorama?-38:seasonal||aquarium?-26:-45;
+  const start=skybridge?-42:depot?-20:diorama?-38:playroom?-33:seasonal||aquarium?-26:-45;
   const passingX=start+rewardMoment(5300,shinkansen).distance+front+(opposite?.frontX||front);
   const glowTexture=(()=>{
     const c=document.createElement('canvas');c.width=c.height=64;const ctx=c.getContext('2d'),g=ctx.createRadialGradient(32,32,0,32,32,32);
     g.addColorStop(0,'rgba(255,248,218,1)');g.addColorStop(.12,'rgba(255,239,184,.8)');g.addColorStop(.4,'rgba(255,227,168,.12)');g.addColorStop(1,'rgba(255,227,168,0)');ctx.fillStyle=g;ctx.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);
   })();
   const glowMaterial=new THREE.SpriteMaterial({map:glowTexture,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:night?.7:.3});
-  // The new express headlamps already follow their own curved front surfaces.
-  if(!express&&config.family!=='e923')for(const z of [-1,1]){const glow=new THREE.Sprite(glowMaterial);glow.position.set(shinkansen?(config.family==='e5'?3.7:3.6):10.16,shinkansen?(config.family==='e5'?2.65:2.45):config.id==='toyoko'?3.67:3.72,z*(shinkansen?1.12:1));glow.scale.setScalar(night?.60:.32);train.group.add(glow);}
+  const lightOrigin=new THREE.Vector3(),viewDirection=new THREE.Vector3();
+  const lampGlows=(train.headlamps??[]).map(({position,radius})=>{
+    const glow=new THREE.Sprite(glowMaterial);
+    glow.scale.setScalar(radius*(night?3.25:2.05));
+    scene.add(glow);
+    lightOrigin.add(position);
+    return {glow,position};
+  });
+  if(lampGlows.length)lightOrigin.divideScalar(lampGlows.length);
+  else lightOrigin.set(front,2.7,0);
   let raf = 0, elapsed = 0, started = 0, running = false, disposed = false, completed = false;
   let frame = 0, slowFrames = 0, previous = 0, qualityReduced = false;
   const oldError = event => { event.preventDefault(); pause(); onError?.('context-lost'); };
@@ -124,11 +138,13 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     const headS=start+travel,pose=skybridge?skyPose(headS):{x:start+travel,y:0,z:0,yaw:0};
     train.group.position.set(pose.x,pose.y+Math.sin(seconds*11)*.005,pose.z);train.group.rotation.y=pose.yaw;
     train.setHeadlights(moment.headlights);
-    glowMaterial.opacity=(night?.60:.26)*moment.headlights;
+    if(aquarium)train.setLightingTime?.(reduced?0:seconds);
+    glowMaterial.opacity=(night?.55:.24)*moment.headlights;
     if (headlightThrow) {
-      headlightThrow.position.set(pose.x + front + .12, shinkansen ? 2.5 : 3.15, pose.z);
+      headlightThrow.position.copy(lightOrigin).add(train.group.position);
+      headlightThrow.position.x+=.16;
       headlightThrow.target.position.set(pose.x + front + 13, .06, pose.z + .32);
-      headlightThrow.intensity = 102 * moment.headlights;
+      headlightThrow.intensity = 115 * moment.headlights;
     }
     for(const wheel of train.wheels)wheel.rotation[wheel.userData?.spinAxis||'z']=-travel/(wheel.userData?.radius||.43);
     if(opposite){opposite.group.position.set(passingX+(5.3-seconds)*42,0,4.4);for(const wheel of opposite.wheels)wheel.rotation.z=-42*seconds/.43;}
@@ -143,13 +159,12 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     if(shinkansen&&portrait&&!dream){
       target.x=THREE.MathUtils.lerp(target.x,front*.5+.3,portrait);
       position.z*=1+.22*portrait*moment.reveal;
-      if(depot){const opening=1-ramp(2.8,4.2,seconds);position.x+=4*portrait*opening;target.x+=1.2*portrait*opening;}
+      if(depot)target.x+=1.2*portrait*(1-ramp(2.8,4.2,seconds));
     }
-    if(depot)position.z=THREE.MathUtils.lerp(Math.max(position.z,-5),position.z,ramp(2.8,4.2,seconds));
     // The initial tunnel sightline passes through the opening, not the rock.
     if(skybridge&&seconds<2.8)position.z=THREE.MathUtils.lerp(Math.max(position.z,-3.6),position.z,ramp(1.7,2.8,seconds));
     if(reduced){
-      position.set(front+28,diorama?25:skybridge?18:9,-(skybridge?65:55)*aspectScale);target.set(0,dream?3:2,0);
+      position.set(front+28,diorama||playroom?25:skybridge?18:9,-(skybridge?65:55)*aspectScale);target.set(0,dream?3:2,0);
     }else if(!dream){
       // After the wide crossing, travel ahead of the nose and look back along
       // the consist. A tall frame needs a more frontal angle, not a longer lens.
@@ -177,8 +192,14 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
         camera.position.sub(target).multiplyScalar(Math.min(fit*1.02,1.6)).add(target);camera.lookAt(target);
       }
     }
-    renderer.toneMappingExposure=aquarium?1.02:diorama?.96:snow?1.12:night?1.08:depot?1.0:.82+.20*moment.reveal;
-    scene.environmentIntensity=aquarium?.51:diorama?.58:snow?.55:night?.38:depot?.65:.43+.32*moment.reveal;
+    train.group.updateWorldMatrix(true,false);
+    for(const {glow,position} of lampGlows){
+      glow.position.copy(position).applyMatrix4(train.group.matrixWorld);
+      viewDirection.subVectors(camera.position,glow.position).normalize();
+      glow.position.addScaledVector(viewDirection,.085);
+    }
+    renderer.toneMappingExposure=aquarium?1.02:diorama||playroom?.96:snow?1.12:night?1.08:depot?1.0:.82+.20*moment.reveal;
+    scene.environmentIntensity=aquarium?.51:playroom?.49:diorama?.58:snow?.55:night?.38:depot?.65:.43+.32*moment.reveal;
     sun.position.set(pose.x+(depot?55:35),snow?30:55,pose.z-32);sun.target.position.set(pose.x-20,0,pose.z);
     heroFill.position.set(pose.x+20,14,pose.z-20);heroFill.target.position.set(pose.x-10,2,pose.z);
     celebration.update(moment,pose,camera);

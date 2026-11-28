@@ -1,6 +1,7 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { createTunnelMountain } from './reward3d-terrain.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
+import { createFerries } from './reward3d-vessels.js';
 
 export const SKY_RADIUS = 600;
 
@@ -264,7 +265,7 @@ export function createSkybridgeWorld(scene, { config, reduced = false } = {}) {
   // Sunlit shoulders, shaded valleys and distance haze give the coast volume;
   // the old unlit blue silhouettes looked like stacked cardboard cutouts.
   instances(islandGeometry, keep(new THREE.MeshStandardMaterial({ color: 0xb8c6c5, vertexColors: true, roughness: 1, envMapIntensity:.25 })), distantRanges, 'layered-rounded-coastal-ranges');
-  const islands = [], shores = [], town = [], roofs = [], quays = [], boats = [], wakes = [];
+  const islands = [], shores = [], town = [], roofs = [], quays = [];
   for (let i = 0; i < 13; i++) {
     const x = -620 + i * 105 + random() * 35, z = 350 + random() * 150;
     const width = 55 + random() * 65, h = 10 + random() * 30;
@@ -288,13 +289,30 @@ export function createSkybridgeWorld(scene, { config, reduced = false } = {}) {
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false })), town, 'tiny-harbour-town');
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0x9dafa9, fog: false })), roofs, 'harbour-roofs');
   instances(box, keep(new THREE.MeshBasicMaterial({ color: 0xaabec0, fog: false })), quays, 'quays-and-port-cranes');
-  for (let i = 0; i < 12; i++) {
-    const x = -470 + random() * 1020, z = 150 + random() * 390;
-    boats.push({ x, y: -115.3, z, sx: 2 + random() * 2, sy: .65, sz: 7 + random() * 7, ry: -.2 });
-    wakes.push({ x: x - 1.7, y: -115.95, z: z + 13, sx: 2.5, sy: .04, sz: 16, ry: -.2 });
-  }
-  instances(box, keep(new THREE.MeshBasicMaterial({ color: 0xf4f7ed, fog: false })), boats, 'white-boats-in-the-bay');
-  instances(box, keep(new THREE.MeshBasicMaterial({ color: 0x72bdd1, fog: false })), wakes, 'boat-wakes');
+  const ferryRoutes=[
+    {x:-46,z:174,heading:-.22,length:32,width:7.8,height:9,speed:4.5},
+    {x:-55,z:168,heading:2.67,length:27,width:6.7,height:8,speed:5.2},
+    {x:198,z:222,heading:-2.65,length:33,width:7.6,height:9,speed:5.6},
+    {x:-280,z:278,heading:.31,length:32,width:7.9,height:9,speed:5.2},
+    {x:59,z:372,heading:.43,length:31,width:8,height:8,speed:4.6},
+  ];
+  const updateFerries=createFerries(group,keep,ferryRoutes,{waterline:-116, reduced});
+  // Keep this headland low enough for the panorama; the lantern and its
+  // gallery still make a clear silhouette from the high wide shot.
+  const beacons=[{x:-96,z:196},{x:145,z:291}];
+  const footing=keep(new THREE.CylinderGeometry(.84,1,1,16));
+  const shaft=keep(new THREE.CylinderGeometry(.72,1,1,20));
+  const lantern=keep(new THREE.CylinderGeometry(1,1,1,16));
+  const cap=keep(new THREE.ConeGeometry(1,1,20));
+  const atBeacon=(y,rx,height)=>beacons.map(({x,z})=>({x,y,z,sx:rx,sy:height,sz:rx}));
+  instances(footing,stone,atBeacon(-115,5.4,3.2),'lighthouse-rock-plinths');
+  instances(shaft,trim,atBeacon(-107,2.28,13.7),'lighthouse-stone-towers');
+  instances(lantern,metal,atBeacon(-100,2.23,.42),'lighthouse-gallery-rims');
+  instances(lantern,keep(new THREE.MeshStandardMaterial({color:0xaa5545,roughness:.69})),
+    atBeacon(-106.2,1.98,2.35),'lighthouse-daymarks');
+  instances(lantern,keep(new THREE.MeshStandardMaterial({color:0x54858e,metalness:.35,roughness:.21})),
+    atBeacon(-99.01,1.35,1.65),'lighthouse-lantern-glazing');
+  instances(cap,darkMetal,atBeacon(-97.66,1.85,1.35),'lighthouse-metal-caps');
 
   // A large rainbow beyond the bridge, never a camera overlay. The band has
   // feathered inner/outer edges, with violet inside and red outside.
@@ -396,6 +414,7 @@ export function createSkybridgeWorld(scene, { config, reduced = false } = {}) {
       if (disposed) return;
       const time = Number.isFinite(seconds) ? seconds : 0;
       seaMaterial.uniforms.time.value = time;
+      updateFerries(time);
       const reveal=frame.moment?.reveal??1;
       rainbowMaterial.uniforms.strength.value=.62*reveal;
       rainbow.position.x=(frame.headX||0)-140;

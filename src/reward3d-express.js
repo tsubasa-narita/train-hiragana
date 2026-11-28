@@ -54,17 +54,34 @@ function porthole(width,height) {
 }
 
 function windowTexture(seat) {
-  const data=new Uint8Array(64*32*4),seatColor=new THREE.Color(seat);
+  const width=96,height=64,data=new Uint8Array(width*height*4),seatColor=new THREE.Color(seat);
   seatColor.convertLinearToSRGB();
-  for(let y=0;y<32;y++)for(let x=0;x<64;x++){
-    const u=x/63,v=y/31;
-    const reflection=.40+.55*v+.14*Math.sin(u*3+v*2);
-    const inSeat=(u>.15&&u<.33||u>.59&&u<.77)&&v<.49-.07*Math.sin(u*12);
-    const light=v>.88&&v<.92?.35:0;
-    const pixel=inSeat?[seatColor.r*.61,seatColor.g*.63,seatColor.b*.67]:[.17*reflection+light,.28*reflection+light,.34*reflection+light*.8];
-    data.set([...pixel.map(c=>Math.round(c*255)),255],(y*64+x)*4);
+  const smooth=THREE.MathUtils.smoothstep;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const u=(x+.5)/width,v=(y+.5)/height;
+    const reflection=.35+.37*v+.12*Math.sin(u*3+v*2);
+    const ceiling=(1-smooth(Math.abs(v-.875-.035*u),.014,.043))*.40;
+    const oppositeWindow=smooth(v,.27,.36)*(1-smooth(v,.65,.72))*
+      smooth(u,.22,.27)*(1-smooth(u,.58,.67));
+    const pillar=(1-smooth(Math.abs(u-.18),.012,.052))*.09;
+    const pixel=[.10+.19*reflection+ceiling,.14+.22*reflection+ceiling,
+      .18+.24*reflection+ceiling*.88].map((c,i)=>c+oppositeWindow*[.12,.17,.20][i]-pillar);
+    for(const [center,top,span] of [[.29,.47,.19],[.72,.60,.22]]){
+      const side=(u-center+.034*(v-.4))/span;
+      const mask=1-smooth(Math.abs(side),.43,.53);
+      const seatTop=1-smooth(v+side*side*.15,top-.04,top+.015);
+      const lift=.5+.25*smooth(v,.05,.48)+.10*(1-side);
+      const head=smooth(v,top-.20,top-.11)*seatTop;
+      for(let i=0;i<3;i++){
+        const tint=[seatColor.r,seatColor.g,seatColor.b][i]*lift+head*.08;
+        pixel[i]=THREE.MathUtils.lerp(pixel[i],tint,mask*seatTop*.96);
+      }
+    }
+    const reflectedStrip=.115*(1-smooth(Math.abs(v-.68-u*.21),.014,.065));
+    const edge=smooth(u,0,.08)*(1-smooth(u,.92,1))*smooth(v,0,.10);
+    data.set([...pixel.map(c=>Math.round(Math.min(1,c*.72+c*.28*edge+reflectedStrip)*255)),255],(y*width+x)*4);
   }
-  const map=new THREE.DataTexture(data,64,32);
+  const map=new THREE.DataTexture(data,width,height);
   map.colorSpace=THREE.SRGBColorSpace;
   map.magFilter=THREE.LinearFilter;
   map.minFilter=THREE.LinearMipmapLinearFilter;
@@ -92,11 +109,14 @@ export function createExpressModel(config) {
   const panelMetal=material('STAINLESS',{color:'#6a767c',metalness:.73,roughness:.39});
   const equipment=material('MACHINERY',{color:'#313840',metalness:.56,roughness:.62});
   const rubber=material('RUBBER',{color:'#10171d',roughness:.63});
-  const glass=material('CAB_GLASS',{color:laview?'#152731':'#243d4e',metalness:.17,roughness:.14,clearcoat:1,transparent:true,opacity:.98,depthWrite:false});
+  const glass=material('CAB_GLASS',{color:laview?'#273940':'#304652',metalness:.09,roughness:.15,clearcoat:.80,transparent:true,opacity:.73,depthWrite:false});
   const glassTexture=windowTexture(design.seat);
-  const windows=material('PASSENGER_GLASS',{map:glassTexture,metalness:.04,roughness:.34,clearcoat:.48,emissive:'#ffffff',emissiveMap:glassTexture,emissiveIntensity:.13});
+  const windows=material('PASSENGER_GLASS',{map:glassTexture,metalness:.08,roughness:.26,clearcoat:.62,emissive:'#ffffff',emissiveMap:glassTexture,emissiveIntensity:.19});
+  const cabinPlastic=material('CAB_CONSOLE',{color:'#24313b',roughness:.72});
+  const gaugePanel=material('CABIN_LIGHT_SCREEN',{color:'#a6c5c7',emissive:'#74adac',emissiveIntensity:.36});
   const headlamp=material('HEADLAMP',{color:'#fff6e5',emissive:'#fff4d9',emissiveIntensity:3.8,roughness:.18});
   const tail=material('TAILLAMP',{color:'#ba1029',emissive:'#f70e26',emissiveIntensity:1.2});
+  const markerLens=material('MARKER_LENS',{color:'#471d25',roughness:.19,clearcoat:.85});
   const box=own(new THREE.BoxGeometry(1,1,1)),pantoBox=own(box.clone());
   pantoBox.name='pantograph';
   const pose=new THREE.Object3D(),carTransform=new THREE.Matrix4();
@@ -131,36 +151,54 @@ export function createExpressModel(config) {
     },cab?'cab-shell':'car-shell'));
   }
   const cabBody=bodyTube(true),standardBody=bodyTube(false);
-  const cap=own(surface(17,72,(u,v)=>{
-    const r=1-u;
-    const [height,z]=superellipse(v*2*Math.PI,design.profile);
-    const y=centre+height*halfHeight*r,width=z*halfWidth*r;
-    return [noseX(y,width),y,width];
-  },'cab-shell'));
   const gangway=own(panel(1.75,2.48,.17));
-  function face(y, z, w, h, power, lift, name) {
-    return own(surface(14,40,(u,v)=>{
-      const r=1-u;
+  function face(y, z, w, h, power, lift, name, cutout=0) {
+    return own(surface(cutout?5:12,48,(u,v)=>{
+      const r=THREE.MathUtils.lerp(1,cutout,u);
       const [high,wide]=superellipse(v*2*Math.PI,power);
       const py=y+high*r*h/2,pz=z+wide*r*w/2;
       return [noseX(py,pz)+lift,py,pz];
     },name));
   }
   const [glassY,glassWidth,glassHeight,glassPower]=design.glass;
-  const glassRim=face(glassY,0,glassWidth+.085,glassHeight+.085,glassPower,.028,'cab-window-gasket');
+  // Let the windshield see into the cab. The body and decorative mask both
+  // terminate underneath the continuous rubber seal.
+  const cap=own(surface(21,72,(u,v)=>{
+    const angle=v*2*Math.PI;
+    const [height,wide]=superellipse(angle,design.profile);
+    const [glassHigh,glassWide]=superellipse(angle,glassPower);
+    const y=THREE.MathUtils.lerp(centre+height*halfHeight,glassY+glassHigh*glassHeight*.485,u);
+    const z=THREE.MathUtils.lerp(wide*halfWidth,glassWide*glassWidth*.485,u);
+    return [noseX(y,z),y,z];
+  },'cab-shell'));
+  const glassRim=face(glassY,0,glassWidth+(saphir?.19:.085),glassHeight+(saphir?.23:.085),
+    glassPower,.028,'cab-window-gasket',saphir?.86:.91);
   const windscreen=face(glassY,0,glassWidth,glassHeight,glassPower,.048,'cab-window-glazing');
-  const cabMask=saphir?face(2.92,0,2.27,2.37,4,.018,'cab-mask'):null;
+  const cabMask=saphir?own(surface(10,48,(u,v)=>{
+    const angle=v*2*Math.PI;
+    const [maskY,maskZ]=superellipse(angle,4),[high,wide]=superellipse(angle,glassPower);
+    const y=THREE.MathUtils.lerp(2.69+maskY*1.235,glassY+high*glassHeight*.485,u);
+    const z=THREE.MathUtils.lerp(maskZ*(1.10+.13*Math.max(0,maskY)),wide*glassWidth*.485,u);
+    return [noseX(y,z)+.018,y,z];
+  },'cab-mask')):null;
   const couplerPocket=face(1.21,0,laview?.68:.80,.32,3.6,.022,'coupler-pocket');
   const [lampZ,lampY,lampWidth,lampHeight]=design.lamps;
   const lamps=[-1,1].map(side=>({
     rim:face(lampY,side*lampZ,lampWidth+(rapit?.065:.105),lampHeight+.071,rapit?2:3.5,.061,'lamp-housing'),
     lens:face(lampY,side*lampZ,lampWidth,lampHeight,rapit?2:3.5,.079,'nose-lamp'),
   }));
-  const markerRims=rapit?[-1,1].flatMap(side=>[2.30,3.10].map(y=>face(y,side*1.02,.21,.21,2,.06,'marker-housing'))):[];
+  const markerRims=rapit?[-1,1].flatMap(side=>[2.30,3.10].map(y=>({
+    socket:face(y,side*1.02,.215,.215,2,.059,'marker-housing'),
+    lens:face(y,side*1.02,.145,.145,2,.079,'marker-lens'),
+  }))):[];
   const cheekFlutes=rapit?[-1,1].flatMap(side=>[2.26,2.69,3.08].map(y=>own(surface(8,4,(u,v)=>{
     const py=y+.18*u+(v-.5)*Math.sin(Math.PI*u)*.11,pz=side*(1.095+.26*u);
     return [noseX(py,pz)+.042+Math.sin(Math.PI*u)*.048,py,pz];
   },'cheek-flute')))):[];
+  const servicePanel=rapit?own(surface(3,32,(u,v)=>{
+    const z=(v-.5)*2.34,y=1.16-.23*(Math.abs(z)/1.17)**1.8+(u-.5)*.014;
+    return [noseX(y,z)+.026,y,z];
+  },'nose-service-panel-seam')):null;
   const lengthWindow=laview?1.58:hinotori?1.64:1.72,heightWindow=laview?1.35:hinotori?1.02:1.04;
   const windowFrame=own(rapit?porthole(.88,1.14):panel(lengthWindow+.085,heightWindow+.085,.11));
   const sideWindow=own(rapit?porthole(.80,1.06):panel(lengthWindow,heightWindow,.085));
@@ -194,16 +232,28 @@ export function createExpressModel(config) {
       add(glassRim,rubber);
       add(windscreen,glass);
       for(const {rim,lens} of lamps){add(rim,rubber);add(lens,rear?tail:headlamp);}
-      markerRims.forEach(rim=>add(rim,rubber));
+      markerRims.forEach(({socket,lens},i)=>{add(socket,panelMetal);add(lens,i%2===0?markerLens:rubber);});
       cheekFlutes.forEach(flute=>add(flute,accent));
+      if(servicePanel)add(servicePanel,rubber);
+      const dashY=glassY-glassHeight*.39;
+      const dashX=noseX(dashY-.22,glassWidth*.43)-.69;
+      block(cabinPlastic,dashX,dashY-.16,0,.94,.27,glassWidth*.81);
+      add(box,cabinPlastic,dashX-.25,dashY-.01,-.31,.32,.10,.69,0,0,-.20);
+      add(box,gaugePanel,dashX-.27,dashY+.047,-.42,.16,.013,.22,0,0,-.20);
+      block(cabinPlastic,dashX-1.10,dashY+.12,-.39,.17,.64,.42);
+      block(cabinPlastic,dashX-1.7,dashY+.22,0,.11,1.32,2.35);
       if(!rapit){
         add(couplerPocket,rubber);
         const couplerX=noseX(1.19,0);
         block(equipment,couplerX-.18,1.19,0,.52,.20,.46);
         block(panelMetal,couplerX+.12,1.17,0,.26,.13,.28);
       }
-      // Angled wipers lie on the windscreen with their pivots near the base.
-      for(const side of [-1,1])add(box,rubber,noseX(glassY-.34,side*.45)+.068,glassY-.34,side*.45,.026,.58,.034,side*.40);
+      const wipers=own(surface(10,3,(u,v)=>{
+        const y=glassY+glassHeight*THREE.MathUtils.lerp(-.40,.09,u);
+        const z=glassWidth*(THREE.MathUtils.lerp(.27,.12,u)+(v-.5)*.017);
+        return [noseX(y,z)+.073,y,z];
+      },'windscreen-wiper'));
+      add(wipers,rubber);add(wipers,rubber,0,0,0,1,1,-1);
     }else{
       add(gangway,rubber,frontX,2.12,0,1,1,1,0,Math.PI/2);
     }

@@ -138,6 +138,8 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const cabGlass=mat({color:'#67878a',map:ownT(makeGlassTexture()),metalness:.06,roughness:.055,clearcoat:1,clearcoatRoughness:.08,transparent:true,opacity:.78,depthWrite:false,side:THREE.DoubleSide,envMapIntensity:2.4});
   const reflection=mat({color:'#c4e5e9',metalness:.12,roughness:.19,transparent:true,opacity:.26,depthWrite:false,side:THREE.DoubleSide});
   const inside=mat({color:'#899797',metalness:.02,roughness:.85});
+  const console=mat({color:'#333f46',roughness:.59});
+  const cabDisplay=mat({color:'#8eb2b1',emissive:'#71b6ab',emissiveIntensity:.34,roughness:.35});
   const seat=mat({color:cfg.id==='yamanote'?'#4a9762':cfg.id==='toyoko'?'#8a5655':cfg.id==='yokosuka'?'#326f97':'#3f6879',roughness:.96});
   const greenSeat=mat({color:'#72575d',roughness:.92});
   const light=mat({color:'#fff7cf',emissive:'#ffedb3',emissiveIntensity:3.8,roughness:.18});
@@ -145,7 +147,7 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
   const cabinLight=mat({color:'#fff5d9',emissive:'#fff1cf',emissiveIntensity:cfg.sceneId==='night'?1.1:.32,roughness:.6});
   const display=mat({map:ownT(destinationTexture(cfg.destination)),color:'#ffffff',emissive:'#c9ead1',emissiveMap:null,emissiveIntensity:cfg.sceneId==='night'?1.1:.32,roughness:.64});
   display.emissiveMap=display.map;
-  for(const [name,material] of Object.entries({STAINLESS:steel,DOOR_STEEL:doorSteel,ROOF:roofMat,TRIM:trim,RUBBER:rubber,MACHINERY:machinery,ALUMINIUM:aluminium,CAB_PAINT:white,CAB_MASK:faceBlack,GLASS:glass,CAB_GLASS:cabGlass,INTERIOR:inside,SEAT:seat,GREEN_SEAT:greenSeat,HEADLAMP:light,TAILLAMP:tailLight,CABIN_LIGHT:cabinLight,DISPLAY:display}))material.name=name;
+  for(const [name,material] of Object.entries({STAINLESS:steel,DOOR_STEEL:doorSteel,ROOF:roofMat,TRIM:trim,RUBBER:rubber,MACHINERY:machinery,ALUMINIUM:aluminium,CAB_PAINT:white,CAB_MASK:faceBlack,GLASS:glass,CAB_GLASS:cabGlass,INTERIOR:inside,SEAT:seat,GREEN_SEAT:greenSeat,HEADLAMP:light,TAILLAMP:tailLight,CABIN_LIGHT:cabinLight,DISPLAY:display,CAB_CONSOLE:console,CABIN_LIGHT_SCREEN:cabDisplay}))material.name=name;
   stripes.forEach((material,i)=>material.name=`LIVERY_${i}`);
   const unitBox=ownG(new THREE.BoxGeometry(1,1,1));
   const unitCylinder=ownG(new THREE.CylinderGeometry(1,1,1,10));
@@ -426,12 +428,20 @@ export function createTrainModel(config=REWARD_3D_TRAINS[0]) {
         frontRect(rear?tailLight:rubber,2.22,s*1.17,.135,.085,10.042,.025);
       }
     }
-    // Cab interior, two windshield wipers, handrail, antenna and sculpted skirt.
-    box(machinery,9.32,2.17,0,.72,.16,2.28);
-    box(machinery,8.45,2.72,0,.045,1.7,2.55);
-    box(machinery,8.95,2.4,-.72,.36,.4,.4);
-    box(trim,9.37,2.29,-.67,.25,.035,.39);
-    box(cabinLight,9.35,2.32,-.67,.12,.01,.16);
+    // The raised driver's desk has recessed screens, a controller and a
+    // separate seat. The cab's rear bulkhead catches some of the window light.
+    const driverZ=tokyu?-.64:-.71;
+    box(console,9.35,2.17,0,.80,.23,2.29);
+    box(inside,8.42,2.78,0,.05,1.86,2.56);
+    box(console,8.50,2.56,.48,.10,1.47,.62);
+    box(console,8.96,2.17,driverZ,.44,.12,.46,0,0,.10);
+    box(console,8.75,2.49,driverZ,.12,.56,.47,0,0,.11);
+    box(trim,9.39,2.323,driverZ,.35,.06,.78,0,0,.22);
+    for(const offset of [-.235,0,.235])
+      box(cabDisplay,9.385,2.36,driverZ+offset,.20,.010,.167,0,0,.22);
+    rod(console,[9.17,2.30,driverZ+.51],[9.13,2.45,driverZ+.51],.026);
+    rod(trim,[9.105,2.45,driverZ+.44],[9.15,2.45,driverZ+.58],.029);
+    box(cabinLight,8.88,3.66,0,.61,.026,.072);
     for(const s of [-1,1]) {
       rod(rubber,[10.077,2.21,s*.7],[10.086,2.44,s*.31],.014);
       rod(rubber,[10.089,2.3,s*.49],[10.089,2.6,s*.08],.018);

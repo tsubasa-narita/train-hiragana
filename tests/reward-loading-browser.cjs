@@ -7,7 +7,7 @@ const assert=require('node:assert/strict');
     const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
     await context.addInitScript(()=>{
       localStorage.setItem('train-hiragana-v1',JSON.stringify({sound:false,rows:['あ'],findCompounds:'off'}));
-      localStorage.setItem('train-reward-cinema-bag-v4',JSON.stringify({bag:['sakura:laview'],last:null}));
+      localStorage.setItem('train-reward-cinema-bag-v5',JSON.stringify({bag:['sakura:laview'],last:null}));
       window.rewardContexts=0;
       const getContext=HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext=function(kind,...args){if(kind==='webgl'||kind==='webgl2')window.rewardContexts++;return getContext.call(this,kind,...args);};
@@ -17,7 +17,7 @@ const assert=require('node:assert/strict');
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(process.env.TEST_URL||'http://127.0.0.1:4180/');
     assert.equal(requests.length,0,'the home page does not fetch the entire 3D library');
-    const saved=await page.evaluate(()=>localStorage.getItem('train-reward-cinema-bag-v4'));
+    const saved=await page.evaluate(()=>localStorage.getItem('train-reward-cinema-bag-v5'));
     await page.locator('[data-action="start-find"]').click();
     await page.waitForResponse(response=>response.url().endsWith('laview.glb'));
     // Join the real idle-started job; this also waits for its CPU preparation.
@@ -27,7 +27,7 @@ const assert=require('node:assert/strict');
     });
     assert.deepEqual(requests.map(url=>url.split('/').pop()).sort(),['laview.glb','railway_bridge_02.hdr']);
     assert.equal(await page.evaluate(()=>window.rewardContexts),0,'a quiz owns no hidden WebGL renderer');
-    assert.equal(await page.evaluate(()=>localStorage.getItem('train-reward-cinema-bag-v4')),saved,'preloading does not stamp or consume a movie');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('train-reward-cinema-bag-v5')),saved,'preloading does not stamp or consume a movie');
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('train-hiragana-v1')).stamps.length),0);
     const before=requests.length;
     for(const letter of 'あいうえお'){

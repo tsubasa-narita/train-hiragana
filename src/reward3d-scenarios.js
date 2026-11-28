@@ -8,9 +8,11 @@ export const REWARD_SCENARIOS = Object.freeze([
   Object.freeze({id:'snow',name:'ゆきあかりの やまみち'}),
   Object.freeze({id:'aquarium',name:'おさかなと はしる かいていトンネル'}),
   Object.freeze({id:'diorama',name:'ちいさな まちの もけいでんしゃ'}),
+  Object.freeze({id:'playroom',name:'おもちゃの へやの あおい レール'}),
 ]);
-const KEY='train-reward-cinema-bag-v4';
+const KEY='train-reward-cinema-bag-v5';
 const pairs=REWARD_SCENARIOS.flatMap(s=>REWARD_3D_TRAINS.map(t=>`${s.id}:${t.id}`));
+const prePlayroomPairs=new Set(pairs.filter(pair=>!pair.startsWith('playroom:')));
 const legacyScenes=new Set(['depot','night','skybridge']);
 const legacyTrains=new Set(['yokosuka','shonan-shinjuku','saikyo','toyoko','yamanote','komachi','hayabusa']);
 const previousScenes=new Set([...legacyScenes,'sakura','snow']);
@@ -29,7 +31,7 @@ function read(){
   try{
     const stored=JSON.parse(globalThis.localStorage?.getItem(KEY)??'null')||memory;
     if(stored)return stored;
-    for(const [key, oldPairs] of [['train-reward-cinema-bag-v3',previousPairs],['train-reward-cinema-bag-v2',legacyPairs]]){
+    for(const [key, oldPairs] of [['train-reward-cinema-bag-v4',prePlayroomPairs],['train-reward-cinema-bag-v3',previousPairs],['train-reward-cinema-bag-v2',legacyPairs]]){
       const old=JSON.parse(globalThis.localStorage?.getItem(key)??'null');
       if(!Array.isArray(old?.bag))continue;
       const remaining=[...new Set(old.bag.filter(pair=>oldPairs.has(pair)))];

@@ -275,6 +275,30 @@ export function createDepotWorld(scene, { config, reduced = false } = {}) {
   }
   batch(box,accent,cabinets);batch(box,litMetal,cabinetDoors);batch(box,yellow,serviceMarkings);
 
+  // Bridge crane with a recessed trolley, rollers and hook stored clear of
+  // the live track. The warm safety paint is visible through the cab glazing.
+  const craneBeam=[],craneTrim=[],craneRollers=[],chain=[];
+  const hook=new THREE.CurvePath();
+  hook.add(new THREE.CubicBezierCurve3(
+    new THREE.Vector3(0,0,0),new THREE.Vector3(0,-.32,0),
+    new THREE.Vector3(.04,-.45,0),new THREE.Vector3(.23,-.43,0)));
+  hook.add(new THREE.CubicBezierCurve3(
+    new THREE.Vector3(.23,-.43,0),new THREE.Vector3(.44,-.41,0),
+    new THREE.Vector3(.44,-.15,0),new THREE.Vector3(.32,-.11,0)));
+  for(const x of [-22,-58]){
+    craneBeam.push({x,y:7.91,z:1.1,sx:.43,sy:.54,sz:11.1});
+    for(const dy of [-.28,.28])craneBeam.push({x,y:7.91+dy,z:1.1,sx:.81,sy:.10,sz:11.1});
+    craneBeam.push({x,y:7.48,z:4.83,sx:1.19,sy:.52,sz:.91});
+    for(const dx of [-.52,.52])for(const dz of [-.29,.29]){
+      craneRollers.push({x:x+dx,y:7.78,z:4.83+dz,sx:.16,sy:.10,sz:.16,rz:Math.PI/2});
+    }
+    craneTrim.push({x,y:6.97,z:4.83,sx:.036,sy:.81,sz:.036});
+    for(let i=0;i<4;i++)chain.push({x:x-.42+.28*i,y:7.48,z:4.37,sx:.092,sy:.47,sz:.022,rz:-.60});
+    mesh(keep(new THREE.TubeGeometry(hook,15,.038,6,false)),litMetal,x-.16,6.59,4.83);
+  }
+  batch(box,yellow,craneBeam);batch(box,darkMetal,[...craneTrim,...chain]);
+  batch(pipeGeometry,litMetal,craneRollers);
+
   // Cable trays, roof ventilators, wall glazing and bench hardware share batches.
   const fittings=[],equipment=[],clerestory=[],windowFrames=[],benchTops=[],ladder=[];
   for(let x=-260;x<-3;x+=15){

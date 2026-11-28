@@ -357,6 +357,24 @@ export function createSnowWorld(scene, { config, reduced = false } = {}) {
   batch('slender-far-side-catenary', box, standard({ color: 0x64778c, metalness: .35, roughness: .59 }), masts);
   batch('catenary-insulators', box, standard({ color: 0xa8bec8, roughness: .47 }), porcelain);
 
+  // Snow fencing follows the cut behind the railway. Its timber is exposed
+  // on the vertical faces, with a shallow layer of snow on top of each rail.
+  const fencePosts=[],fenceSlats=[],fenceSnow=[];
+  for(const [start,end,z] of [[-47,-20,7.3],[48,81,8.2],[137,169,9.5],[218,253,8.4]]){
+    for(let x=start;x<=end-2.5;x+=2.5){
+      const base=snowHeight(x,z);
+      fencePosts.push({x,y:base+.76,z,sx:.13,sy:1.52,sz:.14});
+      const next=snowHeight(x+2.5,z),slope=Math.atan2(next-base,2.5);
+      for(const y of [.40,.78,1.17]){
+        const rail={x:x+1.25,y:(base+next)/2+y,z:z-.069,sx:2.52,sy:.15,sz:.052,rz:slope};
+        fenceSlats.push(rail);
+        if(y===1.17)fenceSnow.push({...rail,y:rail.y+.092,sy:.046,sz:.074});
+      }
+    }
+  }
+  batch('wooden-snow-fences',box,standard({color:0x74605d,roughness:.93}),[...fencePosts,...fenceSlats]);
+  batch('snow-caps-on-fences',box,standard({color:0xc7dcef,roughness:.89}),fenceSnow);
+
   const buildings = [
     [-171, 24, 5.3, 3.5, 4.1], [-154, 35, 7.2, 4.3, 5.1], [-132, 17, 5.6, 3.4, 4.1],
     [-113, 25, 9.1, 4.7, 6.2], [-97, 37, 5.1, 3.3, 4.6], [-78, 20, 6.8, 3.9, 5.5],

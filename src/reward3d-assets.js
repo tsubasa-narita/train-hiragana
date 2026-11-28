@@ -31,6 +31,23 @@ function prepareGeometry(mesh){
   }
   g.applyMatrix4(mesh.matrixWorld);g.computeBoundingBox();g.computeBoundingSphere();return g;
 }
+function headlampAnchors(cab){
+  const sides=[new THREE.Box3(),new THREE.Box3()];
+  const point=new THREE.Vector3(),size=new THREE.Vector3();
+  cab.traverse(mesh=>{
+    if(!mesh.isMesh||!mesh.material.name.startsWith('HEADLAMP'))return;
+    const positions=mesh.geometry.attributes.position;
+    for(let i=0;i<positions.count;i++){
+      point.fromBufferAttribute(positions,i);
+      sides[point.z<0?0:1].expandByPoint(point);
+    }
+  });
+  return sides.filter(bounds=>!bounds.isEmpty()).map(bounds=>{
+    bounds.getSize(size);
+    const radius=THREE.MathUtils.clamp(Math.max(size.y,size.z),.14,.46);
+    return {position:bounds.getCenter(new THREE.Vector3()),radius};
+  });
+}
 export async function prepareTrainModels(ids){
   await Promise.all(ids.map(id=>{
     if(libraries.has(id))return;
@@ -42,6 +59,7 @@ export async function prepareTrainModels(ids){
         const originals=new Set();
         gltf.scene.traverse(mesh=>{if(mesh.isMesh){originals.add(mesh.geometry);mesh.geometry=prepareGeometry(mesh);}});
         for(const geometry of originals)geometry.dispose();
+        gltf.scene.userData.headlamps=headlampAnchors(gltf.scene.getObjectByName('CAB'));
         libraries.set(id,gltf.scene);
       }).catch(error=>{pending.delete(id);throw error;});
       pending.set(id,job);
@@ -50,13 +68,27 @@ export async function prepareTrainModels(ids){
   }));
 }
 
-function finishTrainMaterial(material, grain, {sceneId, id}) {
+function finishTrainMaterial(material, grain, {sceneId, id}, clock) {
   const name=material.name;
   const metal=/^(?:ALUMINIUM|STAINLESS|DOOR_STEEL|TRIM)/.test(name);
   const paint=/^(?:CAB_PAINT|LIVERY_)/.test(name);
   const glass=/^(?:CAB_GLASS|GLASS|PASSENGER_GLASS)/.test(name);
   const runningGear=/^(?:MACHINERY|ROOF)/.test(name);
   if(!metal&&!paint&&!glass&&!runningGear)return;
+  if(sceneId==='playroom'){
+    if(!glass){
+      material.metalness=.07;
+      material.metalnessMap=null;
+      material.roughnessMap=null;
+      material.roughness=runningGear?.52:.29;
+      if(metal)material.color.lerp(new THREE.Color(0xf1ebdf),.24);
+    }
+    if(material.isMeshPhysicalMaterial){
+      material.clearcoat=runningGear?.29:.65;
+      material.clearcoatRoughness=.23;
+    }
+    return;
+  }
 
   if(metal){
     material.roughness=THREE.MathUtils.clamp(material.roughness*.86,.23,.53);
@@ -79,12 +111,36 @@ function finishTrainMaterial(material, grain, {sceneId, id}) {
     material.roughness=Math.max(.10,material.roughness*.9);
   }
   const mode=metal?1:paint?2:glass?3:4;
-  material.customProgramCacheKey=()=>`rail-finish-${mode}`;
+  const underwater=sceneId==='aquarium'&&(metal||paint);
+  material.customProgramCacheKey=()=>`rail-finish-${mode}-${underwater}`;
   material.onBeforeCompile=shader=>{
     shader.uniforms.trainGrain={value:grain};
     shader.uniforms.wetFinish={value:sceneId==='night'?1:0};
     shader.vertexShader='varying vec3 panelPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\npanelPosition = position;');
+    if(underwater){
+      shader.uniforms.trainTime=clock;
+      shader.vertexShader='varying vec3 lightPosition;\n'+shader.vertexShader.replace('#include <project_vertex>', `
+        #include <project_vertex>
+        vec4 vehicleLightPoint=vec4(transformed,1.);
+        #ifdef USE_INSTANCING
+          vehicleLightPoint=instanceMatrix*vehicleLightPoint;
+        #endif
+        lightPosition=(modelMatrix*vehicleLightPoint).xyz;
+      `);
+      shader.fragmentShader=`
+        varying vec3 lightPosition;
+        uniform float trainTime;
+      `+shader.fragmentShader.replace('#include <emissivemap_fragment>', `
+        #include <emissivemap_fragment>
+        vec2 water=lightPosition.xz+lightPosition.y*vec2(.41,.54);
+        float a=sin(water.x*2.2+water.y*1.02+sin(water.y*1.32-trainTime*.73)*1.4+trainTime*1.3);
+        float b=sin(water.y*2.55-water.x*.67+sin(water.x*.83)*.94-trainTime*1.28);
+        float crest=pow(max(0.,1.-abs(a+b)*1.19),6.);
+        float coverage=.27+.73*smoothstep(.95,3.8,lightPosition.y);
+        totalEmissiveRadiance+=diffuseColor.rgb*vec3(.46,.84,1.01)*crest*coverage*.18;
+      `);
+    }
     shader.fragmentShader=`
       #define TRAIN_FINISH ${mode}
       varying vec3 panelPosition;
@@ -128,6 +184,7 @@ export function createBlenderTrainModel(config){
   const cfg={...REWARD_3D_TRAINS.find(t=>t.id===config.id),...config},count=cfg.cars,pitch=cfg.pitch||20.6,carLength=cfg.carLength||20,frontX=cfg.frontX||10.35;
   const group=new THREE.Group();group.name=`blender-train-${cfg.id}`;
   const geometries=new Set(),materials=new Set(),textures=new Set(),wheels=[],headlights=[];
+  const clock={value:0};
   const grain=sceneryDetailTexture();textures.add(grain);
   const geometryCache=new Map(),materialCache=new Map(),textureCache=new Map(),batches=new Map();
   function material(original,rear=false){
@@ -140,7 +197,7 @@ export function createBlenderTrainModel(config){
     if(cfg.id==='yokosuka'&&original.name.startsWith('ALUMINIUM')){value.color.multiplyScalar(.64);value.roughness=Math.max(value.roughness,.4);}
     if(cfg.id==='toyoko'&&original.name.startsWith('CAB_GLASS')){value.color.set('#283f43');value.opacity=.94;value.clearcoat=.4;value.envMapIntensity=.65;}
     if(cfg.id==='toyoko'&&original.name.startsWith('CAB_MASK')){value.color.set('#071014');value.metalness=.02;value.roughness=.22;value.clearcoat=.25;value.envMapIntensity=.5;}
-    finishTrainMaterial(value,grain,cfg);
+    finishTrainMaterial(value,grain,cfg,clock);
     if(tail){value.color.set('#bd263e');value.emissive.set('#ff193e');value.emissiveIntensity=1.8;}
     else if(original.name.startsWith('HEADLAMP'))headlights.push(value);
     if(original.name.startsWith('CABIN_LIGHT'))value.emissiveIntensity=cfg.sceneId==='night'?1.1:.32;
@@ -188,6 +245,8 @@ export function createBlenderTrainModel(config){
   group.userData={trainId:cfg.id,assetPipeline:'blender-glb',front:0,carPitch:pitch,frontX,rearX:-pitch*(count-1)-frontX,length,carCount:count,wheelRadius:.43,spinAxis:'z',carMetadata};
   let disposed=false;
   return {group,wheels,length,front:0,frontX,rearX:group.userData.rearX,carCount:count,wheelRadius:.43,config:cfg,
+    headlamps:library.userData.headlamps,
+    setLightingTime(seconds){clock.value=seconds;},
     setHeadlights(level){for(const m of headlights){m.emissiveIntensity=3.8*level;m.color.setScalar(.2+.8*level);}},
     dispose(){if(disposed)return;disposed=true;group.removeFromParent();group.traverse(o=>{if(o.isInstancedMesh)o.dispose();});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures)t.dispose();group.clear();wheels.length=0;},
   };

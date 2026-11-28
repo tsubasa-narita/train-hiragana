@@ -44,6 +44,7 @@ const fanfare = [
   { start: 8.84, end: 9.48, frequencies: [391.9954], level: .095 },
   { start: 9.12, end: 9.88, frequencies: [261.6256, 329.6276, 391.9954], level: .038 },
 ];
+const toySignal = [[.67,523.25],[.91,783.99]];
 function sample(time, sceneId, shinkansen) {
   let value = 0;
   if(sceneId==='diorama'){
@@ -53,6 +54,12 @@ function sample(time, sceneId, shinkansen) {
   if(sceneId==='aquarium'){
     const age=time-4.0;
     value+=envelope(time,4.0,6.2,.24,1.24)*.034*Math.sin(TAU*(180*age+15*age*age));
+  }
+  if(sceneId==='playroom'&&time>.67&&time<1.12){
+    for(const [start,note] of toySignal){
+      const phase=TAU*note*(time-start);
+      value+=envelope(time,start,start+.21,.019,.15)*(.047*Math.sin(phase)+.012*Math.sin(phase*2));
+    }
   }
   if (time < 1.1) {
     const phase = TAU * (196 * time + (293.6648 - 196) * time * time / 2.2);

@@ -6,7 +6,7 @@ import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 const TRACK_LENGTH = 650;
 
-function scenery(scene, name, seed) {
+export function scenery(scene, name, seed) {
   const group = new THREE.Group(), resources = new Set();
   group.name = name; scene.add(group);
   const own = value => (resources.add(value), value);
@@ -266,12 +266,31 @@ export function createDioramaWorld(scene,{config,reduced}) {
   });
   mesh(box,wood,0,-5.7,19,650,10,112);
   mesh(box,material({color:0x624637,roughness:.75}),0,-10.9,19,653,.48,115);
+  const cabinetry=[],insets=[],hardware=[];
+  for(const x of [-246,-143,-40,63,166,269]){
+    cabinetry.push([x,-8.0,-36,98,3.8,.95]);
+    insets.push([x,-8.0,-36.53,95,2.85,.16]);
+    for(const dx of [-3.3,3.3])hardware.push([x+dx,-7.75,-36.87,.20,.22,.74]);
+    hardware.push([x,-7.75,-37.24,6.77,.22,.19]);
+  }
+  batch(own(mouldedBox(.048)),wood,cabinetry,true).name='model-table-drawer-fronts';
+  batch(box,material({color:0x8c583e,roughness:.67}),insets);
+  batch(own(mouldedBox(.095)),material({color:0x857166,metalness:.63,roughness:.33}),hardware);
   const felt=detailSurface(material({color:0x85a66e}),grain,{
     projection:[.63,.18,.57],scale:[2.45,1.8],strength:[.13,.16,.11],tint:0xf3f7ed,
   });
   mesh(box,felt,0,-.72,19,646,.41,108);
   mesh(box,material({color:0xb7a08b}),0,-14.5,26,1600,3,860);
   mesh(box,material({color:0xaeb8aa}),0,74,202,1600,185,10);
+  const windowCase=[],windowPanes=[];
+  for(const x of [-116,111,338]){
+    windowCase.push([x,43,196.42,114,51,1.7]);
+    windowPanes.push([x,43,195.46,108,44,.30]);
+    windowCase.push([x,43,195.1,3.5,45,1.12],[x,44,195.02,109,2.6,1.18]);
+    windowCase.push([x,17.0,194.1,119,2.65,6.8]);
+  }
+  batch(box,material({color:0xe2d1b4,roughness:.67}),windowCase);
+  batch(box,material({color:0x9ac1cb,emissive:0x7aabbc,emissiveIntensity:.48,roughness:.47}),windowPanes);
   track(kit,config.gauge,false);
   buildModelTown(kit,TRACK_LENGTH);
   modelParks(kit);

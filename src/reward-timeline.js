@@ -13,11 +13,15 @@ export function rewardMoment(milliseconds,shinkansen=false){
 }
 
 export function chapterText(chapter,sceneId){
-  if(chapter==='anticipation')return sceneId==='diorama'?'ダイヤルが まわるよ！':'ライトが ついた！';
+  if(chapter==='anticipation'){
+    if(sceneId==='playroom')return 'しんごうが かわるよ！';
+    return sceneId==='diorama'?'ダイヤルが まわるよ！':'ライトが ついた！';
+  }
   if(chapter==='launch')return 'しゅっぱーつ！';
   if(chapter==='finale')return 'かっこいいね！';
   if(sceneId==='aquarium')return 'おさかなと いっしょに！';
   if(sceneId==='diorama')return 'ちいさな まちを みてみよう！';
+  if(sceneId==='playroom')return 'あかい はしを わたろう！';
   if(sceneId==='sakura')return 'さくらが まっているよ！';
   if(sceneId==='snow')return 'ゆきの やまへ！';
   return sceneId==='skybridge'?'にじの はしへ！':sceneId==='night'?'でんしゃと すれちがうよ！':'おひさまの なかへ！';

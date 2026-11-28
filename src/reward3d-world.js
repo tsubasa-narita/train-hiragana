@@ -1,6 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { createCityWater } from './reward3d-water.js';
 import { branchletGeometry, branchletMaterial } from './reward3d-vegetation.js';
+import { createFerries } from './reward3d-vessels.js';
+import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 
 function seeded(seed = 4827) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
@@ -57,7 +59,11 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   else for(const x of [-13,63]) { const m=mesh(box(),bank,x,-6.15,0,4,1,1200);m.receiveShadow=true; }
 
   // Concrete piers, separate deck girders, gravel, sleepers and four railheads.
-  const concrete=material({color:night?0x253140:0xb5b2a6,roughness:.85}), edge=material({color:night?0x455260:0xc8c7bb,roughness:night?.4:.7});
+  const detail=keep(sceneryDetailTexture());
+  const concrete=detailSurface(material({color:night?0x35414b:0xb5b2a6,roughness:.85}),detail,{
+    projection:[.9,.73,1.21],scale:[4.8,3.7],strength:[.58,.23,.16],tint:0x9ba6a7,
+  });
+  const edge=material({color:night?0x455260:0xc8c7bb,roughness:night?.4:.7});
   const gravelMap=texture(256,128,ctx=>{
     ctx.fillStyle='#777975';ctx.fillRect(0,0,256,128);
     for(let i=0;i<3500;i++){const v=Math.floor(65+random()*100);ctx.fillStyle=`rgb(${v},${v+2},${v})`;ctx.beginPath();ctx.ellipse(random()*256,random()*128,random()*2+1,random()*1.3+.5,random()*3,0,7);ctx.fill();}
@@ -66,12 +72,15 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   mesh(box(),concrete,-50,-.7,2.2,750,1.1,10.4).receiveShadow=true;
   mesh(box(),material({map:gravelMap,color:night?0x52606b:0xffffff,roughness:night?.63:1}),-50,-.06,2.2,750,.18,9.4).receiveShadow=true;
   for(const z of [-3,7.4]) { mesh(box(),edge,-50,-.1,z,750,.35,.25).receiveShadow=true; }
-  const piers=[];
+  const piers=[],bearingPads=[],beamJoints=[];
   for(let x=-400;x<330;x+=32) {
     piers.push({x,y:-3.8,z:2.2,sx:2.0,sy:6.4,sz:3.4});
     piers.push({x,y:-1.4,z:2.2,sx:2.4,sy:.65,sz:9.5});
+    for(const z of [-.74,5.13])bearingPads.push({x,y:-1.07,z,sx:.86,sy:.13,sz:1.8});
+    for(const z of [-3.012,7.412])beamJoints.push({x,y:-.64,z,sx:.065,sy:.91,sz:.028});
   }
   instances(box(),concrete,piers);
+  instances(box(),material({color:0x253038,roughness:.73,metalness:.32}),[...bearingPads,...beamJoints]);
   const sleepers=[], fasteners=[];
   for(let x=-420;x<330;x+=.66) for(const z of [0,4.4]) {
     sleepers.push({x,y:.015,z,sx:.25,sy:.14,sz:2.35});
@@ -154,9 +163,16 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
       if(x>-12&&x<66)continue;
       const h=6+Math.pow(random(),1.8)*48,w=6+random()*14,d=8+random()*17;
       reflectionBuildings.push({x,z,h,w,windows,style});
-      cityBatches[style].push({x,y:-6.55+h/2,z,sx:w,sy:h,sz:d,color:['#b3bec6','#bcb5aa','#9dacba','#b1ada9'][i%4]});
+      const bodyColors=['#b3bec6','#bcb5aa','#9dacba','#b1ada9'];
+      cityBatches[style].push({x,y:-6.55+h/2,z,sx:w,sy:h,sz:d,color:bodyColors[(i+Math.floor(i/4))%4]});
       roofs.push({x,y:-6.55+h+.14,z,sx:w+.18,sy:.28,sz:d+.18});
       roofs.push({x:x+w*.16,y:-6.55+h+.8,z:z+d*.1,sx:w*.3,sy:1.1,sz:d*.32});
+      if(h>28){
+        const y=-6.55+h;
+        roofs.push({x:x-w*.28,y:y+.51,z:z+d*.18,sx:w*.21,sy:.72,sz:d*.37});
+        roofs.push({x:x-w*.23,y:y+1.66,z,sx:.12,sy:3.0,sz:.105});
+        roofs.push({x:x-w*.23,y:y+2.68,z,sx:1.55,sy:.092,sz:.095});
+      }
       if(i%3===0)podiums.push({x,y:-4.55,z,sx:w+3,sy:4,sz:d+3});
       if(style===2){
         for(const dx of [-.32,0,.32])mullions.push({x:x+w*dx,y:-6.55+h/2,z:z-d*.5-.035,sx:.1,sy:h,sz:.06});
@@ -169,7 +185,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   instances(box(),material({color:night?0x30343c:0xa6a398,roughness:.8}),podiums);
   instances(box(),material({color:0x46525d,metalness:.6,roughness:.42}),mullions);
   if(beacons.length)instances(box(),material({color:0xb1473a,emissive:0xff432b,emissiveIntensity:1.2}),beacons);
-  let cityWater;
+  let cityWater,updateFerries;
   if(night){
     const lampStart=-420,lampSpacing=18,lampZ=35.8,lampHeight=-2.79,deckLampZ=-3.09,deckLampY=-.83;
     cityWater=createCityWater(reflectionBuildings,keep,{
@@ -177,6 +193,10 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     });
     const water=mesh(keep(new THREE.PlaneGeometry(1100,620)),cityWater,-50,-6.4,-273);
     water.rotation.x=-Math.PI/2;water.name='illuminated-waterfront';
+    updateFerries=createFerries(group,keep,[
+      {x:-40,z:-12,length:13,width:3.2,height:3.5,heading:.035,speed:3.8},
+      {x:143,z:-18,length:17,width:4.05,height:4.05,heading:Math.PI-.04,speed:4.3},
+    ],{waterline:-6.4,night:true,reduced});
     // A continuous promenade ties the city to the water rather than leaving
     // isolated glowing towers floating over a flat black ground plane.
     const columns=[],lanterns=[],copes=[],stops=[],fascia=[],deckLights=[];
@@ -325,7 +345,7 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
   }
   return {
     group, sky,
-    update(time,frame){if(disposed)return;if(night&&rainResources[0]){rainResources[0].position.set((frame?.headX||0)-20,-(time*8)%15,0);}if(cityWater)cityWater.uniforms.time.value=time;waterMap.offset.x=time*.012;skyMaterial.uniforms.time.value=time;},
+    update(time,frame){if(disposed)return;if(night&&rainResources[0]){rainResources[0].position.set((frame?.headX||0)-20,-(time*8)%15,0);}if(cityWater)cityWater.uniforms.time.value=time;updateFerries?.(time);waterMap.offset.x=time*.012;skyMaterial.uniforms.time.value=time;},
     dispose(){if(disposed)return;disposed=true;group.traverse(object=>{if(object.isInstancedMesh)object.dispose();});for(const value of resources)value.dispose?.();group.removeFromParent();group.clear();},
   };
 }
