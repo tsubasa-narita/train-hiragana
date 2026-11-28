@@ -1,3 +1,5 @@
+import {isToyReward} from './reward3d-scenarios.js';
+
 // One clock drives the train, camera, effects, dialog and fallback playback.
 export const REWARD_DURATION = 10000;
 const clamp=(n,a=0,b=1)=>Math.min(b,Math.max(a,n));
@@ -14,7 +16,7 @@ export function rewardMoment(milliseconds,shinkansen=false){
 
 export function chapterText(chapter,sceneId){
   if(chapter==='anticipation'){
-    if(sceneId==='playroom')return 'しんごうが かわるよ！';
+    if(isToyReward(sceneId))return 'しんごうが かわるよ！';
     return sceneId==='diorama'?'ダイヤルが まわるよ！':'ライトが ついた！';
   }
   if(chapter==='launch')return 'しゅっぱーつ！';
@@ -22,6 +24,8 @@ export function chapterText(chapter,sceneId){
   if(sceneId==='aquarium')return 'おさかなと いっしょに！';
   if(sceneId==='diorama')return 'ちいさな まちを みてみよう！';
   if(sceneId==='playroom')return 'あかい はしを わたろう！';
+  if(sceneId==='toy-park')return 'かんらんしゃが まわるよ！';
+  if(sceneId==='toy-space')return 'ロケットが とびだすよ！';
   if(sceneId==='sakura')return 'さくらが まっているよ！';
   if(sceneId==='snow')return 'ゆきの やまへ！';
   return sceneId==='skybridge'?'にじの はしへ！':sceneId==='night'?'でんしゃと すれちがうよ！':'おひさまの なかへ！';

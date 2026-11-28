@@ -7,7 +7,7 @@ import { createSakuraWorld } from './reward3d-sakura.js';
 import { createSnowWorld } from './reward3d-snow.js';
 import { createAquariumWorld, createDioramaWorld } from './reward3d-dream.js';
 import { createPlayroomWorld } from './reward3d-playroom.js';
-import { rewardScenario } from './reward3d-scenarios.js';
+import { rewardScenario, isToyReward } from './reward3d-scenarios.js';
 import { createTrainModel } from './reward3d-trains.js';
 import { prepareTrainModels,createBlenderTrainModel,prepareEnvironment,rewardEnvironment } from './reward3d-assets.js';
 import { createRailwayWorld, createReflectionEnvironment } from './reward3d-world.js';
@@ -32,16 +32,18 @@ export async function prepareReward3D(config){
 // Real geometry moves through a fixed world; the camera glides between
 // cinematic views. Seconds, metres and wheel rotation share the same clock.
 export function createReward3D(canvas, config, { onFrame, onComplete, onError, reduced = false } = {}) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
+  const mobile=globalThis.matchMedia('(pointer: coarse)').matches;
+  // Only the offscreen target needs antialiasing. The canvas receives one quad.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scenario=rewardScenario(config.sceneId).id,night=scenario==='night',depot=scenario==='depot',skybridge=scenario==='skybridge';
   const sakura=scenario==='sakura',snow=scenario==='snow',seasonal=sakura||snow;
-  const aquarium=scenario==='aquarium',diorama=scenario==='diorama',playroom=scenario==='playroom',dream=aquarium||diorama||playroom;
+  const aquarium=scenario==='aquarium',diorama=scenario==='diorama',playroom=isToyReward(scenario),dream=aquarium||diorama||playroom;
+  const space=scenario==='toy-space',park=scenario==='toy-park';
   const scene = new THREE.Scene(), warm = depot||sakura||playroom,shinkansen=isShinkansen(config);
-  const roomColor=0xf6ddb6;
+  const roomColor=space?0x222751:park?0xc7e5ec:0xf6ddb6;
   scene.background = new THREE.Color(aquarium?0x185779:diorama?0xbcc2a8:playroom?roomColor:snow?0x829bc3:warm?0xe3c9aa:0xb8d3de);
   const fogColor=aquarium?0x185779:diorama?0xbcc2a8:playroom?roomColor:snow?0x829bc3:sakura?0xd9cbd1:night?0x0b1934:warm?0xe7c49a:0xc7e3f0;
   scene.fog = new THREE.Fog(fogColor,aquarium?42:playroom?88:night?160:seasonal?120:300,aquarium?350:playroom?290:night?650:seasonal?680:1200);
@@ -50,7 +52,9 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   renderer.toneMappingExposure=night?1.05:.92;
   const hemisphere = new THREE.HemisphereLight(aquarium?0xb5e5ff:snow?0xb3d8ff:0xe8f4ff,aquarium?0x274a81:snow?0x657ba8:night?0x14213c:0x78836c,aquarium?1.14:playroom?1.18:diorama?.8:snow?1.05:night?.45:depot?.42:.7); scene.add(hemisphere);
   const sun = new THREE.DirectionalLight(aquarium?0xc7edff:playroom||diorama?0xffe6bb:snow?0xffd4b5:night?0x7aafff:warm?0xffdab0:0xffefd8,aquarium?2.45:playroom?2.8:diorama?3.0:snow?2.1:sakura?3.15:night?1.1:depot?4.8:3.9);
-  sun.castShadow = true; sun.shadow.mapSize.set(globalThis.innerWidth>900?2048:1024,globalThis.innerWidth>900?2048:1024);
+  sun.castShadow = true; sun.shadow.mapSize.setScalar(mobile?512:globalThis.innerWidth>900?2048:1024);
+  sun.shadow.autoUpdate=!mobile;
+  sun.shadow.needsUpdate=true;
   Object.assign(sun.shadow.camera, { left:-50, right:45, top:25, bottom:-25, near:1, far:200 });
   sun.shadow.bias = -.00015; sun.shadow.normalBias = .035;
   scene.add(sun, sun.target);
@@ -61,7 +65,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   // The small cone is unshadowed and only exists in the night scene.
   const headlightThrow = night ? new THREE.SpotLight(0xffe5bd, 0, 34, .27, .83) : null;
   if (headlightThrow) scene.add(headlightThrow, headlightThrow.target);
-  const camera = new THREE.PerspectiveCamera(44,1,.1,1300),film=createFilmFinish(renderer);
+  const camera = new THREE.PerspectiveCamera(44,1,.1,1300),film=createFilmFinish(renderer,mobile);
   const celebration=createCelebration(scene,{scenario,color:config.color,reduced});
   let renderStats={calls:0,triangles:0};
   const world = aquarium?createAquariumWorld(scene,{config,reduced}):
@@ -95,7 +99,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     [[front+10,2.6,-5],[front+9,2.2,-6],[front+7,2.4,-10],[front+8,3.7,-15],[front+7,3.5,-14],[front+6,3,-13]]).map(v=>new THREE.Vector3(...v));
   const targets=(aquarium?
     [[focus,2.8,0],[focus,2.9,0],[focus-2,3.6,2],[front-10,6.1,7],[focus-2,3.4,1],[focus,2.35,0]]:
-    playroom?[[focus,3.1,1],[focus,3.05,1],[focus-2,3.0,2],[front-16,1.6,1],[focus-3,3.3,2],[focus-1,2.50,0]]:
+    playroom?[[focus,3.1,1],[focus,3.05,1],[focus-2,space?4.7:3,2],[front-16,space||park?5.3:1.6,1],[focus-3,3.3,2],[focus-1,2.50,0]]:
     diorama?[[focus-4,1.2,-5],[focus,2.4,1],[focus-1,2,3],[front-15,1.1,9],[focus-2,2.2,1],[focus,2.25,0]]:
     [[focus,2.25,0],[focus,2.15,0],[focus-1,2.05,0],[shinkansen?-3:1,1.8,0],[focus-1,2.05,0],[focus,2.2,0]]).map(v=>new THREE.Vector3(...v));
   function director(seconds){
@@ -121,7 +125,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   if(lampGlows.length)lightOrigin.divideScalar(lampGlows.length);
   else lightOrigin.set(front,2.7,0);
   let raf = 0, elapsed = 0, started = 0, running = false, disposed = false, completed = false;
-  let frame = 0, slowFrames = 0, previous = 0, qualityReduced = false;
+  let frame=0, previous=0, quality=0, slowTime=0;
   const oldError = event => { event.preventDefault(); pause(); onError?.('context-lost'); };
   canvas.addEventListener('webglcontextlost',oldError);
   canvas.dataset.renderer='webgl'; canvas.dataset.train=config.id;canvas.dataset.scenario=scenario;canvas.dataset.asset=train.group.userData.assetPipeline||'procedural-fallback';canvas.dataset.lighting=rewardEnvironment(scenario)?'hdr-ibl':'studio';
@@ -129,6 +133,10 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     if (disposed) return;
     const parent = canvas.parentElement;
     const width = Math.max(1,parent.clientWidth),height=Math.max(1,parent.clientHeight);
+    const density=Math.min(globalThis.devicePixelRatio||1,mobile?1.25:2);
+    const budget=mobile?385000:2050000;
+    const scale=[1,.82,.65][quality];
+    renderer.setPixelRatio(Math.min(density,Math.sqrt(budget/(width*height)))*scale);
     renderer.setSize(width,height,false); camera.aspect=width/height; camera.updateProjectionMatrix();
     if (!running) draw(elapsed);
   }
@@ -205,6 +213,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     celebration.update(moment,pose,camera);
     if(world.sky)world.sky.position.copy(camera.position);
     world.update(seconds,{headX:pose.x,headS,train,moment});
+    if(mobile&&(!running||frame%2===0))sun.shadow.needsUpdate=true;
     renderStats=film.render(scene,camera,moment);
     canvas.dataset.chapter=moment.chapter;
     canvas.dataset.progress=t.toFixed(3);canvas.dataset.frame=String(++frame);
@@ -212,17 +221,25 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   }
   function tick(now) {
     if (!running || disposed) return;
-    elapsed=clamp(now-started,0,REWARD_DURATION);draw(elapsed);
-    // Keep the same animation duration on slower phones; lower pixel cost only.
-    if(previous && now-previous>55 && ++slowFrames>22 && !qualityReduced) {
-      qualityReduced=true;film.reduceQuality();renderer.setPixelRatio(1);renderer.shadowMap.enabled=false;resize();
+    // React to a sustained slow cadence within the first moving shot.
+    // A single delay from a resize, tab switch or startup cannot lower quality.
+    if(previous&&quality<2){
+      const interval=Math.min(now-previous,80);
+      slowTime=interval>23?slowTime+interval:Math.max(0,slowTime-interval*2);
+      if(slowTime>(quality===0?260:480)){
+        quality++;slowTime=0;
+        film.reduceQuality(quality===2);
+        if(quality===2)sun.castShadow=false;
+        resize();
+      }
     }
     previous=now;
+    elapsed=clamp(now-started,0,REWARD_DURATION);draw(elapsed);
     if(elapsed>=REWARD_DURATION){running=false;completed=true;onComplete?.();return;}
     raf=requestAnimationFrame(tick);
   }
   function play() {
-    if(disposed)return;cancelAnimationFrame(raf);elapsed=0;completed=false;previous=0;
+    if(disposed)return;cancelAnimationFrame(raf);elapsed=0;completed=false;previous=0;slowTime=0;
     running=true;started=performance.now();raf=requestAnimationFrame(tick);
   }
   function pause() {
@@ -232,7 +249,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   }
   function resume() {
     if(disposed||running||completed)return;
-    running=true;started=performance.now()-elapsed;previous=0;raf=requestAnimationFrame(tick);
+    running=true;started=performance.now()-elapsed;previous=0;slowTime=0;raf=requestAnimationFrame(tick);
   }
   function dispose() {
     if(disposed)return;pause();disposed=true;observer.disconnect();

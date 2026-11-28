@@ -48,7 +48,7 @@ CPU上の原型だけを最大12編成キャッシュする。再生するシー
 
 車庫・夜景・天空の橋は、[Poly HavenのCC0 HDRI](../assets/reward3d/environment/LICENSE.md)を舞台ごとに使い分ける。実写の光を反射に使い、背景の地形・橋・雲・市街地は立体で描く。空撮の山は閉じた立体で、平らな四角い断面や浮いた面をなくした。
 
-確認は `npm test`、`npm run build`、`tests/reward-visual-browser.cjs`、`tests/android-browser.cjs`。映像テストの既定は全96通り。車両を絞る場合は `REWARD_TEST_IDS` で指定できる。
+確認は `npm test`、`npm run build`、`tests/reward-visual-browser.cjs`、`tests/android-browser.cjs`。映像テストの既定は全120通り。車両を絞る場合は `REWARD_TEST_IDS` で指定できる。
 
 運転台の立体部品を12車種に加えた。特急4車種と新幹線3車種は曲面の車体を開口して前窓のガラスとゴム枠を別部品にした。頭灯の演出はGLBに含まれる灯具の座標を使う。外観と座席色は運行会社の資料を参照した。[西武鉄道 ラビュー](https://www.seiburailway.jp/railways/laview/design.html)、[近鉄 ひのとり](https://www.kintetsu.co.jp/senden/hinotori/imgs/pdf/leaflet.pdf)、[南海 ラピート](https://www.nankai.co.jp/traffic/express/rapit.html)、[JR東日本 サフィール踊り子](https://www.jreast.co.jp/saphir/cars/)
 

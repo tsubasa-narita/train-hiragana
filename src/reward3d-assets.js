@@ -3,6 +3,7 @@ import {GLTFLoader} from '../vendor/three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from '../vendor/three/addons/libs/meshopt_decoder.module.js';
 import {HDRLoader} from '../vendor/three/addons/loaders/HDRLoader.js';
 import {REWARD_3D_TRAINS} from './reward3d-catalog.js';
+import {isToyReward} from './reward3d-scenarios.js';
 import {sceneryDetailTexture} from './reward3d-surface.js';
 
 // Only immutable CPU templates are cached. Every running scene owns its cloned
@@ -75,7 +76,7 @@ function finishTrainMaterial(material, grain, {sceneId, id}, clock) {
   const glass=/^(?:CAB_GLASS|GLASS|PASSENGER_GLASS)/.test(name);
   const runningGear=/^(?:MACHINERY|ROOF)/.test(name);
   if(!metal&&!paint&&!glass&&!runningGear)return;
-  if(sceneId==='playroom'){
+  if(isToyReward(sceneId)){
     if(!glass){
       material.metalness=.07;
       material.metalnessMap=null;

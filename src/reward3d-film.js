@@ -2,12 +2,14 @@ import * as THREE from '../vendor/three/three.module.js';
 
 // A single inexpensive finishing pass. The scene stays in linear HDR until
 // soft highlight bloom, colour grading and the display transform are applied.
-export function createFilmFinish(renderer){
+export function createFilmFinish(renderer, mobile){
   const type=renderer.extensions.has('EXT_color_buffer_float')?THREE.HalfFloatType:THREE.UnsignedByteType;
-  const target=new THREE.WebGLRenderTarget(1,1,{type,depthBuffer:true,samples:Math.min(4,renderer.capabilities.maxSamples)});
+  // The contour pass already smooths edges. Avoid resolving multiple HDR
+  // samples per pixel on phones, where render targets use shared memory.
+  const target=new THREE.WebGLRenderTarget(1,1,{type,depthBuffer:true,samples:mobile?0:Math.min(4,renderer.capabilities.maxSamples)});
   target.texture.name='reward-linear-film';
   const size=new THREE.Vector2(),scene=new THREE.Scene(),camera=new THREE.Camera();
-  const material=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,
+  const material=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,defines:{FILM_QUALITY:mobile?1:2},
     uniforms:{image:{value:target.texture},pixel:{value:new THREE.Vector2(1,1)},bloom:{value:.12}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
     fragmentShader:`uniform sampler2D image;uniform vec2 pixel;uniform float bloom;varying vec2 vUv;
@@ -30,10 +32,18 @@ export function createFilmFinish(renderer){
         float change=abs(contourLuma(neighbours)-l);
         return mix(centre,neighbours,.55*smoothstep(.045,.20,contrast)*(1.-smoothstep(.07,.22,change)));
       }
-      void main(){vec3 color=smoothEdges(vUv);vec2 p=pixel*4.;
+      void main(){
+        #if FILM_QUALITY == 0
+          vec3 color=texture2D(image,vUv).rgb;
+        #else
+          vec3 color=smoothEdges(vUv);
+        #endif
+        #if FILM_QUALITY == 2
+        vec2 p=pixel*4.;
         vec3 halo=bright(vUv)*.24;
         halo+=(bright(vUv+vec2(p.x,0.))+bright(vUv-vec2(p.x,0.))+bright(vUv+vec2(0.,p.y))+bright(vUv-vec2(0.,p.y)))*.19;
         color+=halo*bloom;
+        #endif
         float luma=dot(color,vec3(.2126,.7152,.0722));color=mix(vec3(luma),color,1.10);
         vec2 edge=(vUv-.5)*2.;color*=1.-.075*pow(dot(edge,edge)*.5,1.4);
         gl_FragColor=vec4(max(color,vec3(0.)),1.);
@@ -47,7 +57,14 @@ export function createFilmFinish(renderer){
   const geometry=new THREE.PlaneGeometry(2,2);scene.add(new THREE.Mesh(geometry,material));
   let disposed=false;
   return {
-    reduceQuality(){if(target.samples){target.samples=0;target.dispose();}},
+    reduceQuality(lowest){
+      if(target.samples){target.samples=0;target.dispose();}
+      const quality=lowest?0:1;
+      if(material.defines.FILM_QUALITY!==quality){
+        material.defines.FILM_QUALITY=quality;
+        material.needsUpdate=true;
+      }
+    },
     render(world,view,moment){
       renderer.getDrawingBufferSize(size);
       if(size.x!==target.width||size.y!==target.height){target.setSize(size.x,size.y);material.uniforms.pixel.value.set(1/size.x,1/size.y);}

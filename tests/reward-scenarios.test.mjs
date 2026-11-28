@@ -24,8 +24,8 @@ test('both new worlds match explicit and legacy track gauges',()=>{
   }
 });
 
-test('all 96 combinations appear once per bag and survive a reload',async()=>{
-  assert.equal(allPairs.length,96);
+test('all 120 combinations appear once per bag and survive a reload',async()=>{
+  assert.equal(allPairs.length,120);
   const original=globalThis.localStorage;let stored=null;
   globalThis.localStorage={getItem:()=>stored,setItem:(_,v)=>{stored=v;}};
   try{
@@ -102,10 +102,10 @@ test('expansion adds every new pairing to an in-progress bag without replaying c
     assert.equal(storage.size,1,'preview leaves existing storage untouched');
     const claimed=chooseRewardExperience(undefined,()=>0,next);
     assert.deepEqual(claimed,next);
-    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v5'));
+    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v6'));
     const universe=[saved.last,...saved.bag];
-    assert.equal(universe.length,76);
-    assert.equal(new Set(universe).size,76);
+    assert.equal(universe.length,100);
+    assert.equal(new Set(universe).size,100);
     assert.ok(universe.includes(remaining));
     assert.ok(!universe.includes('depot:hayabusa'));
     assert.ok(universe.includes('snow:laview')&&universe.includes('sakura:yamanote')&&universe.includes('depot:hinotori'));
@@ -120,30 +120,30 @@ test('the previous release queues the four additions without replaying consumed 
   try{
     const {chooseRewardExperience}=await import('../src/reward3d-scenarios.js?dream-expansion');
     chooseRewardExperience(undefined,()=>.6);
-    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v5'));
+    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v6'));
     const universe=[saved.last,...saved.bag];
-    assert.equal(universe.length,47);
+    assert.equal(universe.length,71);
     assert.ok(universe.includes(remaining));
     assert.ok(universe.includes('aquarium:rapit')&&universe.includes('diorama:hayabusa')&&universe.includes('depot:doctor-yellow'));
     assert.ok(!universe.includes('depot:hayabusa'));
   }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
 });
-test('the playroom is added to an active bag with its current progress intact',async()=>{
+test('new toy courses are added to an active bag with its current progress intact',async()=>{
   const original=globalThis.localStorage;
-  const oldKey='train-reward-cinema-bag-v4',remaining='diorama:rapit',last='depot:hayabusa';
+  const oldKey='train-reward-cinema-bag-v5',remaining='playroom:rapit',last='depot:hayabusa';
   const storage=new Map([[oldKey,JSON.stringify({bag:[remaining],last})]]);
   globalThis.localStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)};
   try{
     const {chooseRewardExperience}=await import('../src/reward3d-scenarios.js?playroom-expansion');
     chooseRewardExperience(undefined,()=>.5);
-    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v5'));
+    const saved=JSON.parse(storage.get('train-reward-cinema-bag-v6'));
     const universe=[saved.last,...saved.bag];
-    assert.deepEqual(new Set(universe),new Set([remaining,...REWARD_3D_TRAINS.map(train=>`playroom:${train.id}`)]));
+    assert.deepEqual(new Set(universe),new Set([remaining,...allPairs.filter(pair=>pair.startsWith('toy-'))]));
   }finally{if(original===undefined)delete globalThis.localStorage;else globalThis.localStorage=original;}
 });
 test('plastic rails meet the same wheel height and gauge as each train',()=>{
-  for(const gauge of [1.067,1.435]){
-    const scene=new THREE.Scene(),world=createPlayroomWorld(scene,{config:{gauge},reduced:true});
+  for(const sceneId of ['playroom','toy-park','toy-space'])for(const gauge of [1.067,1.435]){
+    const scene=new THREE.Scene(),world=createPlayroomWorld(scene,{config:{gauge,sceneId},reduced:true});
     try{
       const rails=scene.getObjectByName('playroom-railheads'),matrix=new THREE.Matrix4(),point=new THREE.Vector3(0,.5,0);
       rails.getMatrixAt(0,matrix);point.applyMatrix4(matrix);

@@ -1,4 +1,5 @@
 import { REWARD_DURATION, rewardMoment } from './reward-timeline.js';
+import { isToyReward } from './reward3d-scenarios.js';
 
 // A quiet, entirely synthetic ten-second score. No recorded train sounds.
 const SCORE_SECONDS = REWARD_DURATION / 1000;
@@ -55,7 +56,7 @@ function sample(time, sceneId, shinkansen) {
     const age=time-4.0;
     value+=envelope(time,4.0,6.2,.24,1.24)*.034*Math.sin(TAU*(180*age+15*age*age));
   }
-  if(sceneId==='playroom'&&time>.67&&time<1.12){
+  if(time>.67&&time<1.12&&isToyReward(sceneId)){
     for(const [start,note] of toySignal){
       const phase=TAU*note*(time-start);
       value+=envelope(time,start,start+.21,.019,.15)*(.047*Math.sin(phase)+.012*Math.sin(phase*2));

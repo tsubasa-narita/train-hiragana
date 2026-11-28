@@ -3,6 +3,7 @@ import { scenery } from './reward3d-dream.js';
 import { mouldedBox } from './reward3d-dream-town.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 import { ramp } from './reward-timeline.js';
+import { toyPark, toySpace } from './reward3d-toy-themes.js';
 
 const palette={blue:0x255acb,rail:0x377ef4,red:0xdd3943,yellow:0xf2ba27,cream:0xffe6b6,mint:0x3aae9a};
 const pi=Math.PI;
@@ -25,14 +26,15 @@ function carpet(kit) {
   }),patches).name='woven-rug-squares';
 }
 
-function snapTrack(kit, rounded, gauge) {
+function snapTrack(kit, rounded, gauge, space) {
   const {own,batch,material,box}=kit;
   const deck=[],rails=[],ties=[],tabs=[],brackets=[],feet=[],tops=[];
   const railHalf=gauge/2,step=5.6;
   for(let i=-38;i<=55;i++){
     const x=i*step;
-    const inBridge=x>32&&x<83;
-    deck.push([x,-.28,0,step-.075,.43,3.24,0,0,0,i%3===0?0x3b73d8:0x2e68d0]);
+    const inBridge=!space&&x>32&&x<83;
+    const tint=space?(i%3===0?0x6553af:0x5146a5):(i%3===0?0x3b73d8:0x2e68d0);
+    deck.push([x,-.28,0,step-.075,.43,3.24,0,0,0,tint]);
     for(const z of [-railHalf,railHalf]){
       rails.push([x,.064,z,step-.018,.172,.145]);
       rails.push([x,.008,z,step-.018,.074,.27]);
@@ -49,11 +51,11 @@ function snapTrack(kit, rounded, gauge) {
     tops.push([x,-.66,0,1.89,.40,3.57]);
   }
   batch(rounded,material({color:0xffffff,roughness:.35,metalness:.06}),deck).name='blue-snap-rail-bed';
-  batch(box,material({color:palette.rail,roughness:.30,metalness:.07}),rails).name='playroom-railheads';
-  batch(rounded,material({color:0x437cd6,roughness:.43}),ties);
+  batch(box,material({color:space?0x7be0ec:palette.rail,roughness:.30,metalness:.07}),rails).name='playroom-railheads';
+  batch(rounded,material({color:space?0x8779c4:0x437cd6,roughness:.43}),ties);
   batch(own(new THREE.CylinderGeometry(1,1,1,12)),material({color:0x1b52ad,roughness:.40}),tabs);
-  batch(rounded,material({color:palette.yellow,roughness:.40}),[...feet,...brackets],true).name='snap-in-pier-blocks';
-  batch(rounded,material({color:0xf8cf4f,roughness:.45}),tops);
+  batch(rounded,material({color:space?0x555ea2:palette.yellow,roughness:.40}),[...feet,...brackets],true).name='snap-in-pier-blocks';
+  batch(rounded,material({color:space?0x72adc5:0xf8cf4f,roughness:.45}),tops);
 }
 
 function trussBridge(kit, rounded) {
@@ -175,7 +177,7 @@ function toyCharacters(kit) {
   return arms;
 }
 
-function signalAndPinwheels(kit,rounded) {
+function signalAndPinwheels(kit,rounded,space) {
   const {own,mesh,material,group}=kit;
   const pole=own(new THREE.CylinderGeometry(1,1,1,12));
   const post=material({color:palette.red,roughness:.43});
@@ -189,7 +191,7 @@ function signalAndPinwheels(kit,rounded) {
   const blades=[];
   const petals=own(new THREE.SphereGeometry(1,16,10));
   const finishes=[0xef6d6f,0xf7bf44,0x59c2a5,0x5a88dc].map(color=>material({color,roughness:.34,metalness:.06}));
-  for(const [x,z] of [[30,11.8],[127,12.2],[202,17.0]]){
+  for(const [x,z] of (space?[]:[[30,11.8],[127,12.2],[202,17.0]])){
     mesh(pole,toyYellow,x,.72,z,.21,13.46,.21);
     const rotor=new THREE.Group();
     rotor.position.set(x,7.1,z-.24);group.add(rotor);
@@ -207,16 +209,23 @@ function signalAndPinwheels(kit,rounded) {
 }
 
 export function createPlayroomWorld(scene,{config,reduced=false}){
-  const kit=scenery(scene,'toy-railway-playroom',16441);
+  const id=config.sceneId??'playroom', space=id==='toy-space',park=id==='toy-park';
+  const kit=scenery(scene,`toy-railway-${id}`,16441);
   const rounded=kit.own(mouldedBox(.065));
-  carpet(kit);
-  snapTrack(kit,rounded,config.gauge??1.067);
-  trussBridge(kit,rounded);
-  blocksAndRoom(kit,rounded);
-  const arms=toyCharacters(kit);
-  const {lamp,blades}=signalAndPinwheels(kit,rounded);
+  snapTrack(kit,rounded,config.gauge??1.067,space);
+  if(!space)trussBridge(kit,rounded);
+  let updateTheme,arms=[];
+  if(space)updateTheme=toySpace(kit,rounded,reduced);
+  else if(park)updateTheme=toyPark(kit,rounded,reduced);
+  else {
+    carpet(kit);
+    blocksAndRoom(kit,rounded);
+    arms=toyCharacters(kit);
+  }
+  const {lamp,blades}=signalAndPinwheels(kit,rounded,space);
   const green=new THREE.Color(0x7ded9e);
   function update(time){
+    updateTheme?.(time);
     const launch=ramp(.62,1.12,time);
     lamp.color.set(0xffbc61).lerp(green,launch);
     lamp.emissive.copy(lamp.color);

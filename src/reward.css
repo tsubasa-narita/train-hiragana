@@ -30,6 +30,8 @@
 .reward-cinema[data-scenario='aquarium'] { --scene-color: #78ddea; }
 .reward-cinema[data-scenario='diorama'] { --scene-color: #ffd38d; }
 .reward-cinema[data-scenario='playroom'] { --scene-color: #8bc9ff; }
+.reward-cinema[data-scenario='toy-park'] { --scene-color: #ffc490; }
+.reward-cinema[data-scenario='toy-space'] { --scene-color: #adcbff; }
 
 .reward-heading {
   flex: none;
