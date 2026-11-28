@@ -7,7 +7,7 @@ import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 function seeded(seed = 4827) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 }
-export function createRailwayWorld(scene, { warm = false, blossom = false, night = false, gauge = 1.067, reduced = false } = {}) {
+export function createRailwayWorld(scene, { warm = false, blossom = false, night = false, gauge = 1.067, reduced = false, mobile = false } = {}) {
   const halfGauge=gauge/2;
   const random = seeded(), group = new THREE.Group();
   let disposed = false;
@@ -167,14 +167,14 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
       cityBatches[style].push({x,y:-6.55+h/2,z,sx:w,sy:h,sz:d,color:bodyColors[(i+Math.floor(i/4))%4]});
       roofs.push({x,y:-6.55+h+.14,z,sx:w+.18,sy:.28,sz:d+.18});
       roofs.push({x:x+w*.16,y:-6.55+h+.8,z:z+d*.1,sx:w*.3,sy:1.1,sz:d*.32});
-      if(h>28){
+      if(h>28&&(!mobile||z<112)){
         const y=-6.55+h;
         roofs.push({x:x-w*.28,y:y+.51,z:z+d*.18,sx:w*.21,sy:.72,sz:d*.37});
         roofs.push({x:x-w*.23,y:y+1.66,z,sx:.12,sy:3.0,sz:.105});
         roofs.push({x:x-w*.23,y:y+2.68,z,sx:1.55,sy:.092,sz:.095});
       }
       if(i%3===0)podiums.push({x,y:-4.55,z,sx:w+3,sy:4,sz:d+3});
-      if(style===2){
+      if(style===2&&(!mobile||z<112)){
         for(const dx of [-.32,0,.32])mullions.push({x:x+w*dx,y:-6.55+h/2,z:z-d*.5-.035,sx:.1,sy:h,sz:.06});
       }
       if(night&&h>38)beacons.push({x:x-w*.4,y:-6.55+h+.4,z:z-d*.4,sx:.09,sy:.12,sz:.09});
@@ -220,21 +220,20 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
     instances(box(),material({color:0xfff1cc,emissive:0xffb354,emissiveIntensity:2.45}),deckLights);
   }
 
-  const trunks=[],leaves=[],leafSprays=[];
-  const crown=keep(new THREE.IcosahedronGeometry(1,2)),crownPosition=crown.attributes.position;
-  for(let i=0;i<crownPosition.count;i++){
-    const x=crownPosition.getX(i),y=crownPosition.getY(i),z=crownPosition.getZ(i);
-    const r=1+.1*Math.sin(x*13+y*8)*Math.sin(z*11-x*5)+.05*Math.sin(y*23+z*8);
-    crownPosition.setXYZ(i,x*r,y*r,z*r);
+  const trunks=[],leaves=[],distantLeaves=[],leafSprays=[];
+  function treeCrown(detail){
+    const crown=keep(new THREE.IcosahedronGeometry(1,detail)),positions=crown.attributes.position;
+    const colors=[];
+    for(let i=0;i<positions.count;i++){
+      const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
+      const radius=1+.1*Math.sin(x*13+y*8)*Math.sin(z*11-x*5)+.05*Math.sin(y*23+z*8);
+      positions.setXYZ(i,x*radius,y*radius,z*radius);
+      const shade=.68+.25*(y*radius+1)/2+.07*Math.sin((x*17+z*13)*radius);
+      colors.push(shade*.95,shade,shade*.88);
+    }
+    crown.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    return crown;
   }
-  const leafColors=[],leafNormal=new THREE.Vector3();
-  for(let i=0;i<crownPosition.count;i++){
-    const x=crownPosition.getX(i),y=crownPosition.getY(i),z=crownPosition.getZ(i);
-    leafNormal.set(x,y,z).normalize();crown.attributes.normal.setXYZ(i,...leafNormal);
-    const shade=.68+.25*(y+1)/2+.07*Math.sin(x*17+z*13);
-    leafColors.push(shade*.95,shade,shade*.88);
-  }
-  crown.setAttribute('color',new THREE.Float32BufferAttribute(leafColors,3));
   for(let i=0;i<430;i++){
     const x=-400+random()*850,z=(random()>.5?1:-1)*(14+random()*170);
     if(x>-13&&x<63)continue;
@@ -248,11 +247,14 @@ export function createRailwayWorld(scene, { warm = false, blossom = false, night
       if(!reduced&&x>-115&&x<230&&z>14&&z<53){
         leafSprays.push(lobe);
         leaves.push({...lobe,sx:lobe.sx*.74,sy:lobe.sy*.77,sz:lobe.sz*.74});
-      }else leaves.push(lobe);
+      }else if(mobile&&(Math.abs(z)>58||x< -148||x>238))distantLeaves.push(lobe);
+      else leaves.push(lobe);
     }
   }
   instances(keep(new THREE.CylinderGeometry(.58,1,1,6)),material({color:0x786651,roughness:1}),trunks);
-  instances(crown,material({color:0xffffff,vertexColors:true,roughness:1}),leaves);
+  const foliage=material({color:0xffffff,vertexColors:true,roughness:1});
+  instances(treeCrown(2),foliage,leaves);
+  if(distantLeaves.length)instances(treeCrown(0),foliage,distantLeaves);
   if(leafSprays.length)instances(keep(branchletGeometry(false)),branchletMaterial(keep),leafSprays);
   // Distant ridges have continuous silhouettes, rather than a flat backdrop.
   for(let layer=0;layer<3;layer++){

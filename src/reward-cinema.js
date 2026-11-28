@@ -112,6 +112,7 @@ export function showTrainReward({ train:requested, sound=true, speak, kana=text=
         },
         onComplete:finish,onError:useFallback,
       });
+      if(!current.played)await scene.preparePlayback?.();
       if(closed||version!==loadVersion){scene?.dispose();scene=null;return;}
       clearTimeout(loadTimer);dialog.dataset.renderer='webgl';loadingScene=false;loading.hidden=true;run();
     }catch{if(!closed&&version===loadVersion)useFallback();}

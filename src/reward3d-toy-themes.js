@@ -2,7 +2,7 @@ import * as THREE from '../vendor/three/three.module.js';
 
 const TAU=Math.PI*2;
 
-export function toyPark(kit,rounded,reduced){
+export function toyPark(kit,rounded,{reduced,fast}){
   const {own,batch,mesh,material,group}=kit;
   const floor=mesh(own(new THREE.PlaneGeometry(780,400)),material({color:0x9dd2a3}),0,-6,26);
   floor.rotation.x=-Math.PI/2;
@@ -30,7 +30,7 @@ export function toyPark(kit,rounded,reduced){
   batch(rounded,material({color:0x987d68,roughness:.72}),stems,true);
   batch(own(new THREE.SphereGeometry(1,12,8)),candy,crowns,true);
 
-  const wheelX=48,wheelY=9.0,wheelZ=19,radius=11;
+  const wheelX=fast?70:48,wheelY=8.6,wheelZ=17,radius=9;
   const wheel=new THREE.Group();
   wheel.position.set(wheelX,wheelY,wheelZ);group.add(wheel);
   const rim=own(new THREE.TorusGeometry(radius,.19,8,64));
@@ -61,7 +61,7 @@ export function toyPark(kit,rounded,reduced){
   };
 }
 
-export function toySpace(kit,rounded,reduced){
+export function toySpace(kit,rounded,{reduced,fast}){
   const {own,batch,mesh,material,group,random}=kit;
   const floor=mesh(own(new THREE.PlaneGeometry(820,490)),material({color:0x555b9e}),0,-6,26);
   floor.rotation.x=-Math.PI/2;
@@ -96,7 +96,7 @@ export function toySpace(kit,rounded,reduced){
   mesh(moon,material({color:0x5bc8d1,roughness:.72}),150,15,37,9.2,9.2,9.2);
   mesh(moon,material({color:0xf4ab84,roughness:.72}),-49,12,29,6.6,6.6,6.6);
   const rocket=new THREE.Group();
-  const launchX=34,launchZ=12.5;
+  const launchX=fast?50:37,launchZ=12.5;
   rocket.position.set(launchX,-3.6,launchZ);group.add(rocket);
   const body=material({color:0xffe2bb,roughness:.36}),cap=material({color:0xee6c78,roughness:.40});
   const rocketShell=own(new THREE.CapsuleGeometry(1.65,4,8,18));
@@ -127,13 +127,13 @@ export function toySpace(kit,rounded,reduced){
   batch(rounded,pad,gate,true);
   batch(rounded,kit.glow(0x67dbe9,1.16),light);
   return time=>{
-    const lift=reduced?0:THREE.MathUtils.smoothstep(time,3.4,6.2);
-    rocket.position.y=-4.8+lift*22;
+    const lift=reduced?0:THREE.MathUtils.smoothstep(time,3.8,6.6);
+    rocket.position.y=-4.8+lift*16.4;
     flame.visible=lift>0&&lift<1;
     flame.scale.y=.8+lift*1.7+Math.sin(time*33)*.26;
     flame.position.y=.68-flame.scale.y*.45;
     smoke.forEach((puff,i)=>{
-      const age=(time-3.48-i*.17)/1.55;
+      const age=(time-3.88-i*.17)/1.55;
       puff.visible=!reduced&&age>0&&age<1;
       if(puff.visible){
         puff.position.set(launchX+age*(i-1.7)*1.39,-4.3+age*2.4,launchZ+i*.33);

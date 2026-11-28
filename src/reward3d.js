@@ -75,7 +75,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     snow?createSnowWorld(scene,{config,reduced}):
     depot?createDepotWorld(scene,{config,reduced}):
     skybridge?createSkybridgeWorld(scene,{config,reduced}):
-    createRailwayWorld(scene,{night:true,gauge:config.gauge||1.067,reduced});
+    createRailwayWorld(scene,{night:true,gauge:config.gauge||1.067,reduced,mobile});
   const consist=playroom?{...config,cars:4,greenCars:config.greenCars?.length?[2]:[],pantographCars:[1]}:config;
   const train = buildTrain(consist); scene.add(train.group);
   if(skybridge)bendTrainModel(train,SKY_RADIUS);
@@ -86,9 +86,11 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   const cabBack=config.cabBack??(config.family==='e5'?-1.05:-.3);
   // Six continuous, timed compositions: face reveal, low launch, wide spectacle,
   // then a big, readable three-quarter hero view for the closing fanfare.
-  const times=[0,1.1,3.2,6.7,8.4,10];
+  const times=park||space?[0,1.1,3.2,4.7,6.35,8.4,10]:[0,1.1,3.2,6.7,8.4,10];
   const positions=(aquarium?
     [[front+15,3.85,-4.6],[front+12,3.55,-6],[front+8,4.1,-13],[front-2,7.2,-27],[front+7,5.3,-18],[front+7,4.1,-13]]:
+    park?[[front+12,5.7,-9.4],[front+11,4.7,-9.8],[front+10,3.6,-10],[front+11,2.65,-11],[front+10,14,-22],[front+11,8.7,-15],[front+9,4.2,-10]]:
+    space?[[front+12,5.7,-9.4],[front+11,4.7,-9.8],[front+9,4.8,-11],[front+8,6,-14],[front+9,9,-19],[front+11,8.7,-15],[front+9,4.2,-10]]:
     playroom?[[front+12,5.7,-9.4],[front+11,4.7,-9.8],[front+9,7.2,-14],[front+6,31,-25],[front+11,8.7,-15],[front+9,4.2,-10]]:
     diorama?[[front+16,18,-32],[front+15,14,-23],[front+7,20,-18],[front-12,61,-15],[front+9,17,-19],[front+8,7,-14]]:
     skybridge?
@@ -99,7 +101,9 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     [[front+10,2.6,-5],[front+9,2.2,-6],[front+7,2.4,-10],[front+8,3.7,-15],[front+7,3.5,-14],[front+6,3,-13]]).map(v=>new THREE.Vector3(...v));
   const targets=(aquarium?
     [[focus,2.8,0],[focus,2.9,0],[focus-2,3.6,2],[front-10,6.1,7],[focus-2,3.4,1],[focus,2.35,0]]:
-    playroom?[[focus,3.1,1],[focus,3.05,1],[focus-2,space?4.7:3,2],[front-16,space||park?5.3:1.6,1],[focus-3,3.3,2],[focus-1,2.50,0]]:
+    park?[[focus,3.1,1],[focus,3.05,1],[focus,2.65,0],[focus,2.5,1],[focus-3,7.7,4],[focus-3,3.3,2],[focus-1,2.50,0]]:
+    space?[[focus,3.1,1],[focus,3.05,1],[focus-1,3.6,1],[focus,6.2,4],[focus-2,7,3],[focus-3,3.3,2],[focus-1,2.50,0]]:
+    playroom?[[focus,3.1,1],[focus,3.05,1],[focus-2,3,2],[front-16,1.6,1],[focus-3,3.3,2],[focus-1,2.50,0]]:
     diorama?[[focus-4,1.2,-5],[focus,2.4,1],[focus-1,2,3],[front-15,1.1,9],[focus-2,2.2,1],[focus,2.25,0]]:
     [[focus,2.25,0],[focus,2.15,0],[focus-1,2.05,0],[shinkansen?-3:1,1.8,0],[focus-1,2.05,0],[focus,2.2,0]]).map(v=>new THREE.Vector3(...v));
   function director(seconds){
@@ -129,6 +133,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
   const oldError = event => { event.preventDefault(); pause(); onError?.('context-lost'); };
   canvas.addEventListener('webglcontextlost',oldError);
   canvas.dataset.renderer='webgl'; canvas.dataset.train=config.id;canvas.dataset.scenario=scenario;canvas.dataset.asset=train.group.userData.assetPipeline||'procedural-fallback';canvas.dataset.lighting=rewardEnvironment(scenario)?'hdr-ibl':'studio';
+  let viewportWidth=0,viewportHeight=0,pixelRatio=0;
   function resize() {
     if (disposed) return;
     const parent = canvas.parentElement;
@@ -136,11 +141,14 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     const density=Math.min(globalThis.devicePixelRatio||1,mobile?1.25:2);
     const budget=mobile?385000:2050000;
     const scale=[1,.82,.65][quality];
-    renderer.setPixelRatio(Math.min(density,Math.sqrt(budget/(width*height)))*scale);
+    const ratio=Math.min(density,Math.sqrt(budget/(width*height)))*scale;
+    if(width===viewportWidth&&height===viewportHeight&&ratio===pixelRatio)return;
+    viewportWidth=width;viewportHeight=height;pixelRatio=ratio;
+    if(renderer.getPixelRatio()!==ratio)renderer.setPixelRatio(ratio);
     renderer.setSize(width,height,false); camera.aspect=width/height; camera.updateProjectionMatrix();
     if (!running) draw(elapsed);
   }
-  function draw(milliseconds) {
+  function draw(milliseconds, silent=false) {
     if(disposed)return;
     const moment=rewardMoment(milliseconds,shinkansen),seconds=moment.seconds,t=moment.progress,travel=moment.distance;
     const headS=start+travel,pose=skybridge?skyPose(headS):{x:start+travel,y:0,z:0,yaw:0};
@@ -215,9 +223,29 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     world.update(seconds,{headX:pose.x,headS,train,moment});
     if(mobile&&(!running||frame%2===0))sun.shadow.needsUpdate=true;
     renderStats=film.render(scene,camera,moment);
+    if(silent)return;
     canvas.dataset.chapter=moment.chapter;
     canvas.dataset.progress=t.toFixed(3);canvas.dataset.frame=String(++frame);
     onFrame?.(t);
+  }
+  async function preparePlayback(){
+    // Submit the passes first seen at the action and finale while the loading
+    // overlay is up. Preserve the opening frame and start the clock afterwards.
+    if(disposed)return;
+    if(!reduced){
+      draw(night?5350:4900,true);
+      if(night)draw(9210,true);
+      draw(0,true);
+    }
+    const gl=renderer.getContext(),fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);
+    if(!fence)return;
+    gl.flush();
+    const until=performance.now()+160;
+    try{
+      while(!disposed&&performance.now()<until&&gl.clientWaitSync(fence,0,0)===gl.TIMEOUT_EXPIRED){
+        await new Promise(resolve=>setTimeout(resolve,8));
+      }
+    }finally{if(!disposed)gl.deleteSync(fence);}
   }
   function tick(now) {
     if (!running || disposed) return;
@@ -259,7 +287,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     delete canvas.rewardScene;
   }
   const observer=new ResizeObserver(resize);observer.observe(canvas.parentElement);resize();
-  const api={play,pause,resume,dispose,
+  const api={play,pause,resume,dispose,preparePlayback,
     seek(milliseconds){if(disposed)return;pause();elapsed=clamp(milliseconds,0,REWARD_DURATION);draw(elapsed);},
     get framing(){const project=(x,y)=>{const p=new THREE.Vector3(x,y,0).applyMatrix4(train.group.matrixWorld).project(camera);return {x:(p.x+1)/2,y:(1-p.y)/2,depth:p.z};};return {...project(front,shinkansen?1.5:2.5),cab:project(shinkansen?cabBack:front,3)};},
     get elapsed(){return elapsed;},get running(){return running;},

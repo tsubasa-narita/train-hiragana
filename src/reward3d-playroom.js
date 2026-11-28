@@ -4,6 +4,7 @@ import { mouldedBox } from './reward3d-dream-town.js';
 import { detailSurface, sceneryDetailTexture } from './reward3d-surface.js';
 import { ramp } from './reward-timeline.js';
 import { toyPark, toySpace } from './reward3d-toy-themes.js';
+import { isShinkansen } from './reward3d-catalog.js';
 
 const palette={blue:0x255acb,rail:0x377ef4,red:0xdd3943,yellow:0xf2ba27,cream:0xffe6b6,mint:0x3aae9a};
 const pi=Math.PI;
@@ -215,8 +216,9 @@ export function createPlayroomWorld(scene,{config,reduced=false}){
   snapTrack(kit,rounded,config.gauge??1.067,space);
   if(!space)trussBridge(kit,rounded);
   let updateTheme,arms=[];
-  if(space)updateTheme=toySpace(kit,rounded,reduced);
-  else if(park)updateTheme=toyPark(kit,rounded,reduced);
+  const fast=isShinkansen(config);
+  if(space)updateTheme=toySpace(kit,rounded,{reduced,fast});
+  else if(park)updateTheme=toyPark(kit,rounded,{reduced,fast});
   else {
     carpet(kit);
     blocksAndRoom(kit,rounded);
