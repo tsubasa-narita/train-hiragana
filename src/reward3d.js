@@ -233,7 +233,7 @@ export function createReward3D(canvas, config, { onFrame, onComplete, onError, r
     // overlay is up. Preserve the opening frame and start the clock afterwards.
     if(disposed)return;
     if(!reduced){
-      draw(night?5350:4900,true);
+      draw(night?5350:space?5250:4900,true);
       if(night)draw(9210,true);
       draw(0,true);
     }
